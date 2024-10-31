@@ -40,23 +40,23 @@ function r3d_save_general_callback()
 	$data = $_POST;
 
 	if (isset($data['slug']) && (get_option('real3dflipbook_global')['slug'] ?? '') != $data['slug']) {
-        update_option('r3d_flush_rewrite_rules', true);
-    }
+		update_option('r3d_flush_rewrite_rules', true);
+	}
 
 	update_option('real3dflipbook_global', $data);
 
 	if (isset($data["manageFlipbooks"])) {
-        switch ($data["manageFlipbooks"]) {
-            case "Administrator":
-                update_option("real3dflipbook_capability", "activate_plugins");
-                break;
-            case "Editor":
-                update_option("real3dflipbook_capability", "publish_pages");
-                break;
-            default:
-                update_option("real3dflipbook_capability", "publish_posts");
-        }
-    }
+		switch ($data["manageFlipbooks"]) {
+			case "Administrator":
+				update_option("real3dflipbook_capability", "activate_plugins");
+				break;
+			case "Editor":
+				update_option("real3dflipbook_capability", "publish_pages");
+				break;
+			default:
+				update_option("real3dflipbook_capability", "publish_posts");
+		}
+	}
 
 	wp_die();
 }
@@ -76,41 +76,41 @@ function r3d_reset_general_callback()
 add_action('wp_ajax_r3d_save_thumbnail', 'r3dfb_save_thumbnail_callback');
 function r3dfb_save_thumbnail_callback()
 {
-    check_ajax_referer('saving-real3d-flipbook', 'security');
+	check_ajax_referer('saving-real3d-flipbook', 'security');
 
-    $post_data = r3d_sanitize_array($_POST);
-    $id = intval($post_data['id']);
-    $book = get_option('real3dflipbook_' . $id);
-    $upload_dir = wp_upload_dir();
-    $booksFolder = $upload_dir['basedir'] . '/real3d-flipbook/';
-    $bookFolder = $booksFolder . 'flipbook_' . $id . '/';
+	$post_data = r3d_sanitize_array($_POST);
+	$id = intval($post_data['id']);
+	$book = get_option('real3dflipbook_' . $id);
+	$upload_dir = wp_upload_dir();
+	$booksFolder = $upload_dir['basedir'] . '/real3d-flipbook/';
+	$bookFolder = $booksFolder . 'flipbook_' . $id . '/';
 
-    if (!file_exists($booksFolder)) {
-        mkdir($booksFolder, 0777, true);
-    }
+	if (!file_exists($booksFolder)) {
+		mkdir($booksFolder, 0777, true);
+	}
 
-    if (!file_exists($bookFolder)) {
-        mkdir($bookFolder, 0777, true);
-    }
+	if (!file_exists($bookFolder)) {
+		mkdir($bookFolder, 0777, true);
+	}
 
-    if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
-        $file_tmp = $_FILES['file']['tmp_name'];
-        $file_name = sanitize_file_name($_FILES['file']['name']);
-        $file_dest = $bookFolder . $file_name;
+	if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+		$file_tmp = $_FILES['file']['tmp_name'];
+		$file_name = sanitize_file_name($_FILES['file']['name']);
+		$file_dest = $bookFolder . $file_name;
 
-        if (move_uploaded_file($file_tmp, $file_dest)) {
-            $thumbnail_url = esc_url($upload_dir['baseurl'] . '/real3d-flipbook/flipbook_' . $id . '/' . $file_name);
-            echo $thumbnail_url;
+		if (move_uploaded_file($file_tmp, $file_dest)) {
+			$thumbnail_url = esc_url($upload_dir['baseurl'] . '/real3d-flipbook/flipbook_' . $id . '/' . $file_name);
+			echo $thumbnail_url;
 
-            // Update the flipbook option with the new thumbnail URL
-            $book['lightboxThumbnailUrl'] = $thumbnail_url;
-            update_option('real3dflipbook_' . $id, $book);
-        } else {
-            echo "Error saving the uploaded file.";
-        }
-    } else {
-        echo "Error uploading the file.";
-    }
+			// Update the flipbook option with the new thumbnail URL
+			$book['lightboxThumbnailUrl'] = $thumbnail_url;
+			update_option('real3dflipbook_' . $id, $book);
+		} else {
+			echo "Error saving the uploaded file.";
+		}
+	} else {
+		echo "Error uploading the file.";
+	}
 
-    wp_die();
+	wp_die();
 }

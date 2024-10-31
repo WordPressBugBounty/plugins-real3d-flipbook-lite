@@ -130,6 +130,7 @@
         "thumbnailsOnStart",
         "contentOnStart",
         "searchOnStart",
+        "searchResultsThumbs",
         "tableOfContentCloseOnClick",
         "thumbsCloseOnClick",
         "googleAnalyticsTrackingCode",
@@ -303,7 +304,7 @@
       "btnDownloadPages",
       "btnDownloadPdf",
       "btnPrint",
-      "btnSelect",
+      "btnSingle",
       "btnSearch",
       "search",
       "btnBookmark",
@@ -353,7 +354,6 @@
         btnPrint: { hAlign: "center", vAlign: "bottom" },
         btnDownloadPages: { hAlign: "center", vAlign: "bottom" },
         btnDownloadPdf: { hAlign: "center", vAlign: "bottom" },
-        btnSelect: { hAlign: "center", vAlign: "bottom" },
       },
       1: {},
       2: {
@@ -372,7 +372,6 @@
         btnPrint: { hAlign: "right" },
         btnDownloadPages: { hAlign: "right" },
         btnDownloadPdf: { hAlign: "right" },
-        btnSelect: { hAlign: "right" },
       },
       3: {
         // top
@@ -389,7 +388,6 @@
         btnToc: { vAlign: "top", hAlign: "left" },
         btnBookmark: { vAlign: "top", hAlign: "left" },
         btnSearch: { vAlign: "top", hAlign: "left" },
-        btnSelect: { vAlign: "top", hAlign: "right" },
         btnShare: { vAlign: "top", hAlign: "right" },
         btnAutoplay: { hAlign: "right" },
         btnExpand: { hAlign: "right" },
@@ -417,7 +415,6 @@
         btnPrint: { vAlign: "top", hAlign: "right" },
         btnDownloadPages: { vAlign: "top", hAlign: "right" },
         btnDownloadPdf: { vAlign: "top", hAlign: "right" },
-        btnSelect: { vAlign: "top", hAlign: "right" },
       },
     };
 

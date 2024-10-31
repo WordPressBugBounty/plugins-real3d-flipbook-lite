@@ -96,7 +96,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
   function createFlipbook(link, options) {
     options.pdfUrl = link.href;
-    jQuery(link).flipBook(options);
+    new FlipBook(link, options);
   }
 
   function loadScript(src) {

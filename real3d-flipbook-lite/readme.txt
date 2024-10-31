@@ -296,6 +296,13 @@ Use web-optimized images with a resolution around 2000px, preferably in JPG or W
 * Improvement: Keep page editor items after replacing PDF
 * Improvement: Edit flipbook page performance
 
+= 4.8 =
+* Fix: Saving flipbooks with large number of pages
+* Fix: Menu button Tools not visible in Firefox
+* Fix: PDF flipbook with 2 pages
+* Improvement: Table of Contents styling
+* Fix: Lightbox start page in Right to left mode
+* Fix: Last page PDF flipbook
 
 == Upgrade to PRO for More Features ==
 Unlock advanced features like PDF hyperlinks, text search, custom toolbar configurations, and much more. Enhance your content presentation with [Real3D FlipBook PRO](https://real3dflipbook.com).

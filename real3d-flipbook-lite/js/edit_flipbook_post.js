@@ -73,6 +73,7 @@ var pluginDir = (function (scripts) {
       }
 
       for (var key in options.pages) {
+        options.pages[key] = options.pages[key] || {};
         if (options.pages[key].htmlContent)
           options.pages[key].htmlContent = unescape(
             options.pages[key].htmlContent
@@ -350,6 +351,15 @@ var pluginDir = (function (scripts) {
     );
 
     addOptionGeneral(
+      "searchResultsThumbs",
+      "checkbox",
+      "Show search results as page thumbnails",
+      "",
+      null,
+      true
+    );
+
+    addOptionGeneral(
       "tableOfContentCloseOnClick",
       "checkbox",
       "Close Table of Contents when page is clicked",
@@ -470,6 +480,13 @@ var pluginDir = (function (scripts) {
     );
 
     addOptionGeneral(
+      "fitToWidth",
+      "checkbox",
+      "Fit to width",
+      "Fit flipbook to width (for scroll view mode)"
+    );
+
+    addOptionGeneral(
       "rightClickEnabled",
       "checkbox",
       "Right click context menu",
@@ -541,7 +558,7 @@ var pluginDir = (function (scripts) {
     addMenuButton("btnDownloadPages");
     addMenuButton("btnDownloadPdf");
     addMenuButton("btnPrint");
-    addMenuButton("btnSelect");
+    addMenuButton("btnSingle");
     addMenuButton("btnSearch");
     addMenuButton("search");
     addMenuButton("btnBookmark");
@@ -1071,7 +1088,7 @@ var pluginDir = (function (scripts) {
         // disableAutoFetch: false,
         // disableCreateObjectURL: false,
         // disableFontFace: false,
-        // disableRange: false,
+        disableRange: options.disableRange,
         disableAutoFetch: true,
         disableStream: true,
         // isEvalSupported: true,
@@ -1361,93 +1378,134 @@ var pluginDir = (function (scripts) {
 
     var w = window;
 
-    $form.on("submit", function (e) {
-      var pagesContainer = $("#pages-container");
-      var pagesCount = pagesContainer.find(".page").length;
+    // Function to parse input names into keys
+    function parseInputName(name) {
+      const keys = [];
+      name
+        .replace(/\[(\w*)\]/g, ".$1")
+        .split(".")
+        .forEach(function (key) {
+          if (key === "") {
+            // Handle empty keys (e.g., `arr[]`)
+            keys.push("");
+          } else {
+            keys.push(key);
+          }
+        });
+      return keys;
+    }
 
-      if (pagesCount < 1 && !getOptionValue("pdfUrl")) {
-        alert("Flipbook has no pages!");
-        return false;
-      }
+    // Function to assign values to nested keys
+    function assignNestedValue(obj, keys, value) {
+      if (value !== "") {
+        let current = obj;
 
-      sortOptions();
+        for (let i = 0; i < keys.length; i++) {
+          let key = keys[i];
 
-      var arr = $form.serializeArray();
+          // Handle empty keys for arrays
+          if (key === "") {
+            if (!Array.isArray(current)) {
+              current = [];
+            }
+            key = current.length;
+          } else if (!isNaN(key)) {
+            // Convert numeric keys to numbers
+            key = parseInt(key, 10);
+          }
 
-      //remove empty fields
-      arr.forEach(function (element, index) {
-        if (element.value == "") {
-          $form.find('input[name="' + element.name + '"]').remove();
-          $form.find('select[name="' + element.name + '"]').remove();
-          $form.find('textarea[name="' + element.name + '"]').remove();
+          if (i === keys.length - 1) {
+            // Last key, assign the value
+            current[key] = value;
+          } else {
+            // If the key doesn't exist, create an object or array
+            if (current[key] === undefined || current[key] === null) {
+              const nextKey = keys[i + 1];
+              current[key] = isNaN(nextKey) ? {} : [];
+            }
+            current = current[key];
+          }
         }
+      }
+    }
+
+    // Main function to convert serialized array to object
+    function convertSerializedArrayToObject(serializedArray) {
+      const data = {};
+
+      serializedArray.forEach(function (item) {
+        const keys = parseInputName(item.name);
+        assignNestedValue(data, keys, item.value);
       });
 
-      var title = $form.find('input[name="book_title"]').val() || "";
-      var author = $form.find('input[name="book_author"]').val() || "";
-      var summary = $form.find('textarea[name="book_summary"]').val() || "";
-      // save title and author as post content, for search
-      jQuery(
-        '<input name="post_content" value="' +
-          title +
-          " " +
-          author +
-          " " +
-          summary +
-          '">'
-      ).appendTo($form);
+      return data;
+    }
 
-      //add page items to form before save
-      if (pageEditor) {
-        var pages = pageEditor.getItems();
+    $form.on("submit", function (e) {
+      if ($form.find('input[name="flipbook_options"]').length === 0) {
+        var pagesContainer = $("#pages-container");
+        var pagesCount = pagesContainer.find(".page").length;
 
-        pages.forEach(function (itemsArr, pageIndex) {
-          itemsArr.forEach(function (item, itemIndex) {
-            function addPageItemSetting(pageIndex, itemIndex, name) {
-              $form.append(
-                $("<input>")
-                  .attr("type", "hidden")
-                  .attr(
-                    "name",
-                    "pages[" +
-                      pageIndex +
-                      "][items][" +
-                      itemIndex +
-                      "][" +
-                      name +
-                      "]"
-                  )
-                  .val(item[name])
-              );
-            }
+        if (pagesCount < 1 && !getOptionValue("pdfUrl")) {
+          alert("Flipbook has no pages!");
+          return false;
+        }
 
-            addPageItemSetting(pageIndex, itemIndex, "x");
-            addPageItemSetting(pageIndex, itemIndex, "y");
-            addPageItemSetting(pageIndex, itemIndex, "width");
-            addPageItemSetting(pageIndex, itemIndex, "height");
-            addPageItemSetting(pageIndex, itemIndex, "url");
-            addPageItemSetting(pageIndex, itemIndex, "type");
-            if (item.type == "link") {
-              addPageItemSetting(pageIndex, itemIndex, "page");
-            }
+        sortOptions();
 
-            if (item.type == "video" || item.type == "audio")
-              addPageItemSetting(pageIndex, itemIndex, "autoplay");
+        var serializedFormArray = $form
+          .find(".flipbook-option-field")
+          .serializeArray();
 
-            if (item.type == "video")
-              addPageItemSetting(pageIndex, itemIndex, "muted");
+        var flipbookOptions =
+          convertSerializedArrayToObject(serializedFormArray);
 
-            if (item.type == "video" || item.type == "audio")
-              addPageItemSetting(pageIndex, itemIndex, "controls");
+        $form.find(".flipbook-option-field").removeAttr("name");
 
-            if (item.type == "video" || item.type == "audio")
-              addPageItemSetting(pageIndex, itemIndex, "loop");
+        var title = $form.find('input[name="book_title"]').val() || "";
+        var author = $form.find('input[name="book_author"]').val() || "";
+        var summary = $form.find('textarea[name="book_summary"]').val() || "";
+
+        jQuery(
+          '<input name="post_content" value="' +
+            title +
+            " " +
+            author +
+            " " +
+            summary +
+            '">'
+        ).appendTo($form);
+
+        if (pageEditor) {
+          var pages = pageEditor.getItems();
+          flipbookOptions.pages = flipbookOptions.pages || [];
+          pages.forEach(function (itemsArr, pageIndex) {
+            flipbookOptions.pages[pageIndex] =
+              flipbookOptions.pages[pageIndex] || {};
+
+            itemsArr.forEach(function (item, itemIndex) {
+              delete item.node;
+              for (var key in item) {
+                if (item[key] === null) delete item[key];
+              }
+            });
+            flipbookOptions.pages[pageIndex].items = itemsArr;
           });
-        });
+        }
+
+        let jsonString = JSON.stringify(flipbookOptions);
+        let encodedJsonString = encodeURIComponent(jsonString);
+
+        $form.append(
+          $("<input>")
+            .attr("type", "hidden")
+            .attr("name", "flipbook_options")
+            .val(encodedJsonString)
+        );
       }
     });
 
-    var lengths = [308, 111];
+    var lengths = [358, 148];
 
     $(window).scroll(function () {
       updateSaveBar();
@@ -1541,7 +1599,7 @@ var pluginDir = (function (scripts) {
       switch (type) {
         case "text":
           elem = $(
-            '<input type="text" name="' +
+            '<input class="flipbook-option-field" type="text" name="' +
               name +
               '" placeholder="Global setting">'
           ).appendTo(td);
@@ -1551,7 +1609,7 @@ var pluginDir = (function (scripts) {
 
         case "color":
           elem = $(
-            '<input type="text" name="' +
+            '<input class="flipbook-option-field" type="text" name="' +
               name +
               '" class="alpha-color-picker" placeholder="Global setting">'
           ).appendTo(td);
@@ -1561,7 +1619,7 @@ var pluginDir = (function (scripts) {
 
         case "textarea":
           elem = $(
-            '<textarea name="' +
+            '<textarea class="flipbook-option-field" name="' +
               name +
               '" placeholder="Global setting"></textarea>'
           ).appendTo(td);
@@ -1573,26 +1631,23 @@ var pluginDir = (function (scripts) {
           break;
 
         case "checkbox":
-          elem = $('<select name="' + name + '"></select>').appendTo(td);
-          var globalSetting = $(
-            '<option name="' + name + '" value="">Global setting</option>'
-          ).appendTo(elem);
-          var enabled = $(
-            '<option name="' + name + '" value="true">Enabled</option>'
-          ).appendTo(elem);
-          var disabled = $(
-            '<option name="' + name + '" value="false">Disabled</option>'
-          ).appendTo(elem);
+          elem = $("<select>", {
+            class: "flipbook-option-field global-option",
+            name: name,
+          })
+            .append(
+              $("<option>", { value: "", text: "Global setting" }),
+              $("<option>", { value: "true", text: "Enabled" }),
+              $("<option>", { value: "false", text: "Disabled" })
+            )
+            .val(val == true ? "true" : val == false ? "false" : "")
+            .appendTo(td);
 
-          if (val == true) enabled.attr("selected", "true");
-          else if (val == false) disabled.attr("selected", "true");
-          else globalSetting.attr("selected", "true");
-          elem.addClass("global-option");
           break;
 
         case "selectImage":
           elem = $(
-            '<input type="hidden" name="' +
+            '<input class="flipbook-option-field" type="hidden" name="' +
               name +
               '"><img name="' +
               name +
@@ -1604,7 +1659,7 @@ var pluginDir = (function (scripts) {
 
         case "selectFile":
           elem = $(
-            '<input type="text" name="' +
+            '<input class="flipbook-option-field" type="text" name="' +
               name +
               '"><a class="select-image-button button-secondary button80" href="#">Select file</a>'
           ).appendTo(td);
@@ -1612,7 +1667,11 @@ var pluginDir = (function (scripts) {
           break;
 
         case "dropdown":
-          elem = $('<select name="' + name + '"></select>').appendTo(td);
+          elem = $(
+            '<select class="flipbook-option-field" name="' +
+              name +
+              '"></select>'
+          ).appendTo(td);
 
           var globalSetting = $('<option value="">Global setting</option>')
             .appendTo(elem)
@@ -2181,9 +2240,9 @@ var pluginDir = (function (scripts) {
       var $itemWrapper = $('<div class="toc-item-wrapper">');
       // var $toggle = $('<span>+</span>').appendTo($itemWrapper)
       var $item = $(
-        '<div class="toc-item"><input type="text" class="toc-title" placeholder="Title" value="' +
+        '<div class="toc-item"><input type="text" class="toc-title flipbook-option-field" placeholder="Title" value="' +
           title +
-          '"></input><span> : </span><input type="number" placeholder="Page number" class="toc-page" value="' +
+          '"></input><span> : </span><input type="number" placeholder="Page number" class="toc-page flipbook-option-field" value="' +
           page +
           '"></input></div>'
       ).appendTo($itemWrapper);
@@ -2255,20 +2314,31 @@ var pluginDir = (function (scripts) {
       const escapedHtmlContent = escape(unescape(htmlContent));
       const strippedTitle = r3d_stripslashes(title);
 
-      // Constructing HTML content for the page
-      const pageHtml = `
-		  <li id="${id}" class="page" data-index="${id}">
-			<div class="page-img"><img src="${thumb}" style="display:none;"></div>
-			<span class="page-number">${pageNumber}</span>
-			<div style="display:block;">
-			  <input class="page-title" type="hidden" placeholder="title" value="${strippedTitle}" readonly/>
-			  <input class="page-src" type="hidden" placeholder="src" value="${src}" readonly/>
-			  <input class="page-thumb" type="hidden" placeholder="thumb" value="${thumb}" readonly/>
-			  <input class="page-json" type="hidden" placeholder="json" value="${json}" readonly/>
-			  <input class="page-html-content" type="hidden" placeholder="htmlContent" value="${escapedHtmlContent}" readonly/>
-			</div>
-		  </li>
-		`;
+      let sendPagesAsJson = false;
+      let pageHtml;
+
+      if (sendPagesAsJson) {
+        pageHtml = `
+		<li id="${id}" class="page" data-index="${id}" data-src="${src}" data-thumb="${thumb}" data-json="${json}" data-htmlContent="${escapedHtmlContent}">
+		  <div class="page-img"><img src="${thumb}" style="display:none;"></div>
+		  <span class="page-number">${pageNumber}</span>
+		</li>
+	  `;
+      } else {
+        pageHtml = `
+		  	  <li id="${id}" class="page" data-index="${id}">
+		  		<div class="page-img"><img src="${thumb}" style="display:none;"></div>
+		  		<span class="page-number">${pageNumber}</span>
+		  		<div style="display:block;">
+		  		  <input class="page-title flipbook-option-field" type="hidden" placeholder="title" value="${strippedTitle}" readonly/>
+		  		  <input class="page-src flipbook-option-field" type="hidden" placeholder="src" value="${src}" readonly/>
+		  		  <input class="page-thumb flipbook-option-field" type="hidden" placeholder="thumb" value="${thumb}" readonly/>
+		  		  <input class="page-json flipbook-option-field" type="hidden" placeholder="json" value="${json}" readonly/>
+		  		  <input class="page-html-content flipbook-option-field" type="hidden" placeholder="htmlContent" value="${escapedHtmlContent}" readonly/>
+		  		</div>
+		  	  </li>
+		  	`;
+      }
 
       // Create jQuery object from the constructed HTML
       const $page = $(pageHtml);
@@ -2635,7 +2705,7 @@ var pluginDir = (function (scripts) {
         const canvas = await renderPdfPage(
           pdfDocument,
           editingPageIndex + 1,
-          1000
+          1e3
         );
 
         canvas.toBlob(function (blob) {
@@ -2714,7 +2784,8 @@ var pluginDir = (function (scripts) {
     }
 
     function getSrc(index) {
-      return getPage(index).find(".page-src").val();
+      const $page = getPage(index);
+      return $page.find(".page-src").val() || $page[0].dataset.src;
     }
 
     function setSrc(index, val) {
