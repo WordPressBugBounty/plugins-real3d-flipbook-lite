@@ -42,8 +42,6 @@ var pluginDir = (function (scripts) {
 
     $(".creating-page").hide();
 
-    options = $.parseJSON(window.flipbook[0]);
-
     
     function convertStrings(obj) {
       $.each(obj, function (key, value) {
@@ -1460,20 +1458,15 @@ var pluginDir = (function (scripts) {
         var flipbookOptions =
           convertSerializedArrayToObject(serializedFormArray);
 
-        $form.find(".flipbook-option-field").removeAttr("name");
+        // $form.find(".flipbook-option-field").removeAttr("name");
+        $form.find(".flipbook-option-field").remove(); // remove input from form
 
-        var title = $form.find('input[name="book_title"]').val() || "";
-        var author = $form.find('input[name="book_author"]').val() || "";
-        var summary = $form.find('textarea[name="book_summary"]').val() || "";
+        const title = $form.find('input[name="book_title"]').val() || "",
+          author = $form.find('input[name="book_author"]').val() || "",
+          summary = $form.find('input[name="book_summary"]').val() || "";
 
         jQuery(
-          '<input name="post_content" value="' +
-            title +
-            " " +
-            author +
-            " " +
-            summary +
-            '">'
+          `<input name="post_content" value="${title} ${author} ${summary}">`
         ).appendTo($form);
 
         if (pageEditor) {
@@ -1503,9 +1496,9 @@ var pluginDir = (function (scripts) {
             .val(encodedJsonString)
         );
       }
-    });
+      });
 
-    var lengths = [358, 148];
+    var lengths = [620, 148];
 
     $(window).scroll(function () {
       updateSaveBar();
@@ -1598,36 +1591,34 @@ var pluginDir = (function (scripts) {
 
       switch (type) {
         case "text":
-          elem = $(
-            '<input class="flipbook-option-field" type="text" name="' +
-              name +
-              '" placeholder="Global setting">'
-          ).appendTo(td);
-          if (typeof val != "undefined") elem.attr("value", val);
-          elem.addClass("global-option");
+          elem = $("<input>", {
+            type: "text",
+            name: name,
+            class: "flipbook-option-field global-option",
+            placeholder: "Global setting",
+            value: typeof val !== "undefined" ? val : "",
+          }).appendTo(td);
           break;
 
         case "color":
-          elem = $(
-            '<input class="flipbook-option-field" type="text" name="' +
-              name +
-              '" class="alpha-color-picker" placeholder="Global setting">'
-          ).appendTo(td);
-          elem.attr("value", val);
-          elem.addClass("global-option");
+          elem = $("<input>", {
+            type: "text",
+            name: name,
+            class: "flipbook-option-field alpha-color-picker global-option",
+            placeholder: "Global setting",
+            value: val || "",
+          }).appendTo(td);
           break;
 
         case "textarea":
-          elem = $(
-            '<textarea class="flipbook-option-field" name="' +
-              name +
-              '" placeholder="Global setting"></textarea>'
-          ).appendTo(td);
-          if (typeof val != "undefined") {
-            elem.attr("value", val);
+          elem = $("<textarea>", {
+            name: name,
+            class: "flipbook-option-field global-option",
+            placeholder: "Global setting",
+          }).appendTo(td);
+          if (typeof val !== "undefined") {
             elem.text(val);
           }
-          elem.addClass("global-option");
           break;
 
         case "checkbox":
@@ -1646,29 +1637,53 @@ var pluginDir = (function (scripts) {
           break;
 
         case "selectImage":
-          elem = $(
-            '<input class="flipbook-option-field" type="hidden" name="' +
-              name +
-              '"><img name="' +
-              name +
-              '"><a class="select-image-button button-secondary button80" href="#">Select image</a><a class="remove-image-button button-secondary button80" href="#">Remove image</a>'
-          ).appendTo(td);
-          $(elem[0]).attr("value", val);
-          $(elem[1]).attr("src", val);
+          elem = $("<div>")
+            .append(
+              $("<input>", {
+                class: "flipbook-option-field",
+                type: "hidden",
+                name: name,
+                value: val || "",
+              }),
+              $("<img>", {
+                name: name,
+                src: val || "",
+              }),
+              $("<a>", {
+                class: "select-image-button button-secondary button80",
+                href: "#",
+                text: "Select image",
+              }),
+              $("<a>", {
+                class: "remove-image-button button-secondary button80",
+                href: "#",
+                text: "Remove image",
+              })
+            )
+            .appendTo(td);
           break;
 
         case "selectFile":
-          elem = $(
-            '<input class="flipbook-option-field" type="text" name="' +
-              name +
-              '"><a class="select-image-button button-secondary button80" href="#">Select file</a>'
-          ).appendTo(td);
-          elem.attr("value", val);
+          elem = $("<div>")
+            .append(
+              $("<input>", {
+                class: "flipbook-option-field",
+                type: "text",
+                name: name,
+                value: val || "",
+              }),
+              $("<a>", {
+                class: "select-image-button button-secondary button80",
+                href: "#",
+                text: "Select file",
+              })
+            )
+            .appendTo(td);
           break;
 
         case "dropdown":
           elem = $(
-            '<select class="flipbook-option-field" name="' +
+            '<select class="flipbook-option-field global-option" name="' +
               name +
               '"></select>'
           ).appendTo(td);
@@ -1695,7 +1710,6 @@ var pluginDir = (function (scripts) {
               option.attr("selected", "true");
             }
           }
-          elem.addClass("global-option");
           break;
       }
 
@@ -1937,7 +1951,7 @@ var pluginDir = (function (scripts) {
               processData: false,
               contentType: false,
               success: function (response, textStatus, jqXHR) {
-                resolve(r3d_stripslashes(response));
+                resolve(r3d_stripslashes(response.data.thumbnail_url));
               },
               error: function (XMLHttpRequest, textStatus, errorThrown) {
                 reject();
@@ -2030,7 +2044,7 @@ var pluginDir = (function (scripts) {
       clearLightboxThumbnail();
 
       setOptionValue("type", "jpg");
-      setOptionValue("pdfUrl", "");
+      setOptionValue("pdfUrl");
 
       const startIndex = $pagesContainer.find(".page").length;
       //   pdfToolsOptions.pdfUrl = pdfUrl;
@@ -2144,7 +2158,7 @@ var pluginDir = (function (scripts) {
 
       if (getOptionValue("pdfUrl")) {
         clearPages();
-        setOptionValue("pdfUrl", "");
+        setOptionValue("pdfUrl");
       }
 
       $("#r3d-convert").hide();
@@ -2537,7 +2551,7 @@ var pluginDir = (function (scripts) {
     getOption("viewMode", "select").change(onViewModeChange);
     onViewModeChange();
 
-    function setOptionValue(optionName, value, type) {
+    function setOptionValue(optionName, value = "", type = "input") {
       options[optionName] = value;
 
       if (typeof value == "object") {
@@ -2546,7 +2560,6 @@ var pluginDir = (function (scripts) {
         }
         return null;
       }
-      var type = type || "input";
       var $elem = $(type + "[name='" + optionName + "']")
         .attr("value", value)
         .prop("checked", value);

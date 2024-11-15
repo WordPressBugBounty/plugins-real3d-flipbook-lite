@@ -1,87 +1,172 @@
-=== 3D FlipBook, PDF Viewer, PDF Embedder - Real 3D FlipBook WordPress Plugin ===
+=== Real3D Flipbook Lite – 3D FlipBook, PDF Viewer, PDF Embedder ===
 Contributors: creativeinteractivemedia
 Donate link: https://codecanyon.net/item/real3d-flipbook-wordpress-plugin/6942587
 Tags: flipbook, pdf flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
-Tested up to: 6.5
-Stable tag: 3.63
+Tested up to: 6.7
+Stable tag: 4.8.5
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-The ultimate 3D flipbook, PDF viewer, and image gallery for your WordPress site!
+Transform your PDFs and images into stunning, interactive 3D flipbooks directly within WordPress.
 
 == Description ==
 
-Transform PDFs and images into stunning 3D flipbooks directly within your WordPress posts and pages. Real3D Flipbook enhances the visual appeal and interactivity of your site, creating an engaging user experience.
+**Real3D Flipbook Lite** is the ultimate **3D Flipbook Plugin for WordPress** that converts your PDFs and images into interactive, realistic 3D flipbooks. Enhance your website's user experience with lifelike page-turning effects that work seamlessly on all devices and browsers.
 
-**Features:**
-* Realistic 3D flipping effect
-* Multiple view modes: Lightbox, Swipe, Scroll, and Fullscreen
-* Gutenberg block support
-* Fully responsive and mobile-friendly
+### **Why Choose Real3D Flipbook Lite?**
 
-### Live Demo & Documentation ###
-* [Live Demo](https://real3dflipbook.com)
-* [Try your PDF](https://real3dflipbook.com#try)
-* [User Manual](https://real3dflipbook.gitbook.io/wp-lite/)
+- **Realistic 3D Page Flip Animation**
+  - Experience the most realistic page-flipping effect with advanced 3D animations that captivate your audience.
+  
+- **Fully Responsive and Mobile-Friendly**
+  - Flipbooks adapt perfectly to any screen size—desktops, tablets, or smartphones—ensuring a smooth user experience.
 
-### Support ###
-For any issues or feature requests, [open a ticket](https://wordpress.org/support/plugin/real3d-flipbook-lite/).
+- **Easy Integration with Gutenberg and Shortcodes**
+  - Insert flipbooks effortlessly using Gutenberg blocks or shortcodes. No coding skills required.
 
-### Key Features ###
-* **Open PDF Links as Flipbooks:** Enable lightbox flipbooks for PDF links. [Watch Video](https://youtu.be/MTFyY84o1Ss)
-* **Easily Migrate:** Automatically convert existing shortcodes from PDF Embedder, DearFlip, 3D Flipbook, Wonder PDF Embed, and PDF.js Viewer.
-* **Create Flipbook in 5 Steps:**
-  1. Go to Real3D Flipbook > Add New
-  2. Select PDF or images
-  3. Publish the flipbook
-  4. Copy the shortcode
-  5. Paste it into a post or page
-  [Watch Video](https://youtu.be/1ljFRYr0Kh8)
-* **Lightbox Flipbook:** Open in fullscreen overlay on various triggers.
-* **Embedded Flipbook:** Insert flipbooks anywhere in posts/pages.
-* **Self-Hosted:** Ensures fast and secure loading on your server.
-* **Realistic 3D Flipbooks:** Most realistic page flip animation.
-* **Customizable:** Choose from various modes and customize toolbar, background, colors, and more.
+- **Multiple View Modes**
+  - Choose from Lightbox, Swipe, Scroll, and Fullscreen modes to display your flipbooks the way you want.
 
-### Advanced Features in PRO Version ###
-Upgrade for features like PDF hyperlinks, text search, custom toolbar configurations, and more. [Real3D FlipBook PRO](https://real3dflipbook.com).
+- **Customizable Design**
+  - Personalize your flipbooks with various settings for toolbar, background, colors, and more to match your brand.
 
-### Add Ons ###
-* [PDF Tools Addon](https://real3dflipbook.com/pdf-tools-addon/): Convert PDF to images to enhance loading speed and security.
+- **SEO Optimized**
+  - Built with SEO best practices to help your flipbooks rank higher in search results and attract more organic traffic.
+
+### **Live Demo & Documentation**
+
+- **[Live Demo](https://real3dflipbook.com)**
+- **[Try Your PDF](https://real3dflipbook.com#try)**
+- **[User Manual](https://real3dflipbook.gitbook.io/wp-lite/)**
+
+### **Support**
+
+- For questions or support, **[open a ticket](https://wordpress.org/support/plugin/real3d-flipbook-lite/)**.
+
+---
+
+### **Key Features**
+
+#### **1. Realistic 3D Flipbooks**
+
+- Bring your content to life with the most realistic 3D page-flipping animations available.
+
+#### **2. Open PDF Links as Flipbooks**
+
+- Automatically convert PDF links into interactive flipbooks that open in a lightbox. **[Watch Video](https://youtu.be/MTFyY84o1Ss)**
+
+#### **3. Easy Migration from Other Plugins**
+
+- Seamlessly convert shortcodes from PDF Embedder, DearFlip, 3D Flipbook, Wonder PDF Embed, and PDF.js Viewer to Real3D Flipbook.
+
+#### **4. Create Flipbooks in 5 Simple Steps**
+
+1. **Add New Flipbook:** Go to Real3D Flipbook > Add New.
+2. **Select PDF or Images:** Upload your content.
+3. **Publish:** Save your flipbook.
+4. **Copy Shortcode:** Grab the generated shortcode.
+5. **Embed:** Paste it into any post or page.
+
+- **[Watch Tutorial](https://youtu.be/1ljFRYr0Kh8)**
+
+#### **5. Multiple Display Modes**
+
+- **Lightbox Flipbook:** Open flipbooks in a fullscreen overlay triggered by buttons, links, or images.
+- **Embedded Flipbook:** Place flipbooks directly within your posts or pages.
+
+#### **6. Self-Hosted for Speed and Security**
+
+- All files are stored on your server, ensuring fast load times and enhanced security.
+
+#### **7. Customizable Interface**
+
+- Tailor your flipbooks with customizable toolbar buttons, backgrounds, colors, and control settings.
+
+#### **8. Responsive and Touch-Friendly**
+
+- Optimized for touch interactions on mobile devices, providing a seamless experience for all users.
+
+---
+
+### **Advanced Features in PRO Version**
+
+Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
+
+- **PDF Hyperlinks:** Interactive links within your PDFs.
+- **Text Search and Select:** Enable users to search and select text.
+- **Customizable Toolbar:** Add or remove toolbar buttons.
+- **Unlimited Pages and File Sizes:** Handle large PDFs with ease.
+- **Advanced Customization:** More control over flipbook appearance and behavior.
+
+---
+
+### **Add-Ons**
+
+- **[PDF Tools Addon](https://real3dflipbook.com/pdf-tools-addon/):** Convert PDFs to images for faster loading and improved security.
+
+---
 
 == Installation ==
 
-### Automatic Installation
+### **Automatic Installation**
 
-1. Go to 'Plugins > Add New' and search for 'Real3D Flipbook'.
-2. Click 'Install Now' and then activate.
-3. Create a new flipbook: 'Real3D Flipbook' > 'Add New', add images or PDF, customize settings, and publish.
-4. Copy the shortcode and paste it into a post or page.
+1. **Install Plugin:**
+   - Navigate to **Plugins > Add New** in your WordPress dashboard.
+   - Search for **Real3D Flipbook Lite**.
+   - Click **Install Now** and then **Activate**.
 
-### Manual Installation
+2. **Create a Flipbook:**
+   - Go to **Real3D Flipbook > Add New**.
+   - Upload your **PDF** or **images**.
+   - Customize settings if desired.
+   - Click **Publish**.
 
-1. Download the plugin zip file.
-2. Upload through 'Plugins > Add New > Upload' or extract to '/wp-content/plugins/' directory.
-3. Activate the plugin through the 'Plugins' menu.
-4. Create and publish a new flipbook, then use the shortcode in a post or page.
+3. **Embed Flipbook:**
+   - Copy the generated **shortcode**.
+   - Paste it into any **post** or **page** where you want the flipbook to appear.
+
+### **Manual Installation**
+
+1. **Download Plugin:**
+   - Download the plugin zip file from the WordPress plugin repository.
+
+2. **Upload to WordPress:**
+   - Go to **Plugins > Add New > Upload Plugin**.
+   - Choose the downloaded zip file and click **Install Now**.
+
+3. **Activate Plugin:**
+   - After installation, click **Activate Plugin**.
+
+4. **Create and Embed Flipbook:**
+   - Follow steps under **Automatic Installation** to create and embed your flipbook.
+
+---
 
 == Frequently Asked Questions ==
 
-= How to create a flipbook? =
-Go to 'Real3D Flipbook > Add New', add pages by uploading JPGs or PDF, and publish the flipbook.
+ **How do I create a flipbook?**
 
-= How to embed a flipbook in a post or page? =
-Copy the flipbook shortcode from the list and paste it into a post or page.
+- Navigate to **Real3D Flipbook > Add New**, upload your PDF or images, customize settings, and click **Publish**.
 
-= Is there a limit to the number of pages or PDF file size? =
-Supports 500+ MB PDF files with 1000+ pages. Only visible pages are loaded, so performance is not affected by the number of pages.
+ **How do I embed a flipbook in a post or page?**
 
-= How to optimize PDF flipbook for fast loading? =
-Optimize PDFs by reducing resolution to 150 dpi, using JPEG encoding for images, and ensuring web optimization settings.
+- Copy the **shortcode** from the flipbook list and paste it into your desired post or page.
 
-= How to optimize image flipbook for fast loading? =
-Use web-optimized images with a resolution around 2000px, preferably in JPG or WebP formats.
+ **Is there a limit to the number of pages or PDF file size?**
+
+- No, Real3D Flipbook Lite supports large PDFs with hundreds of pages. It uses smart loading to ensure performance isn't affected.
+
+ **How can I optimize my PDF flipbook for fast loading?**
+
+- Optimize your PDFs by:
+  - Reducing image resolutions to 150 dpi.
+  - Using JPEG compression.
+  - Enabling web optimization settings.
+
+ **How can I optimize my image flipbook for fast loading?**
+
+- Use web-optimized images with a resolution around 2000px in JPG or WebP formats.
 
 == Changelog ==
 

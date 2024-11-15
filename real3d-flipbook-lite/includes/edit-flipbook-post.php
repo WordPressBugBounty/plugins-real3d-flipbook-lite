@@ -27,7 +27,7 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 	<div class="<?php echo esc_attr($r3d_postbox_class); ?>">
 		<div class="postbox-header">
 			<h2 class="hndle ui-sortable-handle"><?php echo esc_html($r3d_postbox_title); ?></h2>
-			<button type="button" class="handlediv" aria-disabled="false"><span class="screen-reader-text"><?php _e('Toggle panel:', 'real3d-flipbook');
+			<button type="button" class="handlediv" aria-disabled="false"><span class="screen-reader-text"><?php esc_html_e('Toggle panel:', 'real3d-flipbook');
 																											echo esc_html(' ' . $r3d_postbox_title); ?></span><span class="toggle-indicator"
 					aria-hidden="true"></span></button>
 		</div>
@@ -60,44 +60,59 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 
 	<div>
 		<h2 id="r3d-tabs" class="nav-tab-wrapper wp-clearfix">
-			<a href="#" class="nav-tab" data-tab="tab-pages"><?php _e('Pages', 'real3d-flipbook'); ?></a>
-			<a href="#" class="nav-tab" data-tab="tab-general"><?php _e('General', 'real3d-flipbook'); ?></a>
-			<a href="#" class="nav-tab" data-tab="tab-toc"><?php _e('Table of Contents', 'real3d-flipbook'); ?></a>
-			<a href="#" class="nav-tab" data-tab="tab-lightbox"><?php _e('Lightbox', 'real3d-flipbook'); ?></a>
-			<a href="#" class="nav-tab" data-tab="tab-webgl"><?php _e('WebGL', 'real3d-flipbook'); ?></a>
-			<a href="#" class="nav-tab" data-tab="tab-mobile"><?php _e('Mobile', 'real3d-flipbook'); ?></a>
+			<a href="#" class="nav-tab" data-tab="tab-pages"><?php esc_html_e('Pages', 'real3d-flipbook'); ?></a>
+			<a href="#" class="nav-tab" data-tab="tab-general"><?php esc_html_e('General', 'real3d-flipbook'); ?></a>
+			<a href="#" class="nav-tab"
+				data-tab="tab-toc"><?php esc_html_e('Table of Contents', 'real3d-flipbook'); ?></a>
+			<a href="#" class="nav-tab" data-tab="tab-lightbox"><?php esc_html_e('Lightbox', 'real3d-flipbook'); ?></a>
+			<a href="#" class="nav-tab" data-tab="tab-webgl"><?php esc_html_e('WebGL', 'real3d-flipbook'); ?></a>
+			<a href="#" class="nav-tab" data-tab="tab-mobile"><?php esc_html_e('Mobile', 'real3d-flipbook'); ?></a>
 			<?php
 			?>
-			<a href="#" class="nav-tab" data-tab="tab-menu"><?php _e('Menu Buttons', 'real3d-flipbook'); ?></a>
+			<a href="#" class="nav-tab" data-tab="tab-menu"><?php esc_html_e('Menu Buttons', 'real3d-flipbook'); ?></a>
 		</h2>
 		<div id="tab-pages" style="display:none;">
 
-			<!-- <p><?php _e("Select PDF or images from media library, or enter PDF URL.", "real3d-flipbook") ?></p> -->
+			<!-- <p><?php esc_html_e("Select PDF or images from media library, or enter PDF URL.", "real3d-flipbook") ?></p> -->
 
 			<table class="form-table">
 				<tbody>
 
 					<tr>
-						<!-- <th><label><?php _e("Flipbook source", "real3d-flipbook") ?></label></th> -->
+						<!-- <th><label><?php esc_html_e("Flipbook source", "real3d-flipbook") ?></label></th> -->
 						<td>
 							<button class='button-primary add-pages-button'
-								id='r3d-select-source'><?php _e("Select PDF or images", "real3d-flipbook"); ?></button>
+								id='r3d-select-source'><?php esc_html_e("Select PDF or images", "real3d-flipbook"); ?></button>
 							<input type='text' class='regular-text flipbook-option-field' name="pdfUrl"
 								id='r3d-pdf-source' placeholder="PDF URL">
 							<button class='button-primary convert-button' id='r3d-convert'
-								style="display: none;"><?php _e("Convert with PDF Tools", "real3d-flipbook"); ?></button>
+								style="display: none;"><?php esc_html_e("Convert with PDF Tools", "real3d-flipbook"); ?></button>
 
 							<p id="add-pages-description" class="description">
-								<?php _e("Select PDF or images from media library, or enter PDF URL", "real3d-flipbook") ?>
+								<?php esc_html_e("Select PDF or images from media library, or enter PDF URL", "real3d-flipbook") ?>
 							</p>
 							<p id="buy-pdf-tools" style="display:none;">
 
 								<?php
 								$message = sprintf(
-									esc_html__('Optimize Real3D PDF Flipbooks with %1$s by converting PDF to images and JSON. Speed up the flipbook loading and secure the PDF.', 'real3d-flipbook'),
-									'<a href="https://real3dflipbook.com/pdf-tools-addon/?ref=wp" style="text-decoration: none; font-weight: bold;" target="_blank">' . esc_html__('PDF Tools Addon for Real3D Flipbook', 'real3d-flipbook') . '</a>'
+									/* translators: %1$s is replaced with the anchor HTML for the "PDF Tools Addon" link. */
+									esc_html__(
+										'Optimize Real3D PDF Flipbooks with %1$s by converting PDF to images and JSON. Speed up the flipbook loading and secure the PDF.',
+										'real3d-flipbook'
+									),
+									'<a href="' . esc_url('https://real3dflipbook.com/pdf-tools-addon/?ref=wp') . '" style="text-decoration: none; font-weight: bold;" target="_blank">' . esc_html__('PDF Tools Addon for Real3D Flipbook', 'real3d-flipbook') . '</a>'
 								);
-								echo $message;
+
+								echo wp_kses(
+									$message,
+									[
+										'a' => [
+											'href' => [],
+											'style' => [],
+											'target' => [],
+										],
+									]
+								);
 								?>
 							</p>
 							<p id="add-pages-info" class="description" style="display:none;"></p>
@@ -108,18 +123,18 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 
 			<div>
 				<ul id="pages-container" tabindex="-1" class="attachments ui-sortable"></ul>
-				<span class="delete-pages-button"><?php _e('Delete all pages', 'real3d-flipbook'); ?></span>
+				<span class="delete-pages-button"><?php esc_html_e('Delete all pages', 'real3d-flipbook'); ?></span>
 			</div>
 		</div>
 
 		<div id="tab-toc" style="display:none;">
 			<p class="description">
-				<?php _e('Create custom Table of Contents. This overrides default PDF outline or table of contents created by page titles.', 'real3d-flipbook'); ?>
+				<?php esc_html_e('Create custom Table of Contents. This overrides default PDF outline or table of contents created by page titles.', 'real3d-flipbook'); ?>
 			</p>
 			<p>
-				<a class="add-toc-item button-primary" href="#"><?php _e('Add item', 'real3d-flipbook'); ?></a>
+				<a class="add-toc-item button-primary" href="#"><?php esc_html_e('Add item', 'real3d-flipbook'); ?></a>
 				<a href="#" type="button"
-					class="button-link toc-delete-all"><?php _e('Delete all', 'real3d-flipbook'); ?></a>
+					class="button-link toc-delete-all"><?php esc_html_e('Delete all', 'real3d-flipbook'); ?></a>
 			</p>
 			<table class="form-table" id="flipbook-toc-options">
 				<tbody></tbody>
@@ -138,7 +153,7 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 		</div>
 		<div id="tab-mobile" style="display:none;">
 			<p class="description">
-				<?php _e('Override settings for mobile devices (use different view mode, smaller textures ect)', 'real3d-flipbook'); ?>
+				<?php esc_html_e('Override settings for mobile devices (use different view mode, smaller textures ect)', 'real3d-flipbook'); ?>
 			</p>
 			<table class="form-table" id="flipbook-mobile-options">
 				<tbody></tbody>
@@ -170,7 +185,7 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 		<div id="tab-menu" style="display:none;">
 			<!-- <div id="poststuff"> -->
 			<div class="meta-box-sortables">
-				<h3><?php _e('Menu buttons', 'real3d-flipbook'); ?></h3>
+				<h3><?php esc_html_e('Menu buttons', 'real3d-flipbook'); ?></h3>
 
 				<?php
 
@@ -211,21 +226,21 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 	<div tabindex="0" class="media-modal wp-core-ui" id="edit-page-modal" style="display: none;">
 
 		<button type="button" class="media-modal-close STX-modal-close"><span class="media-modal-icon"><span
-					class="screen-reader-text"><?php _e('Close media panel', 'real3d-flipbook'); ?></span></span></button>
+					class="screen-reader-text"><?php esc_html_e('Close media panel', 'real3d-flipbook'); ?></span></span></button>
 		<div class="media-modal-content STX-modal-content">
 			<div class="edit-attachment-frame mode-select hide-menu hide-router">
 
 				<div class="edit-media-header">
 					<button class="left dashicons"><span
-							class="screen-reader-text"><?php _e('Edit previous media item', 'real3d-flipbook'); ?></span></button>
+							class="screen-reader-text"><?php esc_html_e('Edit previous media item', 'real3d-flipbook'); ?></span></button>
 					<button class="right dashicons"><span
-							class="screen-reader-text"><?php _e('Edit next media item', 'real3d-flipbook'); ?></span></button>
+							class="screen-reader-text"><?php esc_html_e('Edit next media item', 'real3d-flipbook'); ?></span></button>
 					<button type="button" class="media-modal-close"><span class="media-modal-icon"><span
-								class="screen-reader-text"><?php _e('Close dialog', 'real3d-flipbook'); ?></span></span></button>
+								class="screen-reader-text"><?php esc_html_e('Close dialog', 'real3d-flipbook'); ?></span></span></button>
 				</div>
 
 				<div class="media-frame-title STX-modal-title">
-					<h1><?php _e('Edit page', 'real3d-flipbook'); ?></h1>
+					<h1><?php esc_html_e('Edit page', 'real3d-flipbook'); ?></h1>
 				</div>
 
 				<div class="media-frame-content STX-modal-frame-content">
@@ -239,7 +254,7 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 								<div class="attachment-actions">
 
 									<button type="button"
-										class="button replace-page"><?php _e('Replace image', 'real3d-flipbook'); ?></button>
+										class="button replace-page"><?php esc_html_e('Replace image', 'real3d-flipbook'); ?></button>
 
 								</div>
 							</div>
@@ -250,14 +265,14 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 
 								<div class="setting" data-setting="title">
 									<label for="edit-page-title"
-										class="name"><?php _e('Title', 'real3d-flipbook'); ?></label>
+										class="name"><?php esc_html_e('Title', 'real3d-flipbook'); ?></label>
 									<input type="text" id="edit-page-title"
 										placeholder="Page title (for Table of Content)">
 								</div>
 
 								<div class="setting" data-setting="html-content">
 									<label for="edit-page-html-content"
-										class="name"><?php _e('HTML content', 'real3d-flipbook'); ?></label>
+										class="name"><?php esc_html_e('HTML content', 'real3d-flipbook'); ?></label>
 									<textarea id="edit-page-html-content"
 										placeholder="Add any HTML content to page, set style and position with inline CSS"></textarea>
 								</div>
@@ -321,5 +336,5 @@ $flipbook_global_defaults = r3dfb_getDefaults();
 
 $flipbook['globals'] = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 $flipbook['globals']['plugins_url'] = plugins_url();
-wp_localize_script('real3d-flipbook-edit-post', 'flipbook', array(json_encode($flipbook)));
+wp_localize_script('real3d-flipbook-edit-post', 'options', $flipbook);
 

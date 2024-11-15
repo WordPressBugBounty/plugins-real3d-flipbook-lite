@@ -62,15 +62,15 @@ class R3D_Post_Type
 
 		register_post_type('r3d', $args);
 
-		if(get_option('r3d_flush_rewrite_rules')){
+		if (get_option('r3d_flush_rewrite_rules')) {
 			flush_rewrite_rules();
 			update_option('r3d_flush_rewrite_rules', false);
 		}
 
 
 		$categories_labels = array(
-			'name' => __('Flipbook Categories', 'taxonomy general name'),
-			'singular_name' => __('Flipbook Category', 'taxonomy singular name'),
+			'name' => __('Flipbook Categories', 'real3d-flipbook'),
+			'singular_name' => __('Flipbook Category', 'real3d-flipbook'),
 			'search_items' =>  __('Search Categories', 'real3d-flipbook'),
 			'all_items' => __('All Categories', 'real3d-flipbook'),
 			'edit_item' => __('Edit Categories', 'real3d-flipbook'),
@@ -93,8 +93,8 @@ class R3D_Post_Type
 
 
 		$author_labels = array(
-			'name' => __('Flipbook Authors', 'taxonomy general name'),
-			'singular_name' => __('Flipbook Author', 'taxonomy singular name'),
+			'name' => __('Flipbook Authors', 'real3d-flipbook'),
+			'singular_name' => __('Flipbook Author', 'real3d-flipbook'),
 			'search_items' =>  __('Search Authors', 'real3d-flipbook'),
 			'all_items' => __('All Authors', 'real3d-flipbook'),
 			'edit_item' => __('Edit Author', 'real3d-flipbook'),
@@ -199,11 +199,18 @@ class R3D_Post_Type
 			wp_die('No post to duplicate has been supplied!');
 		}
 
-		if (!isset($_GET['duplicate_nonce']) || !wp_verify_nonce($_GET['duplicate_nonce'], basename(__FILE__)))
+		if (!isset($_GET['duplicate_nonce'])) {
 			return;
+		}
+
+		$duplicate_nonce = sanitize_text_field(wp_unslash($_GET['duplicate_nonce']));
+
+		if (!wp_verify_nonce($duplicate_nonce, basename(__FILE__))) {
+			return;
+		}
 
 		$post_id = (isset($_GET['post']) ? absint($_GET['post']) : absint($_POST['post']));
-		
+
 		$post = get_post($post_id);
 
 		$current_user = wp_get_current_user();
@@ -252,11 +259,11 @@ class R3D_Post_Type
 				wp_set_object_terms($new_post_id, $post_terms, $taxonomy, false);
 			}
 
-			
+
 			wp_redirect(admin_url('edit.php?post_type=r3d'));
 			exit;
 		} else {
-			wp_die('Post creation failed, could not find original post: ' . $post_id);
+			wp_die('Post creation failed, could not find original post: ' . esc_html($post_id));
 		}
 	}
 
@@ -272,12 +279,11 @@ class R3D_Post_Type
 
 		$columns = array(
 			'cb'        => '<input type="checkbox" />',
-			'cover' => __('Cover', 'r3dfb'),
-			'title'     => __('Title', 'r3dfb'),
-			'shortcode' => __('Shortcode', 'r3dfb'),
-			// 'permalink' => __( 'Permalink', 'r3dfb' ),
-			'date'      => __('Date', 'r3dfb'),
-			'author'      => __('Author', 'r3dfb')
+			'cover' => __('Cover', 'real3d-flipbook'),
+			'title'     => __('Title', 'real3d-flipbook'),
+			'shortcode' => __('Shortcode', 'real3d-flipbook'),
+			'date'      => __('Date', 'real3d-flipbook'),
+			'author'      => __('Author', 'real3d-flipbook')
 		);
 
 		return $columns;

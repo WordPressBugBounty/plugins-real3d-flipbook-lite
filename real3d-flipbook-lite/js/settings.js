@@ -40,8 +40,6 @@
     if (postboxes.handle_click && !postboxes.handle_click.guid)
       postboxes.add_postbox_toggles();
 
-    options = $.parseJSON(window.options[0]);
-
     //removeIf(!lite)
     function convertStrings(obj) {
       jQuery.each(obj, function (key, value) {

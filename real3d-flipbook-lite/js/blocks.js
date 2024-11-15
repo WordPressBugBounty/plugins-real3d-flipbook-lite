@@ -18,8 +18,6 @@ var __ = wp.i18n.__, // The __() function for internationalization.
   RadioControl = wp.components.RadioControl,
   Toolbar = wp.components.Toolbar;
 
-var r3dfb = jQuery.parseJSON(r3dfb[0]);
-
 var r3dfb_selectFlipbok = [{ label: "Select Flipbook", value: "" }];
 
 // for (var i = 0; i < r3dfb.length; i++) {

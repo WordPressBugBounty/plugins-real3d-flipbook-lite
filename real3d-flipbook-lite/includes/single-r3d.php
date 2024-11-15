@@ -56,5 +56,5 @@ if ($show_flipbook) {
 	get_footer();
 } else {
 
-	esc_html_e('Forbidden');
+	esc_html_e('Forbidden', 'real3d-flipbook');
 }

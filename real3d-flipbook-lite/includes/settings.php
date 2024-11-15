@@ -10,22 +10,22 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 
 ?>
 
-<div class="postbox closed">
-	<div class="postbox-header">
-		<h2 class="hndle ui-sortable-handle"><?php echo esc_html($r3d_postbox_title); ?></h2>
-		<div class="handle-actions hide-if-no-js"><button type="button" class="handle-order-higher"
-				aria-disabled="false" aria-describedby="submitdiv-handle-order-higher-description"><span
-					class="screen-reader-text"><?php _e('Toggle panel:', 'real3d-flipbook');
-																																																							echo esc_html(' ' . $r3d_postbox_title); ?></span><span
-					class="toggle-indicator" aria-hidden="true"></span></button></div>
+	<div class="postbox closed">
+		<div class="postbox-header">
+			<h2 class="hndle ui-sortable-handle"><?php echo esc_html($r3d_postbox_title); ?></h2>
+			<div class="handle-actions hide-if-no-js"><button type="button" class="handle-order-higher"
+					aria-disabled="false" aria-describedby="submitdiv-handle-order-higher-description"><span
+						class="screen-reader-text"><?php esc_html_e('Toggle panel:', 'real3d-flipbook');
+													echo esc_html(' ' . $r3d_postbox_title); ?></span><span class="toggle-indicator"
+						aria-hidden="true"></span></button></div>
+		</div>
+		<div class="inside">
+			<table class="form-table" id="<?php echo esc_attr($r3d_postbox_id); ?>">
+				<tbody></tbody>
+			</table>
+			<div class="clear"></div>
+		</div>
 	</div>
-	<div class="inside">
-		<table class="form-table" id="<?php echo esc_attr($r3d_postbox_id); ?>">
-			<tbody></tbody>
-		</table>
-		<div class="clear"></div>
-	</div>
-</div>
 
 <?php
 
@@ -41,10 +41,10 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 
 <div id='real3dflipbook-admin' style="display:none;">
 	<a href="admin.php?page=real3d_flipbook_admin" class="back-to-list-link">&larr;
-		<?php _e('Back to flipbooks list', 'flipbook'); ?>
+		<?php esc_html_e('Back to flipbooks list', 'real3d-flipbook'); ?>
 	</a>
-	<h1><?php _e('Global settings', 'real3d-flipbook'); ?></h1>
-	<p><?php _e('Global default settings for all flipbooks', 'real3d-flipbook'); ?></p>
+	<h1><?php esc_html_e('Global settings', 'real3d-flipbook'); ?></h1>
+	<p><?php esc_html_e('Global default settings for all flipbooks', 'real3d-flipbook'); ?></p>
 	<form method="post" id="real3dflipbook-options-form" enctype="multipart/form-data"
 		action="admin-ajax.php?page=real3d_flipbook_admin&action=save_settings">
 		<div>
@@ -52,7 +52,8 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 			<h2 id="r3d-tabs" class="nav-tab-wrapper wp-clearfix">
 				<?php
 				?>
-				<a href="#" class="nav-tab" data-tab="tab-overrides"><?php _e('Overrides', 'real3d-flipbook'); ?></a>
+				<a href="#" class="nav-tab"
+					data-tab="tab-overrides"><?php esc_html_e('Overrides', 'real3d-flipbook'); ?></a>
 				<?php
 				?>
 
@@ -75,7 +76,7 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 			</div>
 			<div id="tab-mobile" style="display:none;">
 				<p class="description">
-					<?php _e('Override settings for mobile devices (use different view mode, smaller textures ect)', 'real3d-flipbook'); ?>
+					<?php esc_html_e('Override settings for mobile devices (use different view mode, smaller textures ect)', 'real3d-flipbook'); ?>
 				</p>
 				<table class="form-table" id="flipbook-mobile-options">
 					<tbody></tbody>
@@ -93,7 +94,7 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 			</div>
 			<div id="tab-menu" style="display:none;">
 				<div class="meta-box-sortables">
-					<h3><?php _e('Menu buttons', 'real3d-flipbook'); ?></h3>
+					<h3><?php esc_html_e('Menu buttons', 'real3d-flipbook'); ?></h3>
 
 					<?php
 
@@ -134,8 +135,8 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 					<table class="form-table" id="flipbook-ui-options">
 						<tbody></tbody>
 					</table>
-					<h3><?php _e('Advanced settings', 'real3d-flipbook'); ?></h3>
-					<p><?php _e('Override layout and skin settings', 'real3d-flipbook'); ?></p>
+					<h3><?php esc_html_e('Advanced settings', 'real3d-flipbook'); ?></h3>
+					<p><?php esc_html_e('Override layout and skin settings', 'real3d-flipbook'); ?></p>
 
 					<?php
 
@@ -169,10 +170,10 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 			<!-- endRemoveIf(lite) -->
 			<div id="tab-overrides" style="display:none;">
 				<p class="description">
-					<?php _e('Use Real3D Flipbook to show your existing PDF links or PDF Viewer / PDF Embedder / 3D Flipbook shortocodes.', 'real3d-flipbook'); ?>
+					<?php esc_html_e('Use Real3D Flipbook to show your existing PDF links or PDF Viewer / PDF Embedder / 3D Flipbook shortocodes.', 'real3d-flipbook'); ?>
 				</p>
 				<p class="description">
-					<?php _e('Just by enabling the option, Real3D Flipbok will be used instead of your old viewer.', 'real3d-flipbook'); ?>
+					<?php esc_html_e('Just by enabling the option, Real3D Flipbok will be used instead of your old viewer.', 'real3d-flipbook'); ?>
 				</p>
 				<table class="form-table" id="flipbook-overrides-options">
 					<tbody></tbody>
@@ -183,11 +184,11 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 			if (defined('R3D_PDF_TOOLS_VERSION')) {
 				if (version_compare(R3D_PDF_TOOLS_VERSION, '2.0', '>=')) {
 			?>
-			<div id="tab-pdf-tools" style="display:none;">
-				<table class="form-table" id="flipbook-pdf-tools-options">
-					<tbody></tbody>
-				</table>
-			</div>
+					<div id="tab-pdf-tools" style="display:none;">
+						<table class="form-table" id="flipbook-pdf-tools-options">
+							<tbody></tbody>
+						</table>
+					</div>
 			<?php
 				}
 			}
@@ -207,9 +208,9 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 	<input type="submit" name="btbsubmit" id="btbsubmit" class="alignright button save-button button-primary"
 		value="Save">
 	<a href="#"
-		class="alignright flipbook-reset-defaults button button-secondary"><?php _e('Rest to defaults', 'real3d-flipbook'); ?></a>
+		class="alignright flipbook-reset-defaults button button-secondary"><?php esc_html_e('Rest to defaults', 'real3d-flipbook'); ?></a>
 </p>
-<div id="r3d-save-holder" style="display: none;" />
+<div id="r3d-save-holder" style="display: none;"></div>
 </form>
 </div>
 <?php
@@ -229,4 +230,4 @@ wp_localize_script('real3d-flipbook-settings', 'r3d_nonce', array($r3d_nonce));
 
 $flipbook["globals"] = $flipbook_global;
 $flipbook["globals_defaults"] = $flipbook_global_defaults;
-wp_localize_script('real3d-flipbook-settings', 'options', array(json_encode($flipbook)));
+wp_localize_script('real3d-flipbook-settings', 'options', $flipbook);
