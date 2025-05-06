@@ -83,7 +83,7 @@ function r3dfb_save_thumbnail_callback()
 	$book = get_option('real3dflipbook_' . $id);
 
 	if (!$book) {
-		wp_send_json_error(['message' => __('The specified flipbook does not exist.', 'real3d-flipbook')]);
+		wp_send_json_error(['message' => esc_html__('The specified flipbook does not exist.', 'real3d-flipbook')]);
 	}
 
 	$upload_dir = wp_upload_dir();
@@ -126,6 +126,6 @@ function r3dfb_save_thumbnail_callback()
 
 		wp_send_json_success(['thumbnail_url' => $thumbnail_url]);
 	} else {
-		wp_send_json_error(['message' => __('Error uploading the file.', 'real3d-flipbook')]);
+		wp_send_json_error(['message' => esc_html__('Error uploading the file.', 'real3d-flipbook')]);
 	}
 }

@@ -1,4 +1,7 @@
+"use strict";
+
 window.addEventListener("DOMContentLoaded", function () {
+  r3d_frontend.options = flipbookOptions_global;
   const withClass = r3d_frontend.options.convertPDFLinksWithClass;
   const withoutClass = r3d_frontend.options.convertPDFLinksWithoutClass;
 
@@ -72,7 +75,7 @@ window.addEventListener("DOMContentLoaded", function () {
     options.cMapUrl = rootFolder + "assets/cmaps/";
 
     if (window.FLIPBOOK) {
-      pdfLinks.forEach((link) => createFlipbook(link, options));
+      pdfLinks.forEach((link, index) => createFlipbook(link, index, options));
     } else {
       Promise.all([
         loadScript(
@@ -83,7 +86,9 @@ window.addEventListener("DOMContentLoaded", function () {
         ),
       ])
         .then(() => {
-          pdfLinks.forEach((link) => createFlipbook(link, options));
+          pdfLinks.forEach((link, index) =>
+            createFlipbook(link, index + 1, options)
+          );
         })
         .catch((error) => {
           console.error(
@@ -94,8 +99,29 @@ window.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function createFlipbook(link, options) {
+  function getOptionFromClass(element, optionName) {
+    while (element) {
+      if (element.classList) {
+        const matchingClass = Array.from(element.classList).find((cls) =>
+          cls.includes("r3d-" + optionName)
+        );
+        if (matchingClass) {
+          return matchingClass.replace("r3d-" + optionName + "-", "");
+        }
+      }
+      element = element.parentElement;
+    }
+    return false;
+  }
+
+  function createFlipbook(link, index, options) {
     options.pdfUrl = link.href;
+    const deeplinkingPrefix = getOptionFromClass(link, "deeplinkingPrefix");
+    if (deeplinkingPrefix) {
+      options.deeplinkingPrefix = deeplinkingPrefix;
+    } else if (options.deeplinking && options.deeplinking.enabled) {
+      options.deeplinking.prefix = "book" + index + "_";
+    }
     new FlipBook(link, options);
   }
 

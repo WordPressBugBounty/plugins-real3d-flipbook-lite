@@ -73,13 +73,10 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 		</h2>
 		<div id="tab-pages" style="display:none;">
 
-			<!-- <p><?php esc_html_e("Select PDF or images from media library, or enter PDF URL.", "real3d-flipbook") ?></p> -->
-
 			<table class="form-table">
 				<tbody>
 
 					<tr>
-						<!-- <th><label><?php esc_html_e("Flipbook source", "real3d-flipbook") ?></label></th> -->
 						<td>
 							<button class='button-primary add-pages-button'
 								id='r3d-select-source'><?php esc_html_e("Select PDF or images", "real3d-flipbook"); ?></button>
@@ -123,7 +120,10 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 
 			<div>
 				<ul id="pages-container" tabindex="-1" class="attachments ui-sortable"></ul>
-				<span class="delete-pages-button"><?php esc_html_e('Delete all pages', 'real3d-flipbook'); ?></span>
+				<span
+					class="button button-secondary paste-page"><?php esc_html_e('Paste page', 'real3d-flipbook'); ?></span>
+				<span
+					class="button button-secondary delete-pages-button"><?php esc_html_e('Delete all pages', 'real3d-flipbook'); ?></span>
 			</div>
 		</div>
 
@@ -170,7 +170,6 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 			</table>
 		</div>
 		<div id="tab-ui" style="display:none;">
-			<!-- <div id="poststuff"> -->
 			<div class="meta-box-sortables">
 
 				<?php
@@ -180,47 +179,35 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 				?>
 
 			</div>
-			<!-- </div> -->
 		</div>
 		<div id="tab-menu" style="display:none;">
-			<!-- <div id="poststuff"> -->
 			<div class="meta-box-sortables">
 				<h3><?php esc_html_e('Menu buttons', 'real3d-flipbook'); ?></h3>
 
 				<?php
 
-				r3d_postbox(__('Current page', 'real3d-flipbook'), 'currentPage');
-				r3d_postbox(__('Previous page', 'real3d-flipbook'), 'btnPrev');
-				r3d_postbox(__('Next page', 'real3d-flipbook'), 'btnNext');
-				r3d_postbox(__('Zoom In', 'real3d-flipbook'), 'btnZoomIn');
-				r3d_postbox(__('Zoom Out', 'real3d-flipbook'), 'btnZoomOut');
-				r3d_postbox(__('Table of Contents', 'real3d-flipbook'), 'btnToc');
-				r3d_postbox(__('Thumbnails', 'real3d-flipbook'), 'btnThumbs');
-				r3d_postbox(__('Share', 'real3d-flipbook'), 'btnShare');
-				r3d_postbox(__('Print', 'real3d-flipbook'), 'btnPrint');
-				r3d_postbox(__('Download PDF', 'real3d-flipbook'), 'btnDownloadPdf');
-				r3d_postbox(__('Sound', 'real3d-flipbook'), 'btnSound');
-				r3d_postbox(__('Fullscreen', 'real3d-flipbook'), 'btnExpand');
-				r3d_postbox(__('Tools', 'real3d-flipbook'), 'btnTools');
-				r3d_postbox(__('Close', 'real3d-flipbook'), 'btnClose');
-				r3d_postbox(__('Social share buttons', 'real3d-flipbook'), 'share-buttons');
+				r3d_postbox(__('Current page', 'real3d-flipbook'), 'currentPage'); // escaped in r3d_postbox()
+				r3d_postbox(__('Previous page', 'real3d-flipbook'), 'btnPrev'); // escaped in r3d_postbox()
+				r3d_postbox(__('Next page', 'real3d-flipbook'), 'btnNext'); // escaped in r3d_postbox()
+				r3d_postbox(__('Zoom In', 'real3d-flipbook'), 'btnZoomIn'); // escaped in r3d_postbox()
+				r3d_postbox(__('Zoom Out', 'real3d-flipbook'), 'btnZoomOut'); // escaped in r3d_postbox()
+				r3d_postbox(__('Table of Contents', 'real3d-flipbook'), 'btnToc'); // escaped in r3d_postbox()
+				r3d_postbox(__('Thumbnails', 'real3d-flipbook'), 'btnThumbs'); // escaped in r3d_postbox()
+				r3d_postbox(__('Share', 'real3d-flipbook'), 'btnShare'); // escaped in r3d_postbox()
+				r3d_postbox(__('Print', 'real3d-flipbook'), 'btnPrint'); // escaped in r3d_postbox()
+				r3d_postbox(__('Download PDF', 'real3d-flipbook'), 'btnDownloadPdf'); // escaped in r3d_postbox()
+				r3d_postbox(__('Sound', 'real3d-flipbook'), 'btnSound'); // escaped in r3d_postbox()
+				r3d_postbox(__('Fullscreen', 'real3d-flipbook'), 'btnExpand'); // escaped in r3d_postbox()
+				r3d_postbox(__('Tools', 'real3d-flipbook'), 'btnTools'); // escaped in r3d_postbox()
+				r3d_postbox(__('Close', 'real3d-flipbook'), 'btnClose'); // escaped in r3d_postbox()
+				r3d_postbox(__('Social share buttons', 'real3d-flipbook'), 'share-buttons'); // escaped in r3d_postbox()
 
 				?>
 
 			</div>
 		</div>
 	</div>
-	<!--  <p id="r3d-save" class="submit">
-            <span class="spinner"></span>
-            <input type="submit" name="btbsubmit" class="alignright button save-button button-primary" value="Update" style="display:none;">
-            <input type="submit" name="btbsubmit" class="alignright button create-button button-primary" value="Publish" style="display:none;">
-            <a id="r3d-preview" href="#" class="alignright flipbook-preview button save-button button-secondary">Preview</a>
-            <a href="#" class="alignright flipbook-reset-defaults button button-secondary">Reset all settings</a>
-         </p> -->
-	<!-- <div id="r3d-save-holder" style="display: none;" ></div> -->
-	<!-- </form> -->
 </div>
-<!-- </div> -->
 <div id="edit-page-modal-wrapper">
 
 	<div tabindex="0" class="media-modal wp-core-ui" id="edit-page-modal" style="display: none;">
@@ -256,6 +243,9 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 									<button type="button"
 										class="button replace-page"><?php esc_html_e('Replace image', 'real3d-flipbook'); ?></button>
 
+									<button type="button"
+										class="button copy-page"><?php esc_html_e('Copy page', 'real3d-flipbook'); ?></button>
+
 								</div>
 							</div>
 						</div>
@@ -270,9 +260,15 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 										placeholder="Page title (for Table of Content)">
 								</div>
 
+								<div class="setting" data-setting="caption">
+									<label for="edit-page-caption"
+										class="name"><?php esc_html_e('Caption', 'real3d-flipbook'); ?></label>
+									<textarea type="text" id="edit-page-caption" placeholder="Page caption"></textarea>
+								</div>
+
 								<div class="setting" data-setting="html-content">
 									<label for="edit-page-html-content"
-										class="name"><?php esc_html_e('HTML content', 'real3d-flipbook'); ?></label>
+										class="name"><?php esc_html_e('HTML Content', 'real3d-flipbook'); ?></label>
 									<textarea id="edit-page-html-content"
 										placeholder="Add any HTML content to page, set style and position with inline CSS"></textarea>
 								</div>
@@ -306,14 +302,11 @@ wp_enqueue_script('alpha-color-picker');
 wp_enqueue_script('sweet-alert-2');
 wp_enqueue_style('sweet-alert-2');
 
-//include page editor if installed
 if (defined('R3D_PAGE_EDITOR_VERSION')) {
 	wp_enqueue_script('r3d-page-item');
 	wp_enqueue_script('r3d-page-editor');
 	wp_enqueue_style('r3d-page-editor');
 }
-
-
 
 if (defined('R3D_PDF_TOOLS_VERSION')) {
 	if (version_compare(R3D_PDF_TOOLS_VERSION, '2.0', '>='))

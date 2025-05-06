@@ -1,15 +1,26 @@
 /*
 author http://codecanyon.net/user/creativeinteractivemedia
 */
+"use strict";
 
 (function ($) {
   function downloadObjectAsJson(exportObj, exportName) {
+    if (typeof exportObj !== "object") {
+      console.error("The exportObj parameter must be a JavaScript object.");
+      return;
+    }
+    // Convert the object to a JSON string
+    var jsonString = JSON.stringify(exportObj, null, 2); // Beautify with 2 spaces for readability
     var dataStr =
-      "data:text/json;charset=utf-8," + encodeURIComponent(exportObj);
+      "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
+
+    // Create a temporary anchor element for downloading the file
     var downloadAnchorNode = document.createElement("a");
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute("download", exportName + ".json");
-    document.body.appendChild(downloadAnchorNode); // required for firefox
+
+    // Append to the DOM, click to trigger the download, then remove
+    document.body.appendChild(downloadAnchorNode); // Required for some browsers
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
   }
@@ -68,7 +79,7 @@ author http://codecanyon.net/user/creativeinteractivemedia
         },
 
         success: function (data, textStatus, jqXHR) {
-          downloadObjectAsJson(data, "flipbooks");
+          downloadObjectAsJson(data.data, "flipbooks");
         },
 
         error: function (XMLHttpRequest, textStatus, errorThrown) {

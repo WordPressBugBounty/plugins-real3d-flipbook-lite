@@ -98,30 +98,30 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 
 					<?php
 
-					r3d_postbox(__('Current page', 'real3d-flipbook'), 'currentPage');
-					r3d_postbox(__('First page', 'real3d-flipbook'), 'btnFirst');
-					r3d_postbox(__('Previous page', 'real3d-flipbook'), 'btnPrev');
-					r3d_postbox(__('Next page', 'real3d-flipbook'), 'btnNext');
-					r3d_postbox(__('Last page', 'real3d-flipbook'), 'btnLast');
-					r3d_postbox(__('Autoplay', 'real3d-flipbook'), 'btnAutoplay');
-					r3d_postbox(__('Zoom In', 'real3d-flipbook'), 'btnZoomIn');
-					r3d_postbox(__('Zoom Out', 'real3d-flipbook'), 'btnZoomOut');
-					r3d_postbox(__('Table of Contents', 'real3d-flipbook'), 'btnToc');
-					r3d_postbox(__('Thumbnails', 'real3d-flipbook'), 'btnThumbs');
-					r3d_postbox(__('Share', 'real3d-flipbook'), 'btnShare');
-					r3d_postbox(__('Notes', 'real3d-flipbook'), 'btnNotes');
-					r3d_postbox(__('Print', 'real3d-flipbook'), 'btnPrint');
-					r3d_postbox(__('Download pages', 'real3d-flipbook'), 'btnDownloadPages');
-					r3d_postbox(__('Download PDF', 'real3d-flipbook'), 'btnDownloadPdf');
-					r3d_postbox(__('Sound', 'real3d-flipbook'), 'btnSound');
-					r3d_postbox(__('Fullscreen', 'real3d-flipbook'), 'btnExpand');
-					r3d_postbox(__('Toggle single page', 'real3d-flipbook'), 'btnSingle');
-					r3d_postbox(__('Search Button', 'real3d-flipbook'), 'btnSearch');
-					r3d_postbox(__('Search Input', 'real3d-flipbook'), 'search');
-					r3d_postbox(__('Bookmark', 'real3d-flipbook'), 'btnBookmark');
-					r3d_postbox(__('Tools', 'real3d-flipbook'), 'btnTools');
-					r3d_postbox(__('Close', 'real3d-flipbook'), 'btnClose');
-					r3d_postbox(__('Social share buttons', 'real3d-flipbook'), 'share-buttons');
+					r3d_postbox(__('Current page', 'real3d-flipbook'), 'currentPage'); // escaped in r3d_postbox()
+					r3d_postbox(__('First page', 'real3d-flipbook'), 'btnFirst'); // escaped in r3d_postbox()
+					r3d_postbox(__('Previous page', 'real3d-flipbook'), 'btnPrev'); // escaped in r3d_postbox()
+					r3d_postbox(__('Next page', 'real3d-flipbook'), 'btnNext'); // escaped in r3d_postbox()
+					r3d_postbox(__('Last page', 'real3d-flipbook'), 'btnLast'); // escaped in r3d_postbox()
+					r3d_postbox(__('Autoplay', 'real3d-flipbook'), 'btnAutoplay'); // escaped in r3d_postbox()
+					r3d_postbox(__('Zoom In', 'real3d-flipbook'), 'btnZoomIn'); // escaped in r3d_postbox()
+					r3d_postbox(__('Zoom Out', 'real3d-flipbook'), 'btnZoomOut'); // escaped in r3d_postbox()
+					r3d_postbox(__('Table of Contents', 'real3d-flipbook'), 'btnToc'); // escaped in r3d_postbox()
+					r3d_postbox(__('Thumbnails', 'real3d-flipbook'), 'btnThumbs'); // escaped in r3d_postbox()
+					r3d_postbox(__('Share', 'real3d-flipbook'), 'btnShare'); // escaped in r3d_postbox()
+					r3d_postbox(__('Notes', 'real3d-flipbook'), 'btnNotes'); // escaped in r3d_postbox()
+					r3d_postbox(__('Print', 'real3d-flipbook'), 'btnPrint'); // escaped in r3d_postbox()
+					r3d_postbox(__('Download pages', 'real3d-flipbook'), 'btnDownloadPages'); // escaped in r3d_postbox()
+					r3d_postbox(__('Download PDF', 'real3d-flipbook'), 'btnDownloadPdf'); // escaped in r3d_postbox()
+					r3d_postbox(__('Sound', 'real3d-flipbook'), 'btnSound'); // escaped in r3d_postbox()
+					r3d_postbox(__('Fullscreen', 'real3d-flipbook'), 'btnExpand'); // escaped in r3d_postbox()
+					r3d_postbox(__('Toggle single page', 'real3d-flipbook'), 'btnSingle'); // escaped in r3d_postbox()
+					r3d_postbox(__('Search Button', 'real3d-flipbook'), 'btnSearch'); // escaped in r3d_postbox()
+					r3d_postbox(__('Search Input', 'real3d-flipbook'), 'search'); // escaped in r3d_postbox()
+					r3d_postbox(__('Bookmark', 'real3d-flipbook'), 'btnBookmark'); // escaped in r3d_postbox()
+					r3d_postbox(__('Tools', 'real3d-flipbook'), 'btnTools'); // escaped in r3d_postbox()
+					r3d_postbox(__('Close', 'real3d-flipbook'), 'btnClose'); // escaped in r3d_postbox()
+					r3d_postbox(__('Social share buttons', 'real3d-flipbook'), 'share-buttons'); // escaped in r3d_postbox()
 
 					?>
 
@@ -140,15 +140,15 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 
 					<?php
 
-					r3d_postbox(__('Skin', 'real3d-flipbook'), 'skin');
-					r3d_postbox(__('Flipbook background', 'real3d-flipbook'), 'bg');
-					r3d_postbox(__('Top Menu', 'real3d-flipbook'), 'menu-bar-2');
-					r3d_postbox(__('Bottom Menu', 'real3d-flipbook'), 'menu-bar');
-					r3d_postbox(__('Buttons', 'real3d-flipbook'), 'menu-buttons');
-					r3d_postbox(__('Floating Buttons (on transparent menu)', 'real3d-flipbook'), 'menu-floating');
-					r3d_postbox(__('Side navigation buttons', 'real3d-flipbook'), 'side-buttons');
-					r3d_postbox(__('Close lightbox button', 'real3d-flipbook'), 'close-button');
-					r3d_postbox(__('Sidebar', 'real3d-flipbook'), 'sidebar');
+					r3d_postbox(__('Skin', 'real3d-flipbook'), 'skin'); // escaped in r3d_postbox()
+					r3d_postbox(__('Flipbook background', 'real3d-flipbook'), 'bg'); // escaped in r3d_postbox()
+					r3d_postbox(__('Top Menu', 'real3d-flipbook'), 'menu-bar-2'); // escaped in r3d_postbox()
+					r3d_postbox(__('Bottom Menu', 'real3d-flipbook'), 'menu-bar'); // escaped in r3d_postbox()
+					r3d_postbox(__('Buttons', 'real3d-flipbook'), 'menu-buttons'); // escaped in r3d_postbox()
+					r3d_postbox(__('Floating Buttons (on transparent menu)', 'real3d-flipbook'), 'menu-floating'); // escaped in r3d_postbox()
+					r3d_postbox(__('Side navigation buttons', 'real3d-flipbook'), 'side-buttons'); // escaped in r3d_postbox()
+					r3d_postbox(__('Close lightbox button', 'real3d-flipbook'), 'close-button'); // escaped in r3d_postbox()
+					r3d_postbox(__('Sidebar', 'real3d-flipbook'), 'sidebar'); // escaped in r3d_postbox()
 
 					?>
 
@@ -201,22 +201,20 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 			</div>
 
 		</div>
+		<p id="r3d-save" class="submit">
+			<span class="spinner"></span>
+			<input type="submit" name="btbsubmit" id="btbsubmit" class="alignright button save-button button-primary"
+				value="Save">
+			<a href="#"
+				class="alignright flipbook-reset-defaults button button-secondary"><?php esc_html_e('Rest to defaults', 'real3d-flipbook'); ?></a>
+		</p>
+		<div id="r3d-save-holder" style="display: none;"></div>
+	</form>
 </div>
-<p id="r3d-save" class="submit">
-	<span class="spinner"></span>
-	<!-- <a class="update-all-flipbooks alignright" href='#'>Save this settings for all flipbooks</a> -->
-	<input type="submit" name="btbsubmit" id="btbsubmit" class="alignright button save-button button-primary"
-		value="Save">
-	<a href="#"
-		class="alignright flipbook-reset-defaults button button-secondary"><?php esc_html_e('Rest to defaults', 'real3d-flipbook'); ?></a>
-</p>
-<div id="r3d-save-holder" style="display: none;"></div>
-</form>
-</div>
+
 <?php
 
 wp_enqueue_media();
-// add_thickbox(); 
 wp_enqueue_script('alpha-color-picker');
 wp_enqueue_style('alpha-color-picker');
 wp_enqueue_script("real3d-flipbook-settings");

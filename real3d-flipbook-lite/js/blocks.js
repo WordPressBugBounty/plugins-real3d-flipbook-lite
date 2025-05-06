@@ -1,3 +1,4 @@
+"use strict";
 /*
  * Gutenberg block Javascript code
  */

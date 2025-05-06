@@ -2,23 +2,24 @@
 author http://codecanyon.net/user/creativeinteractivemedia
 */
 
-(function($) {
-    $(document).ready(function(){
+"use strict";
+(function ($) {
+  $(document).ready(function () {
+    $(document.body).append(
+      '<input type="text" id="copy-text-hidden" value="" style="opacity: 0; pointer-events: none; ">'
+    );
 
-        $(document.body).append('<input type="text" id="copy-text-hidden" value="" style="opacity: 0; pointer-events: none; ">')
+    $(".copy-shortcode").on("click", function () {
+      var id = $(this).attr("id");
+      var shortcode = "[real3dflipbook category='" + id + "']";
+      var copyText = document.getElementById("copy-text-hidden");
+      copyText.value = shortcode;
 
-         $('.copy-shortcode').on('click', function(){
-            var id = $(this).attr("id")
-            var shortcode = "[real3dflipbook category='"+id+"']"
-            var copyText = document.getElementById("copy-text-hidden");
-            copyText.value = shortcode
+      /* Select the text field */
+      copyText.select();
 
-            /* Select the text field */
-            copyText.select();
-
-            /* Copy the text inside the text field */
-            document.execCommand("copy");
-        })
-
-    })
+      /* Copy the text inside the text field */
+      document.execCommand("copy");
+    });
+  });
 })(jQuery);

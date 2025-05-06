@@ -1,6 +1,5 @@
 <?php
 
-/*plugin class*/
 class Real3DFlipbook
 {
 
@@ -8,7 +7,6 @@ class Real3DFlipbook
 	public $PLUGIN_DIR_URL;
 	public $PLUGIN_DIR_PATH;
 
-	// Singleton
 	private static $instance = null;
 
 	protected $pro = false;
@@ -44,10 +42,7 @@ class Real3DFlipbook
 		register_activation_hook(REAL3D_FLIPBOOK_FILE, array($this, 'activation_hook'));
 	}
 
-	public function activation_hook($network_wide)
-	{
-		// update_option('r3d_version', $this->PLUGIN_VERSION);
-	}
+	public function activation_hook($network_wide) {}
 
 	public function enqueue_scripts()
 	{
@@ -83,9 +78,14 @@ class Real3DFlipbook
 				array(
 					'rootFolder' => $this->PLUGIN_DIR_URL,
 					'version' => $this->PLUGIN_VERSION,
-					'options' => $this->flipbook_global
 				)
 			);
+
+			if (!wp_script_is('real3d-flipbook-global', 'registered')) {
+				wp_register_script('real3d-flipbook-global', false); // No source, as it's localized data only
+				wp_enqueue_script('real3d-flipbook-global');
+				wp_localize_script('real3d-flipbook-global', 'flipbookOptions_global', $this->flipbook_global);
+			}
 		}
 	}
 
@@ -121,8 +121,7 @@ class Real3DFlipbook
 				wp_localize_script('real3d-flipbook-posts', 'wp_rest', array(
 					'nonce' => wp_create_nonce('wp_rest')
 				));
-
-				}
+			}
 		}
 
 		if (in_array($hook_suffix, array('edit-tags.php'))) {
@@ -164,8 +163,6 @@ class Real3DFlipbook
 				update_option('r3d_autoload_disabled', true);
 				$this->set_real3dflipbook_options_autoload_no();
 			}
-			wp_redirect(admin_url('admin.php?page=real3d_flipbook_help'));
-			exit;
 		}
 
 		$flipbook_global_options = get_option("real3dflipbook_global");
@@ -520,6 +517,8 @@ class Real3DFlipbook
 
 		$title = $post->post_title;
 
+		$flipbook = null;
+
 		if ("auto-draft" == $status && $title) {
 
 			//clear default draft title
@@ -533,6 +532,7 @@ class Real3DFlipbook
 
 
 			$book = $this->flipbook_global[substr('settings', 0, 1)];
+
 
 			if (isset($_POST['id'])) {
 				$flipbook_id = sanitize_text_field(wp_unslash($_POST['id']));
@@ -561,56 +561,44 @@ class Real3DFlipbook
 						['response' => 400]
 					);
 				}
-			} else {
-				wp_die(
-					esc_html__('Missing flipbook options.', 'real3d-flipbook'),
-					esc_html__('Error', 'real3d-flipbook'),
-					['response' => 400]
-				);
 			}
-
-
-
-			foreach ($flipbook['pages'] as $pageIndex => $page) {
-				if (isset($page['htmlContent'])) {
-					$decodedHtmlContent = urldecode($page['htmlContent']);
-					if (!current_user_can('unfiltered_html')) {
-						$flipbook['pages'][$pageIndex]['htmlContent'] = wp_kses_post($decodedHtmlContent);
-					} else {
-						$flipbook['pages'][$pageIndex]['htmlContent'] = $decodedHtmlContent;
-					}
-				}
-			}
-
-			// function recursiveUrldecode($data)
-			// {
-			// 	if (is_array($data)) {
-			// 		foreach ($data as $key => $value) {
-			// 			$data[$key] = recursiveUrldecode($value);
-			// 		}
-			// 	} elseif (is_string($data)) {
-			// 		$data = urldecode($data);
-			// 	}
-			// 	return $data;
-			// }
-
-			// $flipbook_options = recursiveUrldecode($flipbook_options);
-
-			$oldFlipbook = get_option('real3dflipbook_' . $flipbook_id);
-
-			if ($oldFlipbook && isset($oldFlipbook['notes'])) {
-				$flipbook['notes'] = $oldFlipbook['notes'];
-			}
-
-			$flipbook['name'] = $title;
-			$flipbook['post_id'] = $post_ID;
 
 			update_post_meta($post_ID, 'flipbook_id', $flipbook_id);
 
-			if (false === get_option('real3dflipbook_' . (string)$flipbook_id)) {
-				add_option('real3dflipbook_' . (string)$flipbook_id, $flipbook, '', 'no');
-			} else {
-				update_option('real3dflipbook_' . (string)$flipbook_id, $flipbook);
+			if ($flipbook) {
+
+				if (isset($flipbook['pages'])) {
+
+					foreach ($flipbook['pages'] as $pageIndex => $page) {
+						if (isset($page['htmlContent'])) {
+							$decodedHtmlContent = urldecode($page['htmlContent']);
+							if (!current_user_can('unfiltered_html')) {
+								$flipbook['pages'][$pageIndex]['htmlContent'] = wp_kses_post($decodedHtmlContent);
+							} else {
+								$flipbook['pages'][$pageIndex]['htmlContent'] = $decodedHtmlContent;
+							}
+						}
+					}
+				}
+
+				$oldFlipbook = get_option('real3dflipbook_' . $flipbook_id);
+
+				if ($oldFlipbook && isset($oldFlipbook['notes'])) {
+					$flipbook['notes'] = $oldFlipbook['notes'];
+				}
+
+				$flipbook['name'] = $title;
+				$flipbook['post_id'] = $post_ID;
+				$flipbook['viewMode'] = !$flipbook['webgl'] ? $flipbook['viewMode'] : $flipbook['webgl'];
+				if (!$flipbook['viewMode']) {
+					unset($flipbook['viewMode']);
+				}
+
+				if (false === get_option('real3dflipbook_' . (string)$flipbook_id)) {
+					add_option('real3dflipbook_' . (string)$flipbook_id, $flipbook, '', 'no');
+				} else {
+					update_option('real3dflipbook_' . (string)$flipbook_id, $flipbook);
+				}
 			}
 
 			$real3dflipbooks_ids = get_option('real3dflipbooks_ids');
@@ -631,13 +619,6 @@ class Real3DFlipbook
 		global $post;
 
 		if ('r3d' === $post->post_type) {
-
-			/*
-	         * This is a 'r3d' post
-	         * AND a 'single r3d template' is not found on
-	         * theme or child theme directories, so load it
-	         * from our plugin directory.
-	         */
 			return plugin_dir_path(__FILE__) . 'single-r3d.php';
 		}
 
@@ -703,7 +684,11 @@ class Real3DFlipbook
 				delete_option('real3dflipbook_' . (string)$id);
 			}
 
-			$allposts = get_posts(array('post_type' => 'r3d', 'numberposts' => -1));
+			$allposts = get_posts(array(
+				'post_type'   => 'r3d',
+				'numberposts' => -1,
+				'post_status' => array('any', 'trash')
+			));
 			foreach ($allposts as $eachpost) {
 				wp_delete_post($eachpost->ID, true);
 			}
@@ -743,7 +728,7 @@ class Real3DFlipbook
 		$args = array(
 			'post_type' => 'r3d',
 			'posts_per_page' => -1,
-			'post_status' => 'publish'
+			'post_status' => array('publish', 'draft', 'trash') // Include draft and trash posts
 		);
 
 		$flipbook_posts = get_posts($args);
@@ -758,6 +743,7 @@ class Real3DFlipbook
 					if (empty($book['date'])) {
 						$book['date'] = get_the_date('Y-m-d H:i:s', $post->ID);
 					}
+					$book['post_status'] = get_post_status($post->ID);
 					$flipbooks[$flipbook_id] = $book;
 				}
 			}
@@ -797,40 +783,40 @@ class Real3DFlipbook
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			__('Flipbooks', 'real3d-flipbook'),
-			__('Flipbooks', 'real3d-flipbook'),
+			esc_html__('Flipbooks', 'real3d-flipbook'),
+			esc_html__('Flipbooks', 'real3d-flipbook'),
 			$capability,
 			'edit.php?post_type=r3d'
 		);
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			__('Add new', 'real3d-flipbook'),
-			__('Add new', 'real3d-flipbook'),
+			esc_html__('Add new', 'real3d-flipbook'),
+			esc_html__('Add new', 'real3d-flipbook'),
 			$capability,
 			'post-new.php?post_type=r3d'
 		);
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			__('Categories', 'real3d-flipbook'),
-			__('Categories', 'real3d-flipbook'),
+			esc_html__('Categories', 'real3d-flipbook'),
+			esc_html__('Categories', 'real3d-flipbook'),
 			$capability,
 			'edit-tags.php?taxonomy=r3d_category&post_type=r3d'
 		);
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			__('Authors', 'real3d-flipbook'),
-			__('Authors', 'real3d-flipbook'),
+			esc_html__('Authors', 'real3d-flipbook'),
+			esc_html__('Authors', 'real3d-flipbook'),
 			$capability,
 			'edit-tags.php?taxonomy=r3d_author&post_type=r3d'
 		);
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			__('Import / Export', 'real3d-flipbook'),
-			__('Import / Export', 'real3d-flipbook'),
+			esc_html__('Import / Export', 'real3d-flipbook'),
+			esc_html__('Import / Export', 'real3d-flipbook'),
 			$capability,
 			'real3d_flipbook_import',
 			array($this, "import")
@@ -840,8 +826,8 @@ class Real3DFlipbook
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			__('Settings', 'real3d-flipbook'),
-			__('Settings', 'real3d-flipbook'),
+			esc_html__('Settings', 'real3d-flipbook'),
+			esc_html__('Settings', 'real3d-flipbook'),
 			$capability,
 			'real3d_flipbook_settings',
 			array($this, "settings")
@@ -881,16 +867,7 @@ class Real3DFlipbook
 
 		if (function_exists('register_block_type')) {
 
-			// // Register block, and explicitly define the attributes we accept.
-			register_block_type('r3dfb/embed', array(
-				// 'attributes' => array(
-				// 	'id' => array(
-				// 		'type' => 'string',
-				// 	)
-				// ),
-				// 'render_callback' => 'slidertx_render_callback',
-			));
-
+			register_block_type('r3dfb/embed', array());
 			add_action('enqueue_block_assets', array($this, 'enqueue_block_assets'));
 			add_action('enqueue_block_editor_assets', array($this, 'enqueue_block_editor_assets'));
 		}
@@ -1112,13 +1089,13 @@ class Real3DFlipbook
 	public function add_meta_boxes()
 	{
 
-		add_meta_box('r3d_post_meta_box_shortcode', __('Shortcode', 'real3d-flipbook'), array($this, 'create_meta_box_shortcode'), 'r3d', 'side', 'high');
+		add_meta_box('r3d_post_meta_box_shortcode', esc_html__('Shortcode', 'real3d-flipbook'), array($this, 'create_meta_box_shortcode'), 'r3d', 'side', 'high');
 		
-		add_meta_box('r3d_post_meta_box_help', __('Help', 'real3d-flipbook'), array($this, 'create_meta_box_help'), 'r3d', 'side', 'high');
+		add_meta_box('r3d_post_meta_box_help', esc_html__('Help', 'real3d-flipbook'), array($this, 'create_meta_box_help'), 'r3d', 'side', 'high');
 
 		add_meta_box(
 			'real3d_pro_features',
-			__('Get More Features with Real3D Flipbok PRO!', 'real3d-flipbook'), // Title of the metabox
+			esc_html__('Get More Features with Real3D Flipbok PRO!', 'real3d-flipbook'), // Title of the metabox
 			array($this, 'pro_features_metabox_content'), // Callback function that will echo the content of the metabox
 			'r3d',
 			'normal',
@@ -1205,22 +1182,18 @@ class Real3DFlipbook
 				vertical-align: middle;
 				margin-right: 5px;
 				text-decoration: none;
-				/* Removes underline */
 			}
 
 			a:hover .link-icon {
 				text-decoration: none;
-				/* Keeps the icon from being underlined on hover */
 			}
 
 			.video-icon {
 				color: #FF0000;
-				/* YouTube red color */
 			}
 
 			.help-icon {
 				color: #0073aa;
-				/* WordPress blue color */
 			}
 		</style>
 		<a href="https://youtu.be/1ljFRYr0Kh8" target="_blank">
@@ -1305,8 +1278,6 @@ class Real3DFlipbook
 
 		$bookId = $id . '_' . uniqid();
 
-		$flipbook = r3d_array_merge_deep($this->flipbook_global, $flipbook);
-
 		foreach ($args as $key => $val) {
 			if ($val != -1) {
 
@@ -1370,7 +1341,7 @@ class Real3DFlipbook
 			}
 		}
 
-		if ($flipbook['pdfUrl']) {
+		if (isset($flipbook['pdfUrl']) && $flipbook['pdfUrl']) {
 
 			$pdf_url = esc_url($flipbook['pdfUrl']);
 
@@ -1383,24 +1354,43 @@ class Real3DFlipbook
 		if (!isset($flipbook['date']) && isset($flipbook['post_id']))
 			$flipbook['date'] = get_the_date('Y-m-d', get_post($flipbook['post_id']));
 
-
-
 		if ($args['previewpages'] == -1) {
-			if (!$flipbook['previewMode']) $flipbook['previewPages'] = "";
-			else if ($flipbook['previewMode'] == 'logged_out' && is_user_logged_in()) $flipbook['previewPages'] = "";
+			if (!$this->flipbook_global['previewMode']) $flipbook['previewPages'] = "";
+			else if ($this->flipbook_global['previewMode'] == 'logged_out' && is_user_logged_in()) $flipbook['previewPages'] = "";
 		}
 
-		if ($flipbook['deeplinking']['enabled'] === "true") {
-			if (!($flipbook['deeplinking']['prefix']) && isset($flipbook['post_id'])) {
+		$deeplinking = isset($flipbook['deeplinking']) ? $flipbook['deeplinking'] : $this->flipbook_global['deeplinking'];
+
+		if (($deeplinking['enabled'] ?? null) === "true") {
+			if (empty($deeplinking['prefix'] ?? '') && isset($flipbook['post_id'])) {
 				$post = get_post($flipbook['post_id']);
-				if ($post !== null) {
-					$flipbook['deeplinking']['prefix'] = $post->post_name . '/';
+				if ($post !== null && isset($post->post_name)) {
+					$flipbook['deeplinkingPrefix'] = $post->post_name . '/';
 				}
 			}
 		}
 
-		$output = '<div class="real3dflipbook" id="' . esc_attr($bookId) . '" style="position:absolute;" data-flipbook-options="' . esc_attr(wp_json_encode($flipbook)) . '"></div>';
 
+
+		$output = '<div class="real3dflipbook" id="' . esc_attr($bookId) . '" style="position:absolute;"></div>';
+
+
+
+		$script_handle = 'real3d-flipbook-options-' . esc_js($bookId);
+
+
+		if (!wp_script_is($script_handle, 'registered')) {
+			wp_register_script($script_handle, false); // No source, as it's localized data only
+			wp_enqueue_script($script_handle);
+
+			wp_localize_script($script_handle, 'flipbookOptions_' . esc_js($bookId), $flipbook);
+		}
+
+		if (!wp_script_is('real3d-flipbook-global', 'registered')) {
+			wp_register_script('real3d-flipbook-global', false); // No source, as it's localized data only
+			wp_enqueue_script('real3d-flipbook-global');
+			wp_localize_script('real3d-flipbook-global', 'flipbookOptions_global', $this->flipbook_global);
+		}
 
 		if (!wp_script_is('real3d-flipbook', 'enqueued')) {
 			wp_enqueue_script("real3d-flipbook");
@@ -1418,8 +1408,6 @@ class Real3DFlipbook
 				)
 			);
 		}
-
-		// wp_localize_script('real3d-flipbook-embed', 'real3dflipbook_'.$bookId, array(htmlspecialchars(json_encode($flipbook))));
 
 		if (!wp_style_is('real3d-flipbook-style', 'enqueued')) {
 			wp_enqueue_style("real3d-flipbook-style");
@@ -1495,6 +1483,8 @@ function r3dfb_getDefaults()
 		'responsiveViewRatio' => '1',
 		'cover' => 'true',
 		'backCover' => 'true',
+		'scaleCover' => 'false',
+		'pageCaptions' => 'false',
 		'height' => '400',
 		'responsiveHeight' => 'true',
 		'containerRatio' => '',
@@ -1532,9 +1522,14 @@ function r3dfb_getDefaults()
 		'mobile' => array(
 			'thumbnailsOnStart' => 'false',
 			'contentOnStart' => 'false',
+			'pagesInMemory' => '6',
+			'bitmapResizeHeight' => '',
+			'bitmapResizeQuality' => '',
 			'currentPage' => array(
 				'enabled' => 'false'
 			),
+			'pdfUrl' => ''
+
 		),
 		'lightboxCssClass' => '',
 		'lightboxLink' => '',
@@ -1574,6 +1569,9 @@ function r3dfb_getDefaults()
 		'pageMetalness' => '0',
 		'pageSegmentsW' => '6',
 		'pageSegmentsH' => '1',
+		'pagesInMemory' => '20',
+		'bitmapResizeHeight' => '',
+		'bitmapResizeQuality' => '',
 		'pageMiddleShadowSize' => '4',
 		'pageMiddleShadowColorL' => '#7F7F7F',
 		'pageMiddleShadowColorR' => '#AAAAAA',

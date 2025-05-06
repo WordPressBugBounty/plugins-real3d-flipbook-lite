@@ -590,6 +590,18 @@
   box-shadow: inset 0 4px 4px -4px rgb(0 0 0 / 10%);
 }
 
+.pdf-flipbook .page-editor .copy-page {
+  display: none;
+}
+
+.pdf-flipbook .delete-pages-button {
+  display: none;
+}
+
+.pdf-flipbook .paste-page {
+  display: none;
+}
+
 .page-preview {
   float: left;
   width: calc(100% - 300px);
@@ -629,6 +641,10 @@
 }
 
 #edit-page-title {
+  width: 100%;
+}
+
+#edit-page-caption {
   width: 100%;
 }
 

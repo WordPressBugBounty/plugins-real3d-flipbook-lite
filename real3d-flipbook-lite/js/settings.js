@@ -1,3 +1,4 @@
+"use strict";
 (function ($) {
   $(document).ready(function () {
     $("#real3dflipbook-admin").show();
@@ -795,6 +796,7 @@
   });
 })(jQuery);
 
+
 function r3d_stripslashes(str) {
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
   // +   improved by: Ates Goral (http://magnetiq.com)
@@ -823,3 +825,4 @@ function r3d_stripslashes(str) {
     }
   });
 }
+

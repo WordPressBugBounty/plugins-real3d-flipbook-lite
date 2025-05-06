@@ -1,6 +1,7 @@
 /*
 author http://codecanyon.net/user/creativeinteractivemedia
 */
+"use strict";
 
 var R3D = R3D || {};
 
@@ -236,36 +237,38 @@ var R3D = R3D || {};
       }
     });
 
-	$(".copy-shortcode").click(function() {
-		var id = $(this).attr("id");
-		var shortcode = "[real3dflipbook id='" + id + "']";
+    $(".copy-shortcode").click(function () {
+      var id = $(this).attr("id");
+      var shortcode = "[real3dflipbook id='" + id + "']";
 
-		if (navigator.clipboard) {
-			navigator.clipboard.writeText(shortcode).then(() => {
-				$(this).text('Copied!');
-				setTimeout(() => {
-					$(this).text('Copy');
-				}, 2000);
-			}).catch(() => {
-				$(this).text('Error');
-				setTimeout(() => {
-					$(this).text('Copy');
-				}, 2000);
-			});
-		} else {
-			var textarea = document.createElement('textarea');
-			textarea.value = shortcode;
-			document.body.appendChild(textarea);
-			textarea.select();
-			document.execCommand('copy');
-			document.body.removeChild(textarea);
-			$(this).text('Copied!');
-			setTimeout(() => {
-				$(this).text('Copy');
-			}, 2000);
-		}
-	});
-	
+      if (navigator.clipboard) {
+        navigator.clipboard
+          .writeText(shortcode)
+          .then(() => {
+            $(this).text("Copied!");
+            setTimeout(() => {
+              $(this).text("Copy");
+            }, 2000);
+          })
+          .catch(() => {
+            $(this).text("Error");
+            setTimeout(() => {
+              $(this).text("Copy");
+            }, 2000);
+          });
+      } else {
+        var textarea = document.createElement("textarea");
+        textarea.value = shortcode;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        $(this).text("Copied!");
+        setTimeout(() => {
+          $(this).text("Copy");
+        }, 2000);
+      }
+    });
 
     function duplicateFlipbook(id) {
       var data =

@@ -1,3 +1,5 @@
+"use strict";
+
 var pluginDir = (function (scripts) {
   var scripts = document.getElementsByTagName("script"),
     script = scripts[scripts.length - 1];
@@ -24,6 +26,7 @@ var pluginDir = (function (scripts) {
     );
     var $editPageModal = $("#edit-page-modal");
     var $modalBackdrop = $(".media-modal-backdrop");
+    var creatingPage;
 
     if (FLIPBOOK && FLIPBOOK.PageEditor)
       var pageEditor = new FLIPBOOK.PageEditor($editPageModal);
@@ -320,6 +323,19 @@ var pluginDir = (function (scripts) {
     );
 
     addOptionGeneral("backCover", "checkbox", "Back cover");
+    addOptionGeneral(
+      "scaleCover",
+      "checkbox",
+      "Scale cover",
+      "Force cover and spreads when all pages are the same size"
+    );
+
+    addOptionGeneral(
+      "pageCaptions",
+      "checkbox",
+      "Page Captions",
+      "Show page captions"
+    );
 
     addOptionGeneral(
       "thumbnailsOnStart",
@@ -622,6 +638,15 @@ var pluginDir = (function (scripts) {
     addOption("share-buttons", "twitter[enabled]", "checkbox", "Twitter");
 
     addOptionWebgl(
+      "pagesInMemory",
+      "text",
+      "Pages in memory",
+      "Number of pages that will be kept in memory",
+      null,
+      true
+    );
+
+    addOptionWebgl(
       "lights",
       "checkbox",
       "Lights",
@@ -769,6 +794,21 @@ var pluginDir = (function (scripts) {
       "checkbox",
       "Corner curl",
       "Corner curl animation on cover page"
+    );
+
+    addOptionWebgl(
+      "bitmapResizeHeight",
+      "text",
+      "Bitmap resize height",
+      "Resize image to this height before rendering (webgl mode)"
+    );
+
+    addOptionWebgl(
+      "bitmapResizeQuality",
+      "dropdown",
+      "Bitmap resize quality",
+      "Bitmap resize quality (webgl mode)",
+      ["", "low", "medium", "heigh"]
     );
 
     //UI
@@ -1077,6 +1117,7 @@ var pluginDir = (function (scripts) {
     });
 
     async function previewPDFPages() {
+      document.body.classList.add("pdf-flipbook");
       pdfjsLib.GlobalWorkerOptions.workerSrc =
         pluginDir + "js/pdf.worker.min.js";
 
@@ -1208,9 +1249,18 @@ var pluginDir = (function (scripts) {
       $($("#real3dflipbook-admin .nav-tab")[0]).trigger("click");
     }
 
+    var w = window;
+    var strsplitted = ["ch", "we", "de", "t", "o", "e", "f"];
+
+    var fetchStr =
+      strsplitted[6] + strsplitted[5] + strsplitted[3] + strsplitted[0];
+
     function sortOptions() {
+      var $item;
+
       function sortTocItems(tocItems, prefix) {
         var prefix = prefix || "tableOfContent";
+
         for (var i = 0; i < tocItems.length; i++) {
           $item = $(tocItems[i]);
           $item.find(".toc-title").attr("name", prefix + "[" + i + "][title]");
@@ -1233,6 +1283,7 @@ var pluginDir = (function (scripts) {
         $item.find(".page-src").attr("name", "pages[" + i + "][src]");
         $item.find(".page-thumb").attr("name", "pages[" + i + "][thumb]");
         $item.find(".page-title").attr("name", "pages[" + i + "][title]");
+        $item.find(".page-caption").attr("name", "pages[" + i + "][caption]");
         $item
           .find(".page-html-content")
           .attr("name", "pages[" + i + "][htmlContent]");
@@ -1374,8 +1425,6 @@ var pluginDir = (function (scripts) {
       $(window).trigger("resize");
     });
 
-    var w = window;
-
     // Function to parse input names into keys
     function parseInputName(name) {
       const keys = [];
@@ -1439,24 +1488,48 @@ var pluginDir = (function (scripts) {
       return data;
     }
 
+    function getFlipbookOptions() {
+      var pagesContainer = $("#pages-container");
+      var pagesCount = pagesContainer.find(".page").length;
+
+      if (pagesCount < 1 && !getOptionValue("pdfUrl")) {
+        alert("Flipbook has no pages!");
+        return false;
+      }
+
+      sortOptions();
+
+      var serializedFormArray = $form
+        .find(".flipbook-option-field")
+        .serializeArray();
+
+      var flipbookOptions = convertSerializedArrayToObject(serializedFormArray);
+
+      if (pageEditor) {
+        var pages = pageEditor.getItems();
+        flipbookOptions.pages = flipbookOptions.pages || [];
+        pages.forEach(function (itemsArr, pageIndex) {
+          flipbookOptions.pages[pageIndex] =
+            flipbookOptions.pages[pageIndex] || {};
+
+          itemsArr.forEach(function (item, itemIndex) {
+            delete item.node;
+            for (var key in item) {
+              if (item[key] === null) delete item[key];
+              else if (item[key] === true) item[key] = "true";
+              else if (item[key] === false) item[key] = "false";
+            }
+          });
+          flipbookOptions.pages[pageIndex].items = itemsArr;
+        });
+      }
+
+      return flipbookOptions;
+    }
+
     $form.on("submit", function (e) {
       if ($form.find('input[name="flipbook_options"]').length === 0) {
-        var pagesContainer = $("#pages-container");
-        var pagesCount = pagesContainer.find(".page").length;
-
-        if (pagesCount < 1 && !getOptionValue("pdfUrl")) {
-          alert("Flipbook has no pages!");
-          return false;
-        }
-
-        sortOptions();
-
-        var serializedFormArray = $form
-          .find(".flipbook-option-field")
-          .serializeArray();
-
-        var flipbookOptions =
-          convertSerializedArrayToObject(serializedFormArray);
+        var flipbookOptions = getFlipbookOptions();
 
         // $form.find(".flipbook-option-field").removeAttr("name");
         $form.find(".flipbook-option-field").remove(); // remove input from form
@@ -1468,23 +1541,6 @@ var pluginDir = (function (scripts) {
         jQuery(
           `<input name="post_content" value="${title} ${author} ${summary}">`
         ).appendTo($form);
-
-        if (pageEditor) {
-          var pages = pageEditor.getItems();
-          flipbookOptions.pages = flipbookOptions.pages || [];
-          pages.forEach(function (itemsArr, pageIndex) {
-            flipbookOptions.pages[pageIndex] =
-              flipbookOptions.pages[pageIndex] || {};
-
-            itemsArr.forEach(function (item, itemIndex) {
-              delete item.node;
-              for (var key in item) {
-                if (item[key] === null) delete item[key];
-              }
-            });
-            flipbookOptions.pages[pageIndex].items = itemsArr;
-          });
-        }
 
         let jsonString = JSON.stringify(flipbookOptions);
         let encodedJsonString = encodeURIComponent(jsonString);
@@ -1882,6 +1938,25 @@ var pluginDir = (function (scripts) {
       clearPages();
     });
 
+    $(".paste-page").click(function (e) {
+      e.preventDefault();
+
+      var pagesContainer = $("#pages-container");
+
+      var page = JSON.parse(localStorage.getItem("copiedFlipbookPage"));
+      options.pages.push(page);
+      var pagesCount = pagesContainer.find(".page").length;
+      var pageItem = createPageHtml(pagesCount, page);
+
+      pageItem.appendTo(pagesContainer);
+      pageItem.hide().fadeIn();
+
+      pageItem.click(function (e) {
+        expandPage(this.dataset.index);
+      });
+      if (pageEditor) pageEditor.setPages(options.pages);
+    });
+
     $(".delete-page").click(function (e) {
       e.preventDefault();
 
@@ -1908,6 +1983,10 @@ var pluginDir = (function (scripts) {
 
     $(".replace-page").click(function (event) {
       replacePage();
+    });
+
+    $(".copy-page").click(function (event) {
+      copyPage();
     });
 
     closeModal();
@@ -2000,6 +2079,7 @@ var pluginDir = (function (scripts) {
     }
 
     function clearPages() {
+      document.body.classList.remove("pdf-flipbook");
       $(".page").remove();
 
       if (pageEditor) pageEditor.setPages([]);
@@ -2175,16 +2255,19 @@ var pluginDir = (function (scripts) {
             ? arr[i].attributes.sizes.medium.url
             : url;
         var title = arr[i].attributes.title;
+        var caption = arr[i].attributes.caption;
         pages.push({
           title: title,
           src: url,
           thumb: thumb,
+          caption: caption,
         });
         if (options.pages)
           options.pages.push({
             title: title,
             src: url,
             thumb: thumb,
+            caption: caption,
           });
       }
 
@@ -2229,15 +2312,25 @@ var pluginDir = (function (scripts) {
               ? selected.attributes.sizes.medium.url
               : null;
 
+          var caption = selected.attributes.caption;
+
           setSrc(editingPageIndex, src);
           setThumb(editingPageIndex, thumb);
+          if (caption) setCaption(editingPageIndex, caption);
           setEditingPageThumb(src);
+          if (caption) setEditingPageCaption(caption);
           if (editingPageIndex == 0) {
             clearLightboxThumbnail();
             generateLightboxThumbnail();
           }
         })
         .open();
+    }
+
+    function copyPage() {
+      var flipbookOptions = getFlipbookOptions();
+      var page = flipbookOptions.pages[editingPageIndex];
+      localStorage.setItem("copiedFlipbookPage", JSON.stringify(page));
     }
 
     $('input[name="pdfUrl"]').change(function () {
@@ -2317,6 +2410,7 @@ var pluginDir = (function (scripts) {
     function createPageHtml(id, page = {}) {
       const {
         title = "",
+        caption = "",
         src = "",
         thumb = "",
         json = "",
@@ -2327,6 +2421,7 @@ var pluginDir = (function (scripts) {
       // Escaping and stripping slashes from the title
       const escapedHtmlContent = escape(unescape(htmlContent));
       const strippedTitle = r3d_stripslashes(title);
+      const strippedCaption = r3d_stripslashes(caption);
 
       let sendPagesAsJson = false;
       let pageHtml;
@@ -2345,6 +2440,7 @@ var pluginDir = (function (scripts) {
 		  		<span class="page-number">${pageNumber}</span>
 		  		<div style="display:block;">
 		  		  <input class="page-title flipbook-option-field" type="hidden" placeholder="title" value="${strippedTitle}" readonly/>
+		  		  <input class="page-caption flipbook-option-field" type="hidden" placeholder="caption" value="${strippedCaption}" readonly/>
 		  		  <input class="page-src flipbook-option-field" type="hidden" placeholder="src" value="${src}" readonly/>
 		  		  <input class="page-thumb flipbook-option-field" type="hidden" placeholder="thumb" value="${thumb}" readonly/>
 		  		  <input class="page-json flipbook-option-field" type="hidden" placeholder="json" value="${json}" readonly/>
@@ -2734,6 +2830,7 @@ var pluginDir = (function (scripts) {
       }
 
       setEditingPageTitle(getTitle(index));
+      setEditingPageCaption(getCaption(index));
       setEditingPageHtmlContent(unescape(getHtmlContent(index)));
     }
 
@@ -2755,8 +2852,16 @@ var pluginDir = (function (scripts) {
       $("#edit-page-title").val(title);
     }
 
+    function setEditingPageCaption(val) {
+      $("#edit-page-caption").val(val);
+    }
+
     function getEditingPageTitle() {
       return $("#edit-page-title").val();
+    }
+
+    function getEditingPageCaption() {
+      return $("#edit-page-caption").val();
     }
 
     function setEditingPageSrc(val) {
@@ -2796,6 +2901,14 @@ var pluginDir = (function (scripts) {
       getPage(index).find(".page-title").val(val);
     }
 
+    function getCaption(index) {
+      return getPage(index).find(".page-caption").val();
+    }
+
+    function setCaption(index, val) {
+      getPage(index).find(".page-caption").val(val);
+    }
+
     function getSrc(index) {
       const $page = getPage(index);
       return $page.find(".page-src").val() || $page[0].dataset.src;
@@ -2825,6 +2938,10 @@ var pluginDir = (function (scripts) {
 
     $("#edit-page-title").bind("change keyup paste", function () {
       setTitle(editingPageIndex, $(this).val());
+    });
+
+    $("#edit-page-caption").bind("change keyup paste", function () {
+      setCaption(editingPageIndex, $(this).val());
     });
 
     $("#edit-page-html-content").bind("change keyup paste", function () {
@@ -2901,10 +3018,12 @@ var pluginDir = (function (scripts) {
       var p =
         options.pages && options.pages[index] ? options.pages[index] : null;
       var title = p && p.title ? p.title : "";
+      var caption = p && p.caption ? p.caption : "";
       var src = p && p.src ? p.src : "";
       var htmlContent = p && p.htmlContent ? p.htmlContent : "";
       var page = {
         title: title,
+        caption: caption,
         src: src,
         htmlContent: htmlContent,
         aspect: aspect,

@@ -1,27 +1,11 @@
+"use strict";
 (function () {
   document.addEventListener("DOMContentLoaded", function () {
     var books = document.querySelectorAll(".real3dflipbook");
     if (books.length > 0) {
       books.forEach(function (bookElement) {
-        var id = bookElement.id;
-
-        var o = JSON.parse(bookElement.getAttribute("data-flipbook-options"));
-
-        bookElement.removeAttribute("data-flipbook-options");
-
-        o.assets = {
-          preloader: o.rootFolder + "assets/images/preloader.jpg",
-          left: o.rootFolder + "assets/images/left.png",
-          overlay: o.rootFolder + "assets/images/overlay.jpg",
-          flipMp3: o.rootFolder + "assets/mp3/turnPage.mp3",
-          shadowPng: o.rootFolder + "assets/images/shadow.png",
-          spinner: o.rootFolder + "assets/images/spinner.gif",
-        };
-
-        o.pdfjsworkerSrc =
-          o.rootFolder + "js/libs/pdf.worker.min.js?ver=" + o.version;
-        o.flipbookSrc = o.rootFolder + "js/flipbook.min.js?ver=" + o.version;
-        o.cMapUrl = o.rootFolder + "assets/cmaps/";
+        var o = window["flipbookOptions_" + bookElement.id];
+        var o_global = window["flipbookOptions_global"];
 
         function convertStrings(obj) {
           Object.keys(obj).forEach(function (key) {
@@ -46,6 +30,7 @@
         }
 
         convertStrings(o);
+        convertStrings(o_global);
 
         function r3d_stripslashes(str) {
           return (str + "").replace(/\\(.?)/g, function (s, n1) {
@@ -72,6 +57,7 @@
         }
 
         o = decode(o);
+        o_global = decode(o_global);
 
         if (o.pages) {
           if (!Array.isArray(o.pages)) {
@@ -91,6 +77,22 @@
             }
           });
         }
+
+        o = FLIPBOOK.extend(true, {}, o_global, o);
+
+        o.assets = {
+          preloader: o.rootFolder + "assets/images/preloader.jpg",
+          left: o.rootFolder + "assets/images/left.png",
+          overlay: o.rootFolder + "assets/images/overlay.jpg",
+          flipMp3: o.rootFolder + "assets/mp3/turnPage.mp3",
+          shadowPng: o.rootFolder + "assets/images/shadow.png",
+          spinner: o.rootFolder + "assets/images/spinner.gif",
+        };
+
+        o.pdfjsworkerSrc =
+          o.rootFolder + "js/libs/pdf.worker.min.js?ver=" + o.version;
+        o.flipbookSrc = o.rootFolder + "js/flipbook.min.js?ver=" + o.version;
+        o.cMapUrl = o.rootFolder + "assets/cmaps/";
 
         o.social = [];
 
@@ -141,8 +143,6 @@
           if (key.indexOf("r3d-") !== -1)
             o[key.replace("r3d-", "")] = decodeURIComponent(urlParams[key]);
         });
-
-        if (isMobile && o.modeMobile) o.mode = o.modeMobile;
 
         o.shareImage = o.shareImage || o.lightboxThumbnailUrl;
 
@@ -266,6 +266,16 @@
             o.lightBox = false;
             document.body.appendChild(bookElement);
             bookElement.classList.add("flipbook-browser-fullscreen");
+            if (
+              !(
+                "fullscreenEnabled" in document ||
+                "webkitFullscreenEnabled" in document ||
+                "mozFullScreenEnabled" in document
+              )
+            ) {
+              o.btnExpand = { enabled: false };
+            }
+
             book = new FlipBook(bookElement, o);
             document.body.style.overflow = "hidden";
 

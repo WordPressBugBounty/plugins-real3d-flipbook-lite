@@ -1,3 +1,4 @@
+"use strict";
 (function ($) {
   $(document).ready(function () {
     var $btnInsert = $("#r3d-insert-btn");
