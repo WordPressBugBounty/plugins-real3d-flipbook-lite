@@ -12,7 +12,7 @@
       Swal.fire({
         title: "Upgrade to PRO",
         html:
-          "High resolution PDF, PDF links, Automatic Table of Contents form PDF, more Share options, Download, View PDF, Bookmark, Autoplay, Customize toolbar, Customize UI, PDF text search, Global settings and more<br/>" +
+          "PDF links, PDF text search, Interactive pages, Higher zoom level, Global settings, Bookmark, Autoplay, Customize toolbar, Customize UI and more<br/>" +
           '<a href="https://real3dflipbook.com?source=wp_lite_buy_pro_popup" target="_blank">View Real3D Flipbook PRO Demo</a>',
         icon: "warning",
         showCancelButton: true,

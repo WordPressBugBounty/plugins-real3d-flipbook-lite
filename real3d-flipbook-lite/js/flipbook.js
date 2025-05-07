@@ -1,9 +1,3 @@
-/*
- * Real3D FlipBook [https://real3dflipbook.com]
- * @author creativeinteractivemedia [https://codecanyon.net/user/creativeinteractivemedia/portfolio]
- * @version 4.9.6
- * @date 2025-05-06
- */
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
 FLIPBOOK.version = '4.9.6';
@@ -681,8 +675,8 @@ FLIPBOOK.Main = function (options, elem) {
 
     
     var c = { a: 5, b: 7, c: 2 };
-        o.pageTextureSize = Math.pow(c.a * c.b - 1, c.c);
-        o.pageTextureSizeSmall = Math.pow(c.a * c.b - 1, c.c);
+        o.pageTextureSize = Math.pow(c.a * c.b + c.a, c.c);
+        o.pageTextureSizeSmall = Math.pow(c.a * c.b + c.a, c.c);
         o.zoomSize = Math.pow(c.b * c.a + c.a, c.c);
         
 
@@ -1069,7 +1063,7 @@ FLIPBOOK.Main = function (options, elem) {
         }
     };
 
-    this.on('pdfinit', function () {
+    this.on('pdfinit', async function () {
         o.tableOfContent = self.pdfService.outline || o.tableOfContent;
         o.doublePage = self.pdfService.double;
         if (o.scaleCover) {
@@ -1120,6 +1114,16 @@ FLIPBOOK.Main = function (options, elem) {
         o.pw = o.pageWidth;
         o.ph = o.pageHeight;
         o.zoomSize = o.zoomSize || o.pageTextureSize;
+
+        var tocArray = o.tableOfContent;
+        if (o.btnToc.enabled && (!tocArray || !tocArray.length)) {
+            var outline = await self.pdfService.loadOutline();
+            if (outline) {
+                o.tableOfContent = outline;
+            } else {
+                o.btnToc.enabled = false;
+            }
+        }
         self.start();
     });
 
@@ -1694,84 +1698,53 @@ FLIPBOOK.Main.prototype = {
         }
     },
 
-    initJpg: function () {
-        var self = this;
+    initJpg: async function () {
+        const o = this.options;
+        let pages = o.pages || [];
 
-        if (this.options.previewPages) {
-            this.options.pages = this.options.pages.splice(0, this.options.previewPages);
+        if (o.previewPages) pages = pages.slice(0, o.previewPages);
+        if (o.pageRangeStart || o.pageRangeEnd) {
+            const start = Math.max((o.pageRangeStart || 1) - 1, 0);
+            const end = Math.min(o.pageRangeEnd || pages.length, pages.length);
+            pages = pages.slice(start, end);
         }
+        o.pages = pages;
+        const count = pages.length;
+        const offset = o.cover ? 0 : 1;
 
-        if (this.options.pageRangeStart || this.options.pageRangeEnd) {
-            const start = this.options.pageRangeStart || 1;
-            const end = this.options.pageRangeEnd || this.options.pages.length;
-            this.options.pages = this.options.pages.splice(start - 1, end - start + 1);
-        }
+        const loadPage = (idx) => new Promise((resolve) => this.loadPage(idx + offset, o.pageTextureSize, resolve));
 
-        var firstPageIndex = 0;
-        var secondPageIndex = 1;
-        var lastPageIndex = this.options.pages.length - 1;
+        if (!o.hasHtmlContent && !pages.some((p) => p.json)) o.btnSearch.enabled = false;
+        if (!o.tableOfContent.length && !pages.some((p) => p.title)) o.btnToc.enabled = false;
 
-        var firstPageToLoad = 0;
-        var secondPageToLoad = 1;
-        var lastPageToLoad = this.options.pages.length - 1;
-        if (!this.options.cover) {
-            firstPageToLoad++;
-            secondPageToLoad++;
-            lastPageToLoad++;
-        }
+        const getDims = ({ width, height, img }) => [width || img.width, height || img.height];
 
-        this.loadPage(firstPageToLoad, this.options.pageTextureSize, function () {
-            self.setLoadingProgress(0.5);
-
-            var o = self.options;
-            var pw = o.pages[0].width || o.pages[0].img.width;
-            var ph = o.pages[0].height || o.pages[0].img.height;
-            o.pw = pw;
-            o.ph = ph;
-            o.pageWidth = pw;
-            o.pageHeight = ph;
-            o.zoomSize = o.zoomSize || ph;
-            if (o.pages.length == 1) {
-                self.start();
-            } else {
-                self.loadPage(secondPageToLoad, o.pageTextureSize, function () {
-                    var pw2 = o.pages[secondPageIndex].width || o.pages[secondPageIndex].img.width;
-                    var ph2 = o.pages[secondPageIndex].height || o.pages[secondPageIndex].img.height;
-
-                    o.pageWidth2 = pw2;
-                    o.pageHeight2 = ph2;
-
-                    var r1 = pw / ph;
-                    var r2 = pw2 / ph2;
-
-                    o.doublePage = r2 / r1 > 1.5;
-
-                    if (o.scaleCover) {
-                        o.doublePage = true;
-                        o.responsiveView = false;
-                    }
-
-                    if (!o.doublePage) {
-                        o.backCover = o.pages.length % 2 == 0;
-                        if (!o.cover) {
-                            o.backCover = !o.backCover;
-                        }
-                    }
-
-                    if (o.pages.length > 2 && o.doublePage) {
-                        self.loadPage(lastPageToLoad, o.pageTextureSize, function () {
-                            var pwLast = o.pages[lastPageIndex].width || o.pages[lastPageIndex].img.width;
-                            var phLast = o.pages[lastPageIndex].height || o.pages[lastPageIndex].img.height;
-                            var rLast = pwLast / phLast;
-                            o.backCover = r2 / rLast > 1.5;
-                            self.start();
-                        });
-                    } else {
-                        self.start();
-                    }
-                });
-            }
+        this.setLoadingProgress(0.5);
+        await loadPage(0);
+        const [pw, ph] = getDims(pages[0]);
+        Object.assign(o, {
+            pw,
+            ph,
+            pageWidth: pw,
+            pageHeight: ph,
+            zoomSize: o.zoomSize || ph,
         });
+        if (count === 1) return this.start();
+
+        await loadPage(1);
+        const [pw2, ph2] = getDims(pages[1]);
+        Object.assign(o, { pageWidth2: pw2, pageHeight2: ph2 });
+        const ratio = pw / ph;
+        o.doublePage = o.scaleCover || pw2 / ph2 / ratio > 1.5;
+        if (!o.doublePage) o.backCover = (count % 2 === 0) === !!o.cover;
+
+        if (count > 2 && o.doublePage) {
+            await loadPage(count - 1);
+            const [pwL, phL] = getDims(pages[count - 1]);
+            o.backCover = pw2 / ph2 / (pwL / phL) > 1.5;
+        }
+
+        this.start();
     },
 
     initPdf: async function () {
@@ -1817,15 +1790,11 @@ FLIPBOOK.Main.prototype = {
 
     pauseGlobalSound: function () {
         this.toggleSound(false);
-        // if (this.backgroundMusic) {
-        //     this.backgroundMusic.pause();
         this.soundPaused = true;
-        // }
     },
 
     resumeGlobalSound: function () {
         if (this.soundPaused) this.toggleSound(true);
-        // if (this.backgroundMusic && this.soundPaused) this.backgroundMusic.play();
     },
 
     addPageNames: function () {
@@ -2400,20 +2369,6 @@ FLIPBOOK.Main.prototype = {
         this.tocCreated = false;
 
         if (!this.options.pdfMode) {
-            var hasJSON = this.options.pages ? this.options.pages.some((page) => !!page.json) : false;
-            if (!this.options.hasHtmlContent && !hasJSON) {
-                this.options.btnSearch.enabled = false;
-            }
-            if (!this.options.tableOfContent.length) {
-                var hasPageTitles = this.options.pages ? this.options.pages.some((page) => !!page.title) : false;
-                if (!hasPageTitles) {
-                    this.options.btnToc.enabled = false;
-                }
-            }
-        } else {
-            var tocArray = this.options.tableOfContent;
-            if (this.options.btnToc.enabled && (!tocArray || !tocArray.length)) {
-                }
         }
 
         this.createMenu();
@@ -2985,7 +2940,18 @@ FLIPBOOK.Main.prototype = {
             list: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M24 56c0-13.3 10.7-24 24-24H80c13.3 0 24 10.7 24 24V176h16c13.3 0 24 10.7 24 24s-10.7 24-24 24H40c-13.3 0-24-10.7-24-24s10.7-24 24-24H56V80H48C34.7 80 24 69.3 24 56zM86.7 341.2c-6.5-7.4-18.3-6.9-24 1.2L51.5 357.9c-7.7 10.8-22.7 13.3-33.5 5.6s-13.3-22.7-5.6-33.5l11.1-15.6c23.7-33.2 72.3-35.6 99.2-4.9c21.3 24.4 20.8 60.9-1.1 84.7L86.8 432H120c13.3 0 24 10.7 24 24s-10.7 24-24 24H32c-9.5 0-18.2-5.6-22-14.4s-2.1-18.9 4.3-25.9l72-78c5.3-5.8 5.4-14.6 .3-20.5zM224 64H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/></svg>',
             pdf: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M64 464l48 0 0 48-48 0c-35.3 0-64-28.7-64-64L0 64C0 28.7 28.7 0 64 0L229.5 0c17 0 33.3 6.7 45.3 18.7l90.5 90.5c12 12 18.7 28.3 18.7 45.3L384 304l-48 0 0-144-80 0c-17.7 0-32-14.3-32-32l0-80L64 48c-8.8 0-16 7.2-16 16l0 384c0 8.8 7.2 16 16 16zM176 352l32 0c30.9 0 56 25.1 56 56s-25.1 56-56 56l-16 0 0 32c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-48 0-80c0-8.8 7.2-16 16-16zm32 80c13.3 0 24-10.7 24-24s-10.7-24-24-24l-16 0 0 48 16 0zm96-80l32 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-32 0c-8.8 0-16-7.2-16-16l0-128c0-8.8 7.2-16 16-16zm32 128c8.8 0 16-7.2 16-16l0-64c0-8.8-7.2-16-16-16l-16 0 0 96 16 0zm80-112c0-8.8 7.2-16 16-16l48 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 32 32 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 48c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-64 0-64z"/></svg>',
             tools: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 128 512"><path d="M64 360a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm0-160a56 56 0 1 0 0 112 56 56 0 1 0 0-112zM120 96A56 56 0 1 0 8 96a56 56 0 1 0 112 0z"/></svg>',
-            };
+            linkedin:
+                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"/></svg>',
+            whatsapp:
+                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>',
+            pinterest:
+                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><path d="M204 6.5C101.4 6.5 0 74.9 0 185.6 0 256 39.6 296 63.6 296c9.9 0 15.6-27.6 15.6-35.4 0-9.3-23.7-29.1-23.7-67.8 0-80.4 61.2-137.4 140.4-137.4 68.1 0 118.5 38.7 118.5 109.8 0 53.1-21.3 152.7-90.3 152.7-24.9 0-46.2-18-46.2-43.8 0-37.8 26.4-74.4 26.4-113.4 0-66.2-93.9-54.2-93.9 25.8 0 16.8 2.1 35.4 9.6 50.7-13.8 59.4-42 147.9-42 209.1 0 18.9 2.7 37.5 4.5 56.4 3.4 3.8 1.7 3.4 6.9 1.5 50.4-69 48.6-82.5 71.4-172.8 12.3 23.4 44.1 36 69.3 36 106.2 0 153.9-103.5 153.9-196.8C384 71.3 298.2 6.5 204 6.5z"/></svg>',
+            email: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M64 112c-8.8 0-16 7.2-16 16v22.1L220.5 291.7c20.7 17 50.4 17 71.1 0L464 150.1V128c0-8.8-7.2-16-16-16H64zM48 212.2V384c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V212.2L322 328.8c-38.4 31.5-93.7 31.5-132 0L48 212.2zM0 128C0 92.7 28.7 64 64 64H448c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128z"/></svg>',
+            digg: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M81.7 172.3H0v174.4h132.7V96h-51v76.3zm0 133.4H50.9v-92.3h30.8v92.3zm297.2-133.4v174.4h81.8v28.5h-81.8V416H512V172.3H378.9zm81.8 133.4h-30.8v-92.3h30.8v92.3zm-235.6 41h82.1v28.5h-82.1V416h133.3V172.3H225.1v174.4zm51.2-133.3h30.8v92.3h-30.8v-92.3zM153.3 96h51.3v51h-51.3V96zm0 76.3h51.3v174.4h-51.3V172.3z"/></svg>',
+            reddit: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M440.3 203.5c-15 0-28.2 6.2-37.9 15.9-35.7-24.7-83.8-40.6-137.1-42.3L293 52.3l88.2 19.8c0 21.6 17.6 39.2 39.2 39.2 22 0 39.7-18.1 39.7-39.7s-17.6-39.7-39.7-39.7c-15.4 0-28.7 9.3-35.3 22l-97.4-21.6c-4.9-1.3-9.7 2.2-11 7.1L246.3 177c-52.9 2.2-100.5 18.1-136.3 42.8-9.7-10.1-23.4-16.3-38.4-16.3-55.6 0-73.8 74.6-22.9 100.1-1.8 7.9-2.6 16.3-2.6 24.7 0 83.8 94.4 151.7 210.3 151.7 116.4 0 210.8-67.9 210.8-151.7 0-8.4-.9-17.2-3.1-25.1 49.9-25.6 31.5-99.7-23.8-99.7zM129.4 308.9c0-22 17.6-39.7 39.7-39.7 21.6 0 39.2 17.6 39.2 39.7 0 21.6-17.6 39.2-39.2 39.2-22 .1-39.7-17.6-39.7-39.2zm214.3 93.5c-36.4 36.4-139.1 36.4-175.5 0-4-3.5-4-9.7 0-13.7 3.5-3.5 9.7-3.5 13.2 0 27.8 28.5 120 29 149 0 3.5-3.5 9.7-3.5 13.2 0 4.1 4 4.1 10.2.1 13.7zm-.8-54.2c-21.6 0-39.2-17.6-39.2-39.2 0-22 17.6-39.7 39.2-39.7 22 0 39.7 17.6 39.7 39.7-.1 21.5-17.7 39.2-39.7 39.2z"/></svg>',
+            copyLink:
+                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 640 512"><path d="M579.8 267.7c56.5-56.5 56.5-148 0-204.5c-50-50-128.8-56.5-186.3-15.4l-1.6 1.1c-14.4 10.3-17.7 30.3-7.4 44.6s30.3 17.7 44.6 7.4l1.6-1.1c32.1-22.9 76-19.3 103.8 8.6c31.5 31.5 31.5 82.5 0 114L422.3 334.8c-31.5 31.5-82.5 31.5-114 0c-27.9-27.9-31.5-71.8-8.6-103.8l1.1-1.6c10.3-14.4 6.9-34.4-7.4-44.6s-34.4-6.9-44.6 7.4l-1.1 1.6C206.5 251.2 213 330 263 380c56.5 56.5 148 56.5 204.5 0L579.8 267.7zM60.2 244.3c-56.5 56.5-56.5 148 0 204.5c50 50 128.8 56.5 186.3 15.4l1.6-1.1c14.4-10.3 17.7-30.3 7.4-44.6s-30.3-17.7-44.6-7.4l-1.6 1.1c-32.1 22.9-76 19.3-103.8-8.6C74 372 74 321 105.5 289.5L217.7 177.2c31.5-31.5 82.5-31.5 114 0c27.9 27.9 31.5 71.8 8.6 103.9l-1.1 1.6c-10.3 14.4-6.9 34.4 7.4 44.6s34.4 6.9 44.6-7.4l1.1-1.6C433.5 260.8 427 182 377 132c-56.5-56.5-148-56.5-204.5 0L60.2 244.3z"/></svg>',
+        };
 
         var container = document.createElement('div');
         container.innerHTML = icons[name];
@@ -4388,7 +4354,17 @@ FLIPBOOK.Main.prototype = {
             });
 
             var o = this.options;
-            var networks = ['facebook', 'twitter'];
+            var networks = [
+                'facebook',
+                'twitter',
+                'pinterest',
+                'linkedin',
+                'whatsapp',
+                'digg',
+                'reddit',
+                'email',
+                'copyLink',
+            ];
 
             var left = window.screen.width / 2 - 300;
             var top = window.screen.height / 2 - 300;

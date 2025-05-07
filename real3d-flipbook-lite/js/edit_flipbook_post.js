@@ -637,6 +637,18 @@ var pluginDir = (function (scripts) {
 
     addOption("share-buttons", "twitter[enabled]", "checkbox", "Twitter");
 
+    addOption("share-buttons", "pinterest[enabled]", "checkbox", "Pinterest");
+
+    addOption("share-buttons", "email[enabled]", "checkbox", "Email");
+
+    addOption("share-buttons", "reddit[enabled]", "checkbox", "Reddit");
+
+    addOption("share-buttons", "digg[enabled]", "checkbox", "Digg");
+
+    addOption("share-buttons", "linkedin[enabled]", "checkbox", "LinkedIn");
+
+    addOption("share-buttons", "whatsapp[enabled]", "checkbox", "Whatsapp");
+
     addOptionWebgl(
       "pagesInMemory",
       "text",
@@ -1062,7 +1074,7 @@ var pluginDir = (function (scripts) {
       Swal.fire({
         title: "Upgrade to PRO",
         html:
-          "High resolution PDF, PDF links, Automatic Table of Contents form PDF, more Share options, Download, View PDF, Bookmark, Autoplay, Customize toolbar, Customize UI, PDF text search, Global settings and more<br/>" +
+          "PDF links, PDF text search, Interactive pages, Higher zoom level, Global settings, Bookmark, Autoplay, Customize toolbar, Customize UI and more<br/>" +
           '<a href="https://real3dflipbook.com?source=wp_lite_buy_pro_popup" target="_blank">View Real3D Flipbook PRO Demo</a>',
         icon: "warning",
         showCancelButton: true,

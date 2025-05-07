@@ -1,9 +1,3 @@
-/*
- * Real3D FlipBook [https://real3dflipbook.com]
- * @author creativeinteractivemedia [https://codecanyon.net/user/creativeinteractivemedia/portfolio]
- * @version 4.9.6
- * @date 2025-05-06
- */
 /*! iScroll v5.2.0-snapshot ~ (c) 2008-2017 Matteo Spinelli ~ http://cubiq.org/license */
 (function (window, document, Math) {
     var rAF =

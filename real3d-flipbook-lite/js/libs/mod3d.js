@@ -1,9 +1,3 @@
-/*
- * Real3D FlipBook [https://real3dflipbook.com]
- * @author creativeinteractivemedia [https://codecanyon.net/user/creativeinteractivemedia/portfolio]
- * @version 4.9.6
- * @date 2025-05-06
- */
 /**
 *   MOD3 3D Modifier Library for JavaScript
 *   port of AS3DMod ActionScript3 library (http://code.google.com/p/as3dmod/)

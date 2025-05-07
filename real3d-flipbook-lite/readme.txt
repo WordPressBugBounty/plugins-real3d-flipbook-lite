@@ -4,7 +4,7 @@ Donate link: https://codecanyon.net/item/real3d-flipbook-wordpress-plugin/694258
 Tags: flipbook, pdf flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 4.9.6
+Stable tag: 4.9.7
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -33,6 +33,13 @@ Transform your PDFs and images into stunning, interactive 3D flipbooks directly 
 
 - **SEO Optimized**
   - Built with SEO best practices to help your flipbooks rank higher in search results and attract more organic traffic.
+
+- **High Performance**
+  - Optimized page loading and rendering so it works flawless on all devices
+
+- **Most Feature Rich Free Flipbook Plugin**
+- Lightbox flipbook, Auto generated flipbook thumbnail form PDF, Auto generated flipbook post (permalink), Flipbook categories, Enable / disable any toolbar button, Zoom in to 100% page resolution, Share on all social media, Import / Export flipbooks as JSON and much more
+
 
 ### **Live Demo & Documentation**
 
@@ -388,6 +395,30 @@ Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 * Improvement: Table of Contents styling
 * Fix: Lightbox start page in Right to left mode
 * Fix: Last page PDF flipbook
+
+= 4.9.6 =
+* Fix: Pages cut off in view modes "3d" and "2d"
+* Fix: Logo image covering the book
+* Fix: Toggle fullscreen with ESC
+* Fix: Added missing translations for search results
+* Fix: Preview pages bug
+* Fix: Zoom Pan in mode webgl
+* Fix: Text rendering on RTL websites
+* New: Share copy link
+* New: Scale cover option for "webgl" mode - make double with cover flipbook from pages that are all same size 
+* New: Page caption - if page has caption, the icon for viewing the caption on hover will be displayed on the page 
+* New: Filter flipbooks by category on the Flipbooks page
+* New: Flipbook automatically fits to width or height based on single page or double page view
+* Improvement: Optimized shortcode rendering
+* Improvement: Optimized saving of flipbook options
+* Fix: Thumbail size in grid view
+* Fix: Prevent mouse zoom when flipbook is in iframe and not fullscreen
+* Fix: Lightbox start page
+
+= 4.9.7 =
+* Improvement: Higher resolution pages
+* New: Table of Contents from PDF outline
+* New: Share on Pinterest, LinkedIn, WhatsApp, Digg, Reddit, Email, Copy link
 
 == Upgrade to PRO for More Features ==
 Unlock advanced features like PDF hyperlinks, text search, custom toolbar configurations, and much more. Enhance your content presentation with [Real3D FlipBook PRO](https://real3dflipbook.com).
