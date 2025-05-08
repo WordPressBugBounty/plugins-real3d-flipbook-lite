@@ -204,7 +204,7 @@ msgstr ""
 
 #: includes/edit-flipbook-post.php:176
 #: includes/settings.php:170
-msgid "Side navigation buttons"
+msgid "Arrows"
 msgstr ""
 
 #: includes/edit-flipbook-post.php:177

@@ -1024,10 +1024,10 @@ FLIPBOOK.Page3.prototype = {
             o.main.loadPage(index, size, function (page) {
                 if (page && page.image) {
                     var img = page.image[size] || page.image;
-
+                    var page = o.pages[index];
                     if (
-                        (isFront && self.options.pages[index].side == 'right') ||
-                        (self.options.rightToLeft && isFront && self.options.pages[index].side == 'left')
+                        (isFront && page && page.side == 'right') ||
+                        (o.rightToLeft && isFront && page && page.side == 'left')
                     ) {
                         if (!img.clone) {
                             img.clone = new Image();

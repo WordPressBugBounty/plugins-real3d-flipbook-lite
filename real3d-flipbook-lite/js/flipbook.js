@@ -1583,12 +1583,13 @@ FLIPBOOK.Main.prototype = {
             this.setHash(ri);
         }
 
-        if (rtl) {
-            this.enableNext(ri > 0);
+        var firstRi = this.options.cover ? 0 : 2;
 
+        if (rtl) {
+            this.enableNext(ri > firstRi);
             this.enablePrev(this.Book.canFlipPrev() || rightIndex < total - 1);
         } else {
-            this.enablePrev(ri > 0);
+            this.enablePrev(ri > firstRi);
             this.enableNext(this.Book.canFlipNext() || rightIndex < total - 1);
         }
 
@@ -4029,6 +4030,7 @@ FLIPBOOK.Main.prototype = {
         },
 
     enablePrev: function (val) {
+        if (this.prevEnabled == val || !this.btnPrev) return;
         this.enableButton(this.btnPrev, val);
         this.enableButton(this.btnFirst, val);
         this.prevEnabled = val;
@@ -4036,6 +4038,7 @@ FLIPBOOK.Main.prototype = {
     },
 
     enableNext: function (val) {
+        if (this.nextEnabled == val || !this.btnNext) return;
         this.enableButton(this.btnNext, val);
         this.enableButton(this.btnLast, val);
         this.nextEnabled = val;
@@ -4746,7 +4749,8 @@ FLIPBOOK.Book.prototype = {
     },
 
     canFlipPrev: function () {
-        if (this.flippedleft > 0) {
+        const first = this.options.cover ? 0 : 1;
+        if (this.flippedleft > first) {
             if (this.view == 1 && this.isFocusedRight && this.isFocusedRight()) {
                 return true;
             } else if (this.flippedleft == 1 && this.options.rightToLeft && !this.options.backCover) {

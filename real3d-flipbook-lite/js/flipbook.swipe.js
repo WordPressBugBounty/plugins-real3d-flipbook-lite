@@ -1127,6 +1127,8 @@ FLIPBOOK.PageSwipe.prototype = {
         var self = this;
 
         var index = this.options.rightToLeft ? this.options.numPages - this.index - 1 : this.index;
+        var o = this.options;
+        var p = o.pages[index];
 
         this.options.main.loadPage(index, size, function (page) {
             page = page || {};
@@ -1135,10 +1137,7 @@ FLIPBOOK.PageSwipe.prototype = {
                 var img = page.image[size] || page.image;
                 img.classList.add('page-carousel-img');
 
-                if (
-                    self.index % 2 == 0 &&
-                    (self.options.pages[index].side == 'left' || self.options.pages[index].side == 'right')
-                ) {
+                if (self.index % 2 == 0 && ((p && p.side == 'left') || (p && p.side == 'right'))) {
                     if (!img.clone) {
                         img.clone = new Image();
                         img.clone.src = img.src;

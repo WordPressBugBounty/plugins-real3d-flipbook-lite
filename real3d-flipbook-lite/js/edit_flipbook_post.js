@@ -972,26 +972,26 @@ var pluginDir = (function (scripts) {
       "Show also the arrows in the menu"
     );
 
-    addOption("side-buttons", "sideBtnColor", "color", "Color");
+    addOption("side-buttons", "arrowColor", "color", "Color");
 
-    addOption("side-buttons", "sideBtnColorHover", "color", "Hover color");
+    addOption("side-buttons", "arrowColorHover", "color", "Hover color");
 
-    addOption("side-buttons", "sideBtnBackground", "color", "Background color");
+    addOption("side-buttons", "arrowBackground", "color", "Background color");
 
     addOption(
       "side-buttons",
-      "sideBtnBackgroundHover",
+      "arrowBackgroundHover",
       "color",
       "Background hover color"
     );
 
-    addOption("side-buttons", "sideBtnRadius", "text", "Radius", "px");
+    addOption("side-buttons", "arrowRadius", "text", "Radius", "px");
 
-    addOption("side-buttons", "sideBtnMargin", "text", "Margin", "px");
+    addOption("side-buttons", "arrowMargin", "text", "Margin", "px");
 
     addOption(
       "side-buttons",
-      "sideBtnSize",
+      "arrowSize",
       "text",
       "Size",
       "Side buttons margin size, between 8 and 50"
@@ -999,37 +999,21 @@ var pluginDir = (function (scripts) {
 
     addOption(
       "side-buttons",
-      "sideBtnPaddingV",
+      "arrowPadding",
       "text",
-      "Padding vertical",
-      "Side buttons padding vertical, between 0 and 10"
+      "Padding",
+      "Side buttons padding, between 0 and 10"
     );
 
     addOption(
       "side-buttons",
-      "sideBtnPaddingH",
-      "text",
-      "Padding horizontal",
-      "Side buttons padding horizontal, between 0 and 10"
-    );
-
-    addOption(
-      "side-buttons",
-      "sideBtnShadow",
-      "text",
-      "Box shadow",
-      "custom CSS"
-    );
-
-    addOption(
-      "side-buttons",
-      "sideBtnTextShadow",
+      "arrowTextShadow",
       "text",
       "Text shadow",
       "custom CSS"
     );
 
-    addOption("side-buttons", "sideBtnBorder", "text", "Border", "custom CSS");
+    addOption("side-buttons", "arrowBorder", "text", "Border", "custom CSS");
 
     addOption(
       "current-page",

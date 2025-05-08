@@ -491,7 +491,7 @@ msgid "Close lightbox button"
 msgstr "Lightbox kapatma düğmesi"
 
 #: includes/settings.php:141
-msgid "Side navigation buttons"
+msgid "Arrows"
 msgstr "Kenar gezinme düğmeleri"
 
 #: includes/settings.php:140

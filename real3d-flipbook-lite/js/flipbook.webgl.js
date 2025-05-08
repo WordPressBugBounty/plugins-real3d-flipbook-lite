@@ -1197,7 +1197,7 @@ var FLIPBOOK = FLIPBOOK || {};
         ctx2.fillStyle = grd2;
         ctx2.fillRect(0, 0, 64, 64);
         var t2 = new THREE.CanvasTexture(c2);
-        var d = e.s || '';
+        var d = (typeof e.s === 'string' && e.s) || '';
         t2.needsUpdate = true;
         self.specularF = t2;
 
