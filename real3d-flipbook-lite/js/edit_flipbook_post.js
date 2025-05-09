@@ -2021,7 +2021,7 @@ var pluginDir = (function (scripts) {
 
             $.ajax({
               type: "POST",
-              url: "admin-ajax.php?page=real3d_flipbook_admin",
+              url: ajaxurl,
               data: formData,
               processData: false,
               contentType: false,

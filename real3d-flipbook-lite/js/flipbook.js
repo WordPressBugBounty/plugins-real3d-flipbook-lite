@@ -675,9 +675,9 @@ FLIPBOOK.Main = function (options, elem) {
 
     
     var c = { a: 5, b: 7, c: 2 };
-        o.pageTextureSize = Math.pow(c.a * c.b + c.a, c.c);
-        o.pageTextureSizeSmall = Math.pow(c.a * c.b + c.a, c.c);
-        o.zoomSize = Math.pow(c.b * c.a + c.a, c.c);
+        o.pageTextureSize = Math.pow(c.a * c.b + c.c, c.c);
+        o.pageTextureSizeSmall = Math.pow(c.a * c.b + c.c, c.c);
+        o.zoomSize = Math.pow(c.b * c.a + c.c, c.c);
         
 
     if (o.viewMode == '3dSinglePage') {

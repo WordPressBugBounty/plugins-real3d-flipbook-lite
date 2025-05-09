@@ -4,15 +4,17 @@ Donate link: https://codecanyon.net/item/real3d-flipbook-wordpress-plugin/694258
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 4.9.8
+Stable tag: 4.9.9
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-Embed PDF inside your website. Display your PDFs and images as stunning, interactive 3D flipbooks directly within WordPress.
+Embed PDF files easily anywhere on your website. Display your PDFs and images as stunning, interactive 3D flipbooks directly within WordPress.
 
 == Description ==
 
 **Real 3D Flipbook** is the ultimate **3D Flipbook and PDF Viewer Plugin for WordPress** that converts your PDFs and images into interactive, realistic 3D flipbooks and viewers. Enhance your website's user experience with lifelike page-turning effects that work seamlessly on all devices and browsers.
+
+[youtube https://youtu.be/qXbwhShA4ks]
 
 ### **Why Choose Real 3D Flipbook?**
 
@@ -20,7 +22,7 @@ Embed PDF inside your website. Display your PDFs and images as stunning, interac
   - Experience the most realistic page-flipping effect with advanced 3D animations that captivate your audience.
   
 - **Scroll Viewer, Slide Viewer, Simple Viewer, CSS 3D FlipBook, CSS 2D FlipBook**
-  - Besides Realistic WebGL page flip, choose from multiple alternative view modes and page flip animation styles.
+  - In addition to the realistic WebGL page-flip effect, you’ve got a range of other viewing modes and page-flip animations to pick from.
   
 - **Fully Responsive and Mobile-Friendly**
   - Flipbooks adapt perfectly to any screen size—desktops, tablets, or smartphones—ensuring a smooth user experience.
@@ -433,6 +435,9 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 
 = 4.9.8 =
 * Fix: Last page not loading when Cover is disabled
+
+= 4.9.9 =
+* Fix: Saving flipbook thumbnail image
 
 == Upgrade to PRO for More Features ==
 Unlock advanced features like PDF hyperlinks, text search, custom toolbar configurations, and much more. Enhance your content presentation with [Real3D FlipBook PRO](https://real3dflipbook.com).
