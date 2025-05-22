@@ -20,33 +20,8 @@ FLIPBOOK.version = '4.9.6';
     };
 })(window, document);
 
-FLIPBOOK.Main = function (options, elem) {
-    var self = this;
-    if (elem.length) {
-        this.elem = elem[0];
-        this.elements = Array.from(elem);
-    } else {
-        this.elem = elem;
-        this.elements = [elem];
-    }
-
-    this.bodyHasVerticalScrollbar = function () {
-        return document.body.scrollHeight > window.innerHeight;
-    };
-
-    this.isIframe = function () {
-        try {
-            return window.self !== window.top;
-        } catch (e) {
-            return true;
-        }
-    };
-
-    this.isZoomed = function () {
-        return self.zoom > 1;
-    };
-
-    let defaultOptions = {
+FLIPBOOK.Main = class {
+    static defaultOptions = {
         name: '',
         pages: [],
         tableOfContent: [],
@@ -101,7 +76,6 @@ FLIPBOOK.Main = function (options, elem) {
         menu2Margin: 0,
         menu2Padding: 0,
         menu2Transparent: true,
-
         skinColor: '#222',
         skinBackground: '#FFF',
         floatingBtnColor: '#FFF',
@@ -280,7 +254,7 @@ FLIPBOOK.Main = function (options, elem) {
             enabled: true,
             title: 'Toggle single page',
             svgAlt: 'double',
-            //toolsMenu: true,
+            toolsMenu: true,
         },
         btnClose: {
             title: 'Close',
@@ -331,11 +305,11 @@ FLIPBOOK.Main = function (options, elem) {
         pdf: {
             annotationLayer: false,
         },
-        pageTextureSize: 2048,
+        pageTextureSize: 3000,
         pageTextureSizeSmall: 1500,
         thumbTextureSize: 300,
         pageTextureSizeMobile: 1500,
-        pageTextureSizeMobileSmall: 1024,
+        pageTextureSizeMobileSmall: 1000,
         pagesInMemory: 20,
         viewMode: 'webgl',
         singlePageMode: false,
@@ -344,7 +318,7 @@ FLIPBOOK.Main = function (options, elem) {
         zoomMin2: 0.15,
         zoomMax2: null,
         zoomSize: null,
-        zoomStep: 2,
+        zoomStep: 1.5,
         zoomTime: 300,
         zoomReset: false,
         zoomResetTime: 300,
@@ -396,13 +370,12 @@ FLIPBOOK.Main = function (options, elem) {
         lights: true,
         lightColor: 0xffffff,
         lightPositionX: 0,
+        lightPositionY: 150,
         lightPositionZ: 1400,
-        lightPositionY: 350,
         lightIntensity: 0.6,
         shadows: true,
         shadowMapSize: 1024,
-        shadowOpacity: 0.2,
-        shadowDistance: 0,
+        shadowOpacity: 0.3,
         pageRoughness: 1,
         pageMetalness: 0,
         pageHardness: 2,
@@ -432,7 +405,6 @@ FLIPBOOK.Main = function (options, elem) {
         pdfTextLayer: true,
         annotationLayer: true,
         googleAnalyticsTrackingCode: null,
-        minimumAndroidVersion: 6,
         linkColor: 'rgba(0, 0, 0, 0)',
         linkColorHover: 'rgba(255, 255, 0, 1)',
         linkOpacity: 0.4,
@@ -498,758 +470,627 @@ FLIPBOOK.Main = function (options, elem) {
             pagesInMemory: 6,
         },
     };
-
-    this.options = {};
-
-    var dummyStyle = document.createElement('div').style;
-    var vendor = (function () {
-        var vendors = 't,webkitT,MozT,msT,OT'.split(',');
-        var t;
-        var i = 0;
-        var l = vendors.length;
-
-        for (; i < l; i++) {
-            t = vendors[i] + 'ransform';
-            if (t in dummyStyle) {
-                return vendors[i].substr(0, vendors[i].length - 1);
-            }
-        }
-        return false;
-    })();
-
-    var isAndroid = /android/gi.test(navigator.appVersion);
-
-    this.isAndroid = isAndroid;
-
-    function webgl_detect() {
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        return gl instanceof WebGLRenderingContext;
-    }
-
-    if (typeof FLIPBOOK.hasWebGl == 'undefined') {
-        FLIPBOOK.hasWebGl = webgl_detect();
-    }
-
-    this.hasWebGl = FLIPBOOK.hasWebGl;
-
-    this.thumbsShowing = false;
-    this.bookmarkShowing = false;
-    this.searchingString = false;
-    this.tocShowing = false;
-    this.menuShowing = true;
-    this.fullscreenActive = false;
-
-    var layouts = {
-        2: {
-            currentPage: { vAlign: 'bottom', hAlign: 'center' },
-            btnAutoplay: { hAlign: 'right', vAlign: 'top' },
-            btnSound: { hAlign: 'right', vAlign: 'top' },
-            btnSingle: { hAlign: 'right', vAlign: 'top' },
-            btnExpand: { hAlign: 'right', vAlign: 'top' },
-            btnSearch: { hAlign: 'left', vAlign: 'top' },
-            btnBookmark: { hAlign: 'left', vAlign: 'top' },
-            btnToc: { hAlign: 'left', vAlign: 'top' },
-            btnThumbs: { hAlign: 'left', vAlign: 'top' },
-            btnShare: { hAlign: 'right', vAlign: 'top' },
-            btnPrint: { hAlign: 'right', vAlign: 'top' },
-            btnDownloadPages: { hAlign: 'right', vAlign: 'top' },
-            btnDownloadPdf: { hAlign: 'right', vAlign: 'top' },
-            btnTools: { hAlign: 'right', vAlign: 'top' },
-            menuTransparent: true,
-        },
-        3: {
-            menuTransparent: true,
-            menu2Transparent: false,
-            menu2OverBook: false,
-            menu2Padding: 5,
-            btnMargin: 5,
-            currentPage: { vAlign: 'top', hAlign: 'center' },
-            btnPrint: { vAlign: 'top', hAlign: 'right' },
-            btnDownloadPdf: { vAlign: 'top', hAlign: 'right' },
-            btnDownloadPages: { vAlign: 'top', hAlign: 'right' },
-            btnThumbs: { vAlign: 'top', hAlign: 'left' },
-            btnToc: { vAlign: 'top', hAlign: 'left' },
-            btnBookmark: { vAlign: 'top', hAlign: 'left' },
-            btnSearch: { vAlign: 'top', hAlign: 'left' },
-            btnShare: { vAlign: 'top', hAlign: 'right' },
-            btnAutoplay: { vAlign: 'top', hAlign: 'right' },
-            btnSingle: { vAlign: 'top', hAlign: 'right' },
-            btnExpand: { vAlign: 'top', hAlign: 'right' },
-            btnZoomIn: { hAlign: 'right' },
-            btnZoomOut: { hAlign: 'right' },
-            btnSound: { vAlign: 'top', hAlign: 'right' },
-            btnTools: { vAlign: 'top', hAlign: 'right' },
-            menuPadding: 5,
-        },
-        4: {
-            menu2Transparent: false,
-            menu2OverBook: false,
-            sideMenuOverMenu2: false,
-            currentPage: { vAlign: 'top', hAlign: 'center' },
-            btnAutoplay: { vAlign: 'top', hAlign: 'left' },
-            btnSound: { vAlign: 'top', hAlign: 'left' },
-            btnSingle: { vAlign: 'top', hAlign: 'right' },
-            btnExpand: { vAlign: 'top', hAlign: 'right' },
-            btnZoomIn: { vAlign: 'top' },
-            btnZoomOut: { vAlign: 'top' },
-            btnSearch: { vAlign: 'top', hAlign: 'left' },
-            btnBookmark: { vAlign: 'top', hAlign: 'left' },
-            btnToc: { vAlign: 'top', hAlign: 'left' },
-            btnThumbs: { vAlign: 'top', hAlign: 'left' },
-            btnShare: { vAlign: 'top', hAlign: 'right' },
-            btnPrint: { vAlign: 'top', hAlign: 'right' },
-            btnDownloadPages: { vAlign: 'top', hAlign: 'right' },
-            btnDownloadPdf: { vAlign: 'top', hAlign: 'right' },
-            btnTools: { vAlign: 'top', hAlign: 'right' },
-        },
-    };
-
-    var skins = {
-        dark: {
-            skinColor: '#EEE',
-            btnColorHover: '#FFF',
-            skinBackground: '#313538',
-        },
-        gradient: {
-            skinColor: '#EEE',
-            btnColor: '#EEE',
-            btnColorHover: '#FFF',
-            skinBackground: '#313538DD',
-            menuOverBook: true,
-            menu2OverBook: true,
-            sideMenuOverMenu: true,
-            sideMenuOverMenu2: true,
-            menuBackground: 'linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, transparent 100%)',
-            menu2Background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 0%, transparent 100%)',
-        },
-    };
-
-    if (options.skin && skins[options.skin]) {
-        defaultOptions = FLIPBOOK.extend(true, {}, defaultOptions, skins[options.skin]);
-    }
-    if (options.layout && layouts[options.layout]) {
-        defaultOptions = FLIPBOOK.extend(true, {}, defaultOptions, layouts[options.layout]);
-    }
-
-    this.options = FLIPBOOK.extend(true, {}, defaultOptions, options);
-
-    var o = this.options;
-
-    FLIPBOOK.count = FLIPBOOK.count || 0;
-    FLIPBOOK.count++;
-
-    this.uniqueID = FLIPBOOK.count;
-
-    o.isMobile =
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-        (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform));
-
-    if (o.isMobile) {
-        FLIPBOOK.extend(true, o, o.mobile);
-    }
-
-    this.strings = o.strings;
-
-    o.pageShininess = o.pageShininess / 2;
-
-    this.s = 0;
-
-    // o.i = w !== parent;
-
-    if (o.isMobile) {
-        o.singlePageMode = o.singlePageModeIfMobile ? true : o.singlePageMode;
-
-        if (o.viewModeMobile) {
-            o.viewMode = o.viewModeMobile;
-        }
-
-        if (o.pageTextureSizeMobile) {
-            o.pageTextureSize = o.pageTextureSizeMobile;
-        }
-
-        if (o.pageTextureSizeMobileSmall) {
-            o.pageTextureSizeSmall = o.pageTextureSizeMobileSmall;
-        }
-    }
-
-    
-    var c = { a: 5, b: 7, c: 2 };
-        o.pageTextureSize = Math.pow(c.a * c.b + c.c, c.c);
-        o.pageTextureSizeSmall = Math.pow(c.a * c.b + c.c, c.c);
-        o.zoomSize = Math.pow(c.b * c.a + c.c, c.c);
-        
-
-    if (o.viewMode == '3dSinglePage') {
-        o.singlePageMode = true;
-    }
-    if (o.viewMode == '2dSinglePage') {
-        o.singlePageMode = true;
-        o.viewMode = '2d';
-    }
-
-    if (o.singlePageMode) {
-        if (o.viewMode != '2d' && o.viewMode != 'swipe') {
-            o.viewMode = '3d';
-        }
-
-        if (o.rightToLeft) {
-            o.viewMode = 'swipe';
-        }
-
-        o.cover = true;
-    }
-
-    if (o.singlePageMode && o.viewMode == '3d') {
-        o.rightToLeft = false;
-    }
-
-    if (o.viewMode == 'simple') {
-        o.viewMode = '3d';
-        o.instantFlip = true;
-    }
-
-    if (!o.cover) {
-        o.responsiveView = false;
-    }
-
-    if (o.webgl) {
-        var c = { a: 5, b: 6, c: 2 };
-        o.pageTextureSize = Math.pow(c.a * c.b - c.c, c.c);
-        o.pageTextureSizeSmall = Math.pow(c.a * c.b - c.c, c.c);
-        o.zoomSize = Math.pow(c.b * c.a + c.a, c.c);
-    }
-
-    Object.assign(o, { e: 'toString', f: 'padStart', g: 'decodeURIComponent', h: 97, i: 16 });
-
-    o.sideMenuPosition = o.rightToLeft ? 'right' : 'left';
-
-    function getAndroidVersion(ua) {
-        ua = (ua || navigator.userAgent).toLowerCase();
-        var match = ua.match(/android\s([0-9\.]*)/);
-        return match ? match[1] : false;
-    }
-
-    if (o.viewMode == 'webgl') {
-        if (
-            !this.hasWebGl ||
-            o.webgl ||
-            (parseFloat(getAndroidVersion()) < o.minimumAndroidVersion && this.isAndroid)
-        ) {
-            o.viewMode = '3d';
-        }
-    }
-
-    if (o.viewMode == 'webgl' || o.viewMode == 'scroll') o.btnSingle.enabled = false;
-
-    this.webgl = o.viewMode == 'webgl';
-
-    if (o.menuFloating) {
-        o.menuOverBook = true;
-        o.sideMenuOverMenu = true;
-    }
-
-    if (o.menu2Floating) {
-        o.menu2OverBook = true;
-        o.sideMenuOverMenu2 = true;
-    }
-
-    if (o.menuTransparent) {
-        o.menuOverBook = true;
-        o.sideMenuOverMenu = true;
-        o.menuBackground = 'none';
-    }
-
-    if (o.menu2Transparent) {
-        o.menu2OverBook = true;
-        o.sideMenuOverMenu2 = true;
-        o.menu2Background = 'none';
-    } else {
-        o.sideMenuOverMenu2 = false;
-    }
-
-    if (o.menuOverBook) {
-        o.sideMenuOverMenu = true;
-    }
-
-    if (o.menu2OverBook) {
-        o.sideMenuOverMenu2 = true;
-    }
-
-    o.pdfMode = Boolean(o.pdfUrl && o.pdfUrl != '') || o.pdfBase64;
-
-    if (o.backgroundTransparent) {
-        o.backgroundColor = 'none';
-    }
-
-    function parseAspectRatio(ratio) {
-        if (ratio === undefined) {
-            return;
-        }
-        if (typeof ratio === 'number') {
-            return ratio;
-        }
-
-        ratio = String(ratio).trim().replace('/', ':');
-        if (ratio.includes(':')) {
-            const parts = ratio.split(':');
-            const width = parseFloat(parts[0]);
-            const height = parseFloat(parts[1]);
-            return width / height;
-        }
-
-        return parseFloat(ratio);
-    }
-
-    this.options.containerRatio = parseAspectRatio(this.options.containerRatio);
-
-    this.wrapper = document.createElement('div');
-    this.wrapper.classList.add('flipbook-main-wrapper');
-
-    this.skinBgVar = `--skin-bg`;
-    this.skinColorVar = `--skin-color`;
-
-    if (o.backgroundColor !== '') {
-        this.wrapper.style.background = o.backgroundColor;
-    }
-
-    if (o.backgroundPattern !== '') {
-        this.wrapper.style.background = `url(${o.backgroundPattern}) repeat`;
-    }
-
-    if (o.backgroundImage !== '') {
-        this.wrapper.style.background = `url(${o.backgroundImage}) no-repeat`;
-        this.wrapper.style.backgroundSize = 'cover';
-        this.wrapper.style.backgroundPosition = 'center center';
-    }
-
-    this.bookLayer = document.createElement('div');
-    this.bookLayer.classList.add('flipbook-bookLayer');
-    this.wrapper.appendChild(this.bookLayer);
-    if (o.pageDragDisabled) this.bookLayer.style.cursor = 'auto';
-
-    if (o.linkTarget === 'spotlight') {
-        this.bookLayer.addEventListener('click', function (e) {
-            if (e.target.tagName.toLowerCase() === 'a') {
-                e.preventDefault();
-                self.spotlight(e.target.href);
-            }
-        });
-    }
-
-    if (!o.rightClickEnabled) {
-        this.bookLayer.addEventListener('contextmenu', function (e) {
-            e.preventDefault();
-        });
-    }
-
-    if (o.hideMenu) {
-        this.bookLayer.style.bottom = '0';
-        o.menuOverBook = true;
-    }
-
-    o.pagesOriginal = JSON.parse(JSON.stringify(o.pages));
-
-    this.book = document.createElement('div');
-    this.book.classList.add('book');
-    this.bookLayer.appendChild(this.book);
-
-    if (o.preloader && typeof jQuery != 'undefined') {
-        this.preloader = jQuery(o.preloader);
-    } else {
-        this.preloader = document.createElement('div');
-        this.preloader.classList.add('flipbook-preloader', 'cssload-container');
-
-        var speedingWheel = document.createElement('div');
-        speedingWheel.classList.add('cssload-speeding-wheel');
-        this.preloader.appendChild(speedingWheel);
-
-        var loadingText = document.createElement('div');
-        loadingText.classList.add('flipbook-loading-text');
-        loadingText.textContent = o.preloaderText;
-        this.preloader.appendChild(loadingText);
-
-        var loadingBg = document.createElement('div');
-        loadingBg.classList.add('flipbook-loading-bg');
-        this.preloader.appendChild(loadingBg);
-    }
-
-    this.setLoadingProgress(0);
-
-    async function checkHash() {
-        if (self.disposed) {
-            return;
-        }
-
-        var fullHash = window.location.hash;
-
-        var targetPage = self.getPageFromHash();
-        if (!o.cover) {
-            targetPage++;
-        }
-        var startPage = targetPage;
-        if (targetPage < 1) {
-            targetPage = 1;
-        } else if (self.numPages && targetPage > self.numPages) {
-            targetPage = self.numPages;
-        }
-        if (targetPage) {
-            targetPage = o.rightToLeft && o.pages && o.pages.length ? o.pages.length - targetPage + 1 : targetPage;
-
-            if (!self.started) {
-                o.startPage = startPage;
-
-                if (o.lightBox) {
-                    init();
-
-                    if (o.lightBoxFullscreen) {
-                        setTimeout(function () {
-                            self.toggleExpand();
-                        }, 100);
-                    }
-                }
-            } else if (self.Book) {
-                if (self.lightbox && !FLIPBOOK.lightboxOpened) {
-                    self.lightbox.openLightbox();
-                    await self.lightboxStart();
-                }
-                self.goToPage(targetPage, fullHash.indexOf('flip') == -1);
-            }
-        }
-    }
-
-    async function preload() {
-        if (o.pdfMode) {
-            await self.loadScript(FLIPBOOK.pdfjsSrc, 'pdfjsLib');
-            await self.loadScript(FLIPBOOK.pdfServiceSrc, 'FLIPBOOK.PdfService');
-
-            if (o.btnSearch.enabled || o.btnNotes.enabled || o.search.enabled) {
-                await self.loadScript(FLIPBOOK.markSrc, 'Mark');
-            }
-        }
-        if (o.viewMode == 'webgl') {
-            await self.loadScript(FLIPBOOK.threejsSrc, 'THREE');
+    constructor(options, elem) {
+        if (elem.length) {
+            this.elem = elem[0];
+            this.elements = Array.from(elem);
         } else {
-            await self.loadScript(FLIPBOOK.iscrollSrc, 'IScroll');
+            this.elem = elem;
+            this.elements = [elem];
         }
-    }
 
-    async function init() {
-        if (self.initStarted) {
-            return;
+        function webgl_detect() {
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            return gl instanceof WebGLRenderingContext;
         }
-        self.initStarted = true;
 
-        const loadImage = (src) => {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.src = src;
-                img.onload = () => resolve(img);
-                img.onerror = reject;
-            });
+        if (typeof FLIPBOOK.hasWebGl == 'undefined') {
+            FLIPBOOK.hasWebGl = webgl_detect();
+        }
+
+        this.hasWebGl = FLIPBOOK.hasWebGl;
+
+        this.thumbsShowing = false;
+        this.bookmarkShowing = false;
+        this.searchingString = false;
+        this.tocShowing = false;
+        this.menuShowing = true;
+        this.fullscreenActive = false;
+
+        const layouts = {
+            2: {
+                currentPage: { vAlign: 'bottom', hAlign: 'center' },
+                btnAutoplay: { hAlign: 'right', vAlign: 'top' },
+                btnSound: { hAlign: 'right', vAlign: 'top' },
+                btnSingle: { hAlign: 'right', vAlign: 'top' },
+                btnExpand: { hAlign: 'right', vAlign: 'top' },
+                btnSearch: { hAlign: 'left', vAlign: 'top' },
+                btnBookmark: { hAlign: 'left', vAlign: 'top' },
+                btnToc: { hAlign: 'left', vAlign: 'top' },
+                btnThumbs: { hAlign: 'left', vAlign: 'top' },
+                btnShare: { hAlign: 'right', vAlign: 'top' },
+                btnPrint: { hAlign: 'right', vAlign: 'top' },
+                btnDownloadPages: { hAlign: 'right', vAlign: 'top' },
+                btnDownloadPdf: { hAlign: 'right', vAlign: 'top' },
+                btnTools: { hAlign: 'right', vAlign: 'top' },
+                menuTransparent: true,
+            },
+            3: {
+                menuTransparent: true,
+                menu2Transparent: false,
+                menu2OverBook: false,
+                menu2Padding: 5,
+                btnMargin: 5,
+                currentPage: { vAlign: 'top', hAlign: 'center' },
+                btnPrint: { vAlign: 'top', hAlign: 'right' },
+                btnDownloadPdf: { vAlign: 'top', hAlign: 'right' },
+                btnDownloadPages: { vAlign: 'top', hAlign: 'right' },
+                btnThumbs: { vAlign: 'top', hAlign: 'left' },
+                btnToc: { vAlign: 'top', hAlign: 'left' },
+                btnBookmark: { vAlign: 'top', hAlign: 'left' },
+                btnSearch: { vAlign: 'top', hAlign: 'left' },
+                btnShare: { vAlign: 'top', hAlign: 'right' },
+                btnAutoplay: { vAlign: 'top', hAlign: 'right' },
+                btnSingle: { vAlign: 'top', hAlign: 'right' },
+                btnExpand: { vAlign: 'top', hAlign: 'right' },
+                btnZoomIn: { hAlign: 'right' },
+                btnZoomOut: { hAlign: 'right' },
+                btnSound: { vAlign: 'top', hAlign: 'right' },
+                btnTools: { vAlign: 'top', hAlign: 'right' },
+                menuPadding: 5,
+            },
+            4: {
+                menu2Transparent: false,
+                menu2OverBook: false,
+                sideMenuOverMenu2: false,
+                currentPage: { vAlign: 'top', hAlign: 'center' },
+                btnAutoplay: { vAlign: 'top', hAlign: 'left' },
+                btnSound: { vAlign: 'top', hAlign: 'left' },
+                btnSingle: { vAlign: 'top', hAlign: 'right' },
+                btnExpand: { vAlign: 'top', hAlign: 'right' },
+                btnZoomIn: { vAlign: 'top' },
+                btnZoomOut: { vAlign: 'top' },
+                btnSearch: { vAlign: 'top', hAlign: 'left' },
+                btnBookmark: { vAlign: 'top', hAlign: 'left' },
+                btnToc: { vAlign: 'top', hAlign: 'left' },
+                btnThumbs: { vAlign: 'top', hAlign: 'left' },
+                btnShare: { vAlign: 'top', hAlign: 'right' },
+                btnPrint: { vAlign: 'top', hAlign: 'right' },
+                btnDownloadPages: { vAlign: 'top', hAlign: 'right' },
+                btnDownloadPdf: { vAlign: 'top', hAlign: 'right' },
+                btnTools: { vAlign: 'top', hAlign: 'right' },
+            },
         };
 
-        if (o.fillPreloader.enabled) {
-            const fillPreloader = document.createElement('div');
-            fillPreloader.classList.add('flipbook-fillPreloader');
+        const skins = {
+            dark: {
+                skinColor: '#EEE',
+                btnColorHover: '#FFF',
+                skinBackground: '#313538',
+            },
+            gradient: {
+                skinColor: '#EEE',
+                btnColor: '#EEE',
+                btnColorHover: '#FFF',
+                skinBackground: '#313538DD',
+                menuOverBook: true,
+                menu2OverBook: true,
+                sideMenuOverMenu: true,
+                sideMenuOverMenu2: true,
+                menuBackground: 'linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, transparent 100%)',
+                menu2Background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 0%, transparent 100%)',
+            },
+        };
 
-            try {
-                const empty = await loadImage(o.fillPreloader.imgEmpty);
-                const full = await loadImage(o.fillPreloader.imgFull);
+        if (options.skin && skins[options.skin]) {
+            options = FLIPBOOK.extend(true, {}, options, skins[options.skin]);
+        }
+        if (options.layout && layouts[options.layout]) {
+            options = FLIPBOOK.extend(true, {}, options, layouts[options.layout]);
+        }
 
-                fillPreloader.appendChild(empty);
-                fillPreloader.appendChild(full);
+        this.options = FLIPBOOK.extend(true, {}, FLIPBOOK.Main.defaultOptions, options);
 
-                self.$fillPreloader = fillPreloader;
-                self.$fillPreloaderImg = full;
+        FLIPBOOK.count = FLIPBOOK.count || 0;
+        FLIPBOOK.count++;
 
-                self.wrapper.appendChild(fillPreloader);
-            } catch (error) {
-                console.error('Error loading preloader images', error);
+        this.uniqueID = FLIPBOOK.count;
+
+        this.options.isMobile =
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+            (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform));
+
+        if (this.options.isMobile) {
+            FLIPBOOK.extend(true, this.options, this.options.mobile);
+        }
+
+        this.initOptions(this.options);
+    }
+
+    initOptions(o) {
+        const self = this;
+        this.strings = o.strings;
+        o.pageShininess = o.pageShininess / 2;
+        this.s = 0;
+
+        // o.i = w !== parent;
+
+        if (o.isMobile) {
+            o.singlePageMode = o.singlePageModeIfMobile ? true : o.singlePageMode;
+
+            if (o.viewModeMobile) {
+                o.viewMode = o.viewModeMobile;
+            }
+
+            if (o.pageTextureSizeMobile) {
+                o.pageTextureSize = o.pageTextureSizeMobile;
+            }
+
+            if (o.pageTextureSizeMobileSmall) {
+                o.pageTextureSizeSmall = o.pageTextureSizeMobileSmall;
             }
         }
 
-        if (self.initialized) {
-            return;
+        
+        var c = { a: 5, b: 7, c: 2 };
+            o.pageTextureSize = Math.pow(c.a * c.b + c.c, c.c);
+            o.pageTextureSizeSmall = Math.pow(c.a * c.b + c.c, c.c);
+            o.zoomSize = Math.pow(c.b * c.a + c.c, c.c);
+            
+
+        if (o.viewMode == '3dSinglePage') {
+            o.singlePageMode = true;
+        }
+        if (o.viewMode == '2dSinglePage') {
+            o.singlePageMode = true;
+            o.viewMode = '2d';
         }
 
-        self.define = window.define;
-        window.define = null;
+        if (o.singlePageMode) {
+            if (o.viewMode != '2d' && o.viewMode != 'swipe') {
+                o.viewMode = '3d';
+            }
 
-        self.id = self.uniqueID;
+            if (o.rightToLeft) {
+                o.viewMode = 'swipe';
+            }
 
-        self.addPageItems();
-        if (o.pageCaptions) self.addPageCaptions();
-
-        if (o.pdfMode) {
-            self.initPdf();
-        } else {
-            self.initJpg();
+            o.cover = true;
         }
 
-        self.setLoadingProgress(0.1);
-
-        self.initialized = true;
-    }
-
-    this.dispose = function () {
-        this.disposed = true;
-    };
-
-    o.main = this;
-
-    this._events = {};
-
-    this.on = function (type, fn) {
-        if (!this._events[type]) {
-            this._events[type] = [];
+        if (o.singlePageMode && o.viewMode == '3d') {
+            o.rightToLeft = false;
         }
 
-        this._events[type].push(fn);
-    };
-
-    this.off = function (type, fn) {
-        if (!this._events[type]) {
-            return;
+        if (o.viewMode == 'simple') {
+            o.viewMode = '3d';
+            o.instantFlip = true;
         }
 
-        var index = this._events[type].indexOf(fn);
-
-        if (index > -1) {
-            this._events[type].splice(index, 1);
-        }
-    };
-
-    this.trigger = function (type) {
-        if (!this._events[type]) {
-            return;
-        }
-
-        var i = 0;
-        var l = this._events[type].length;
-
-        if (!l) {
-            return;
-        }
-
-        for (; i < l; i++) {
-            this._events[type][i].apply(this, [].slice.call(arguments, 1));
-        }
-    };
-
-    this.on('textlayerrendered', function (_) {
-        if (self.searchingString) {
-            self.mark(self.searchingString);
-        }
-    });
-
-    this.on('pageLoaded', function (e) {
-        o.pages[e.index] = o.pages[e.index] || {};
-        o.pages[e.index].canvas = o.pages[e.index].canvas || {};
-        o.pages[e.index].images = o.pages[e.index].images || {};
-        o.pages[e.index].images[e.size] = e.images;
-    });
-
-    this.on('showpagehtml', function () {
-        window.getSelection().removeAllRanges();
-        if (self.searchingString) {
-            self.mark(self.searchingString);
-        }
-    });
-
-    this.addPageNotes = function (page) {
-        if (this.noteService) {
-            this.noteService.initPageNotes(page);
-        }
-    };
-
-    this.on('pdfinit', async function () {
-        o.tableOfContent = self.pdfService.outline || o.tableOfContent;
-        o.doublePage = self.pdfService.double;
-        if (o.scaleCover) {
-            o.doublePage = true;
+        if (!o.cover) {
             o.responsiveView = false;
         }
-        o.backCover = self.pdfService.backCover;
 
-        self.viewportOriginal = self.pdfService.viewports[0];
-
-        o.firstPage = {
-            width: self.pdfService.viewports[0].width,
-            height: self.pdfService.viewports[0].height,
-            ratio: self.pdfService.viewports[0].width / self.pdfService.viewports[0].height,
-        };
-
-        if (self.pdfService.numPages > 1) {
-            o.secondPage = {
-                width: self.pdfService.viewports[1].width,
-                height: self.pdfService.viewports[1].height,
-                ratio: self.pdfService.viewports[1].width / self.pdfService.viewports[1].height,
-            };
+        if (o.webgl) {
+            var c = { a: 5, b: 6, c: 2 };
+            o.pageTextureSize = Math.pow(c.a * c.b - c.c, c.c);
+            o.pageTextureSizeSmall = Math.pow(c.a * c.b - c.c, c.c);
+            o.zoomSize = Math.pow(c.b * c.a + c.a, c.c);
         }
 
-        o.numPages = self.pdfService.numPages;
+        Object.assign(o, { e: 'toString', f: 'padStart', g: 'decodeURIComponent', h: 97, i: 16 });
 
-        if (o.previewPages && o.numPages > o.previewPages) {
-            o.numPages = o.previewPages;
-        }
+        o.sideMenuPosition = o.rightToLeft ? 'right' : 'left';
 
-        var pages = [];
-        var pageSize = o.pageTextureSize;
-
-        for (var i = 0; i < o.numPages; i++) {
-            var p = {
-                canvas: {},
-            };
-
-            if (o.pages && o.pages[i]) {
-                FLIPBOOK.extend(p, o.pages[i]);
-            }
-            pages[i] = p;
-        }
-
-        o.pages = pages;
-        o.pageWidth = parseInt((pageSize * self.viewportOriginal.width) / self.viewportOriginal.height);
-        o.pageHeight = pageSize;
-        o.pw = o.pageWidth;
-        o.ph = o.pageHeight;
-        o.zoomSize = o.zoomSize || o.pageTextureSize;
-
-        var tocArray = o.tableOfContent;
-        if (o.btnToc.enabled && (!tocArray || !tocArray.length)) {
-            var outline = await self.pdfService.loadOutline();
-            if (outline) {
-                o.tableOfContent = outline;
-            } else {
-                o.btnToc.enabled = false;
+        if (o.viewMode == 'webgl') {
+            if (!this.hasWebGl) {
+                o.viewMode = '3d';
             }
         }
-        self.start();
-    });
 
-    function getFlipbookSrc() {
-        var scripts = document.getElementsByTagName('script');
-        for (var i = 0; i < scripts.length; i++) {
-            var src = String(scripts[i].src);
-            if (src.match('flipbook\\.js') || src.match('flipbook\\.min\\.js')) {
-                return src;
-            } else if (src.match('flipbook\\.lite\\.js') || src.match('flipbook\\.lite\\.min\\.js')) {
-                return src.replace('.lite', '');
-            }
+        if (o.viewMode == 'webgl' || o.viewMode == 'scroll' || o.viewMode == 'swipe') o.btnSingle.enabled = false;
+
+        this.webgl = o.viewMode == 'webgl';
+
+        if (o.menuFloating) {
+            o.menuOverBook = true;
+            o.sideMenuOverMenu = true;
         }
-        return '';
-    }
 
-    FLIPBOOK.flipbookSrc = FLIPBOOK.flipbookSrc || this.options.flipbookSrc || getFlipbookSrc();
+        if (o.menu2Floating) {
+            o.menu2OverBook = true;
+            o.sideMenuOverMenu2 = true;
+        }
 
-    const isMinified = FLIPBOOK.flipbookSrc.includes('flipbook.min.js');
-    const replaceStr = isMinified ? 'flipbook.min.js' : 'flipbook.js';
-    const suffix = isMinified ? '.min' : '';
+        if (o.menuTransparent) {
+            o.menuOverBook = true;
+            o.sideMenuOverMenu = true;
+            o.menuBackground = 'none';
+        }
 
-    const sources = [
-        { key: 'iscrollSrc', value: 'libs/iscroll' },
-        { key: 'threejsSrc', value: 'libs/three' },
-        { key: 'flipbookWebGlSrc', value: 'flipbook.webgl' },
-        { key: 'flipbookBook3Src', value: 'flipbook.book3' },
-        { key: 'flipBookSwipeSrc', value: 'flipbook.swipe' },
-        { key: 'flipBookScrollSrc', value: 'flipbook.scroll' },
-        { key: 'pdfjsSrc', value: 'libs/pdf' },
-        { key: 'pdfServiceSrc', value: 'flipbook.pdfservice' },
-        { key: 'pdfjsworkerSrc', value: 'libs/pdf.worker' },
-        { key: 'markSrc', value: 'libs/mark' },
-    ];
+        if (o.menu2Transparent) {
+            o.menu2OverBook = true;
+            o.sideMenuOverMenu2 = true;
+            o.menu2Background = 'none';
+        } else {
+            o.sideMenuOverMenu2 = false;
+        }
 
-    sources.forEach((source) => {
-        FLIPBOOK[source.key] = FLIPBOOK.flipbookSrc.replace(replaceStr, source.value + suffix + '.js');
-    });
+        if (o.menuOverBook) {
+            o.sideMenuOverMenu = true;
+        }
 
-    if (!o.deeplinkingPrefix && o.deeplinking && o.deeplinking.prefix) {
-        o.deeplinkingPrefix = o.deeplinking.prefix;
-    }
+        if (o.menu2OverBook) {
+            o.sideMenuOverMenu2 = true;
+        }
 
-    o.deeplinkingEnabled = o.deeplinkingPrefix || o.deeplinkingEnabled || (o.deeplinking && o.deeplinking.enabled);
+        o.pdfMode = Boolean(o.pdfUrl || o.pdfBase64);
 
-    if (o.deeplinkingEnabled) {
-        checkHash();
-        window.addEventListener('hashchange', checkHash);
-    }
+        if (o.backgroundTransparent) {
+            o.backgroundColor = 'none';
+        }
 
-    if (o.lightBox) {
-        o.btnClose.enabled = true;
+        function parseAspectRatio(ratio) {
+            if (ratio === undefined) {
+                return;
+            }
+            if (typeof ratio === 'number') {
+                return ratio;
+            }
 
-        this.lightbox = new FLIPBOOK.Lightbox(this, this.wrapper, o);
-        this.lightboxStartedTimes = 0;
-        this.wrapper.style.background = 'none';
-        this.bookLayer.style.background = 'none';
-        this.book.style.background = 'none';
+            ratio = String(ratio).trim().replace('/', ':');
+            if (ratio.includes(':')) {
+                const parts = ratio.split(':');
+                const width = parseFloat(parts[0]);
+                const height = parseFloat(parts[1]);
+                return width / height;
+            }
 
-        this.lightbox.overlay.appendChild(this.preloader);
-        this.preloader.style.position = 'fixed';
+            return parseFloat(ratio);
+        }
 
-        this.elements.forEach(function (el) {
-            el.style.cursor = 'pointer';
-            el.addEventListener('click', async function (e) {
-                if (!self.disposed) {
+        this.options.containerRatio = parseAspectRatio(this.options.containerRatio);
+
+        this.wrapper = document.createElement('div');
+        this.wrapper.classList.add('flipbook-main-wrapper');
+
+        new FLIPBOOK.Tooltip2(this.wrapper);
+
+        if (o.backgroundColor !== '') {
+            this.wrapper.style.background = o.backgroundColor;
+        }
+
+        if (o.backgroundPattern !== '') {
+            this.wrapper.style.background = `url(${o.backgroundPattern}) repeat`;
+        }
+
+        if (o.backgroundImage !== '') {
+            this.wrapper.style.background = `url(${o.backgroundImage}) no-repeat`;
+            this.wrapper.style.backgroundSize = 'cover';
+            this.wrapper.style.backgroundPosition = 'center center';
+        }
+
+        this.bookLayer = document.createElement('div');
+        this.bookLayer.classList.add('flipbook-bookLayer');
+        this.wrapper.appendChild(this.bookLayer);
+        if (o.pageDragDisabled) this.bookLayer.style.cursor = 'auto';
+
+        if (o.linkTarget === 'spotlight') {
+            this.bookLayer.addEventListener('click', (e) => {
+                if (e.target.tagName.toLowerCase() === 'a') {
                     e.preventDefault();
-                    self.lightboxStartPage = this.dataset.page;
-
-                    if (self.started) {
-                        await self.lightboxStart();
-
-                        if (o.lightBoxFullscreen) {
-                            setTimeout(async function () {
-                                self.toggleExpand();
-                            }, 0);
-                        }
-
-                        self.lightbox.openLightbox();
-                    } else {
-                        init();
-                        self.lightbox.openLightbox();
-
-                        if (o.lightBoxFullscreen) {
-                            setTimeout(async function () {
-                                self.toggleExpand();
-                            }, 100);
-                        }
-                    }
+                    this.spotlight(e.target.href);
                 }
             });
-        });
-
-        if (o.lightBoxOpened) {
-            init();
-            if (typeof jQuery != 'undefined') jQuery(window).trigger('r3d-lightboxloadingstarted');
-        } else if (o.lightboxPreload) {
-            preload();
         }
 
-        this.fullscreenElement = document.documentElement;
-    } else {
-        o.btnClose.enabled = false;
-        this.wrapper.appendChild(this.preloader);
-        this.elem.appendChild(this.wrapper);
-        this.elem.style.background = this.wrapper.style.background;
-        this.fullscreenElement = this.elem;
+        if (!o.rightClickEnabled) {
+            this.bookLayer.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        }
 
-        const observer = new IntersectionObserver((entries) => {
-            const isVisible = entries[0].isIntersecting;
-            if (isVisible) {
-                if (!self.Book) {
-                    init();
-                } else {
-                    self.Book.enable();
+        if (o.hideMenu) {
+            this.bookLayer.style.bottom = '0';
+            o.menuOverBook = true;
+        }
+
+        o.pagesOriginal = JSON.parse(JSON.stringify(o.pages));
+
+        this.book = document.createElement('div');
+        this.book.classList.add('book');
+        this.bookLayer.appendChild(this.book);
+
+        if (o.preloader && typeof jQuery != 'undefined') {
+            this.preloader = jQuery(o.preloader);
+        } else {
+            this.preloader = document.createElement('div');
+            this.preloader.classList.add('flipbook-preloader', 'cssload-container');
+
+            var speedingWheel = document.createElement('div');
+            speedingWheel.classList.add('cssload-speeding-wheel');
+            this.preloader.appendChild(speedingWheel);
+
+            var loadingText = document.createElement('div');
+            loadingText.classList.add('flipbook-loading-text');
+            loadingText.textContent = o.preloaderText;
+            this.preloader.appendChild(loadingText);
+
+            var loadingBg = document.createElement('div');
+            loadingBg.classList.add('flipbook-loading-bg');
+            this.preloader.appendChild(loadingBg);
+        }
+
+        this.setLoadingProgress(0);
+
+        async function preload() {
+            if (o.pdfMode) {
+                await self.loadScript(FLIPBOOK.pdfjsSrc, 'pdfjsLib');
+                await self.loadScript(FLIPBOOK.pdfServiceSrc, 'FLIPBOOK.PdfService');
+
+                if (o.btnSearch.enabled || o.btnNotes.enabled || o.search.enabled) {
+                    await self.loadScript(FLIPBOOK.markSrc, 'Mark');
                 }
-            } else if (self.Book) {
-                self.Book.disable();
+            }
+            if (o.viewMode == 'webgl') {
+                await self.loadScript(FLIPBOOK.threejsSrc, 'THREE');
+            } else {
+                await self.loadScript(FLIPBOOK.iscrollSrc, 'IScroll');
+            }
+        }
+
+        this.dispose = function () {
+            this.disposed = true;
+        };
+
+        o.main = this;
+
+        this._events = {};
+
+        this.on = function (type, fn) {
+            if (!this._events[type]) {
+                this._events[type] = [];
+            }
+
+            this._events[type].push(fn);
+        };
+
+        this.off = function (type, fn) {
+            if (!this._events[type]) {
+                return;
+            }
+
+            var index = this._events[type].indexOf(fn);
+
+            if (index > -1) {
+                this._events[type].splice(index, 1);
+            }
+        };
+
+        this.trigger = function (type) {
+            if (!this._events[type]) {
+                return;
+            }
+
+            var i = 0;
+            var l = this._events[type].length;
+
+            if (!l) {
+                return;
+            }
+
+            for (; i < l; i++) {
+                this._events[type][i].apply(this, [].slice.call(arguments, 1));
+            }
+        };
+
+        this.on('textlayerrendered', function (_) {
+            if (self.searchingString) {
+                self.mark(self.searchingString);
             }
         });
-        observer.observe(this.wrapper);
-    }
-};
 
-FLIPBOOK.Main.prototype = {
-    start: async function () {
+        this.on('showpagehtml', function () {
+            window.getSelection().removeAllRanges();
+            if (self.searchingString) {
+                self.mark(self.searchingString);
+            }
+        });
+
+        this.addPageNotes = function (page) {
+            if (this.noteService) {
+                this.noteService.initPageNotes(page);
+            }
+        };
+
+        this.on('pdfinit', async function () {
+            o.tableOfContent = self.pdfService.outline || o.tableOfContent;
+            o.doublePage = self.pdfService.double;
+            if (o.scaleCover) {
+                o.doublePage = true;
+                o.responsiveView = false;
+            }
+            o.backCover = self.pdfService.backCover;
+
+            self.viewportOriginal = self.pdfService.viewports[0];
+
+            o.firstPage = {
+                width: self.pdfService.viewports[0].width,
+                height: self.pdfService.viewports[0].height,
+                ratio: self.pdfService.viewports[0].width / self.pdfService.viewports[0].height,
+            };
+
+            if (self.pdfService.numPages > 1) {
+                o.secondPage = {
+                    width: self.pdfService.viewports[1].width,
+                    height: self.pdfService.viewports[1].height,
+                    ratio: self.pdfService.viewports[1].width / self.pdfService.viewports[1].height,
+                };
+            }
+
+            o.numPages = self.pdfService.numPages;
+
+            if (o.previewPages && o.numPages > o.previewPages) {
+                o.numPages = o.previewPages;
+                if (o.doublePage) o.backCover = false;
+            }
+
+            var pages = [];
+            var pageSize = o.pageTextureSize;
+
+            for (var i = 0; i < o.numPages; i++) {
+                var p = {
+                    canvas: {},
+                };
+
+                if (o.pages && o.pages[i]) {
+                    FLIPBOOK.extend(p, o.pages[i]);
+                }
+                pages[i] = p;
+            }
+
+            o.pages = pages;
+            o.pageWidth = parseInt((pageSize * self.viewportOriginal.width) / self.viewportOriginal.height);
+            o.pageHeight = pageSize;
+            o.pw = o.pageWidth;
+            o.ph = o.pageHeight;
+            o.zoomSize = o.zoomSize || o.pageTextureSize;
+
+            var tocArray = o.tableOfContent;
+            if (o.btnToc.enabled && (!tocArray || !tocArray.length)) {
+                var outline = await self.pdfService.loadOutline();
+                if (outline) {
+                    o.tableOfContent = outline;
+                } else {
+                    o.btnToc.enabled = false;
+                }
+            }
+            self.start();
+        });
+
+        function getFlipbookSrc() {
+            var scripts = document.getElementsByTagName('script');
+            for (var i = 0; i < scripts.length; i++) {
+                var src = String(scripts[i].src);
+                if (src.match('flipbook\\.js') || src.match('flipbook\\.min\\.js')) {
+                    return src;
+                } else if (src.match('flipbook\\.lite\\.js') || src.match('flipbook\\.lite\\.min\\.js')) {
+                    return src.replace('.lite', '');
+                }
+            }
+            return '';
+        }
+
+        FLIPBOOK.flipbookSrc = FLIPBOOK.flipbookSrc || this.options.flipbookSrc || getFlipbookSrc();
+
+        const isMinified = FLIPBOOK.flipbookSrc.includes('flipbook.min.js');
+        const replaceStr = isMinified ? 'flipbook.min.js' : 'flipbook.js';
+        const suffix = isMinified ? '.min' : '';
+
+        const sources = [
+            { key: 'iscrollSrc', value: 'libs/iscroll' },
+            { key: 'threejsSrc', value: 'libs/three' },
+            { key: 'flipbookWebGlSrc', value: 'flipbook.webgl' },
+            { key: 'flipbookBook3Src', value: 'flipbook.book3' },
+            { key: 'flipBookSwipeSrc', value: 'flipbook.swipe' },
+            { key: 'flipBookScrollSrc', value: 'flipbook.scroll' },
+            { key: 'pdfjsSrc', value: 'libs/pdf' },
+            { key: 'pdfServiceSrc', value: 'flipbook.pdfservice' },
+            { key: 'pdfjsworkerSrc', value: 'libs/pdf.worker' },
+            { key: 'markSrc', value: 'libs/mark' },
+        ];
+
+        sources.forEach((source) => {
+            FLIPBOOK[source.key] = FLIPBOOK.flipbookSrc.replace(replaceStr, source.value + suffix + '.js');
+        });
+
+        if (!o.deeplinkingPrefix && o.deeplinking && o.deeplinking.prefix) {
+            o.deeplinkingPrefix = o.deeplinking.prefix;
+        }
+
+        o.deeplinkingEnabled = o.deeplinkingPrefix || o.deeplinkingEnabled || (o.deeplinking && o.deeplinking.enabled);
+
+        if (o.deeplinkingEnabled) {
+            this.checkHash();
+            window.addEventListener('hashchange', this.checkHash.bind(this));
+        }
+
+        if (o.lightBox) {
+            o.btnClose.enabled = true;
+
+            this.lightbox = new FLIPBOOK.Lightbox(this, this.wrapper, o);
+            this.lightboxStartedTimes = 0;
+            this.wrapper.style.background = 'none';
+            this.bookLayer.style.background = 'none';
+            this.book.style.background = 'none';
+
+            this.lightbox.overlay.appendChild(this.preloader);
+            this.preloader.style.position = 'fixed';
+
+            this.elements.forEach(function (el) {
+                el.style.cursor = 'pointer';
+                el.addEventListener('click', async function (e) {
+                    if (!self.disposed) {
+                        e.preventDefault();
+                        self.lightboxStartPage = this.dataset.page;
+
+                        if (self.started) {
+                            await self.lightboxStart();
+
+                            if (o.lightBoxFullscreen) {
+                                setTimeout(async function () {
+                                    self.toggleExpand();
+                                }, 0);
+                            }
+
+                            self.lightbox.openLightbox();
+                        } else {
+                            self.init();
+                            self.lightbox.openLightbox();
+
+                            if (o.lightBoxFullscreen) {
+                                setTimeout(async function () {
+                                    self.toggleExpand();
+                                }, 100);
+                            }
+                        }
+                    }
+                });
+            });
+
+            if (o.lightBoxOpened) {
+                this.init();
+                if (typeof jQuery != 'undefined') jQuery(window).trigger('r3d-lightboxloadingstarted');
+            } else if (o.lightboxPreload) {
+                preload();
+            }
+
+            this.fullscreenElement = document.documentElement;
+        } else {
+            o.btnClose.enabled = false;
+            this.wrapper.appendChild(this.preloader);
+            this.elem.appendChild(this.wrapper);
+            this.elem.style.background = this.wrapper.style.background;
+            this.fullscreenElement = this.elem;
+
+            const observer = new IntersectionObserver((entries) => {
+                const isVisible = entries[0].isIntersecting;
+                if (isVisible) {
+                    if (!self.Book) {
+                        self.init();
+                    } else {
+                        self.Book.enable();
+                    }
+                } else if (self.Book) {
+                    self.Book.disable();
+                }
+            });
+            observer.observe(this.wrapper);
+        }
+    }
+
+    async start() {
         var o = this.options;
 
         if (o.pages.length == 1) {
@@ -1366,9 +1207,127 @@ FLIPBOOK.Main.prototype = {
         }
 
         this.updateSkinColors();
-    },
+    }
 
-    updateSkinColors: function () {
+    async checkHash() {
+        if (this.disposed) {
+            return;
+        }
+        const o = this.options;
+
+        var fullHash = window.location.hash;
+
+        var targetPage = this.getPageFromHash();
+        if (!o.cover) {
+            targetPage++;
+        }
+        var startPage = targetPage;
+        if (targetPage < 1) {
+            targetPage = 1;
+        } else if (this.numPages && targetPage > this.numPages) {
+            targetPage = this.numPages;
+        }
+        if (targetPage) {
+            targetPage = o.rightToLeft && o.pages && o.pages.length ? o.pages.length - targetPage + 1 : targetPage;
+
+            if (!this.started) {
+                o.startPage = startPage;
+
+                if (o.lightBox) {
+                    this.init();
+
+                    if (o.lightBoxFullscreen) {
+                        setTimeout(() => {
+                            this.toggleExpand();
+                        }, 100);
+                    }
+                }
+            } else if (this.Book) {
+                if (this.lightbox && !FLIPBOOK.lightboxOpened) {
+                    this.lightbox.openLightbox();
+                    await this.lightboxStart();
+                }
+                this.goToPage(targetPage, fullHash.indexOf('flip') == -1);
+            }
+        }
+    }
+
+    async init() {
+        if (this.initStarted) {
+            return;
+        }
+        this.initStarted = true;
+        const o = this.options;
+
+        const loadImage = (src) => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.src = src;
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+            });
+        };
+
+        if (o.fillPreloader.enabled) {
+            const fillPreloader = document.createElement('div');
+            fillPreloader.classList.add('flipbook-fillPreloader');
+
+            try {
+                const empty = await loadImage(o.fillPreloader.imgEmpty);
+                const full = await loadImage(o.fillPreloader.imgFull);
+
+                fillPreloader.appendChild(empty);
+                fillPreloader.appendChild(full);
+
+                this.$fillPreloader = fillPreloader;
+                this.$fillPreloaderImg = full;
+
+                this.wrapper.appendChild(fillPreloader);
+            } catch (error) {
+                console.error('Error loading preloader images', error);
+            }
+        }
+
+        if (this.initialized) {
+            return;
+        }
+
+        this.define = window.define;
+        window.define = null;
+
+        this.id = this.uniqueID;
+
+        this.addPageItems();
+        if (o.pageCaptions) this.addPageCaptions();
+
+        if (o.pdfMode) {
+            this.initPdf();
+        } else {
+            this.initJpg();
+        }
+
+        this.setLoadingProgress(0.1);
+
+        this.initialized = true;
+    }
+
+    bodyHasVerticalScrollbar() {
+        return document.body.scrollHeight > window.innerHeight;
+    }
+
+    isIframe() {
+        try {
+            return window.self !== window.top;
+        } catch (e) {
+            return true;
+        }
+    }
+
+    isZoomed() {
+        return this.zoom > 1;
+    }
+
+    updateSkinColors() {
         var o = this.options,
             wrapper = this.wrapper;
 
@@ -1385,9 +1344,9 @@ FLIPBOOK.Main.prototype = {
                 element.style.background = o.skinBackground;
             });
         }
-    },
+    }
 
-    lightboxStart: async function () {
+    async lightboxStart() {
         var self = this,
             o = this.options;
         if (!this.started) {
@@ -1428,9 +1387,9 @@ FLIPBOOK.Main.prototype = {
         this.initColors();
         this.resize();
         this.lightbox.openLightbox();
-    },
+    }
 
-    setHash: function (page) {
+    setHash(page) {
         if (page < 1) {
             page = 1;
         }
@@ -1443,28 +1402,20 @@ FLIPBOOK.Main.prototype = {
             window.location.hash = '#' + this.options.deeplinkingPrefix + String(page);
             this.hash = page;
         }
-    },
+    }
 
-    clearHash: function () {
-        },
+    clearHash() {
+        }
 
-    getPageFromHash: function () {
+    getPageFromHash() {
         var page;
         return page;
-    },
+    }
 
-    sendGAEvent: async function (params) {
-        },
+    async sendGAEvent(params) {
+        }
 
-    addColor: function (element) {
-        element.classList.add('flipbook-color-' + this.options.skin);
-    },
-
-    addColorBg: function (element) {
-        element.classList.add('flipbook-bg-' + this.options.skin);
-    },
-
-    initColors: function () {
+    initColors() {
         const wrapper = this.wrapper;
         const skinColorBgElements = wrapper.querySelectorAll('.skin-color-bg');
         skinColorBgElements.forEach((element) => {
@@ -1478,9 +1429,9 @@ FLIPBOOK.Main.prototype = {
         });
 
         this.updateSkinColors();
-    },
+    }
 
-    lightboxEnd: function () {
+    lightboxEnd() {
         if (document.fullscreenElement) {
             this.toggleExpand();
             this.toggleIcon(this.btnExpand, true);
@@ -1502,26 +1453,29 @@ FLIPBOOK.Main.prototype = {
         if (this.backgroundMusic) {
             this.backgroundMusic.pause();
         }
-    },
+    }
 
-    pauseMediaPlayback: function () {
-        this.wrapper.querySelectorAll('.flipbook-page-item').forEach(function (item) {
-            if (item.nodeName == 'VIDEO' || item.nodeName == 'AUDIO') {
-                item.pause();
+    pauseMediaPlayback() {
+        const mediaElements = this.wrapper.querySelectorAll('video, audio, iframe');
+        mediaElements.forEach((media) => {
+            if (media.tagName.toLowerCase() === 'video' || media.tagName.toLowerCase() === 'audio') {
+                media.pause();
+            } else if (media.tagName.toLowerCase() === 'iframe') {
+                media.src = media.src;
             }
         });
         if (this.pageAudioPlayer) {
             this.pageAudioPlayer.pause();
         }
-    },
+    }
 
-    turnPageStart: function () {
+    turnPageStart() {
         this.pauseMediaPlayback();
         this.resumeGlobalSound();
         this.playFlipSound();
-    },
+    }
 
-    turnPageComplete: function () {
+    turnPageComplete() {
         this.animating = false;
         this.updateCurrentPage();
 
@@ -1536,9 +1490,9 @@ FLIPBOOK.Main.prototype = {
         if (this.options.zoomReset) {
             this.Book.zoomTo(this.options.zoomMin);
         }
-    },
+    }
 
-    updateCurrentPage: function () {
+    updateCurrentPage() {
         var rtl = this.options.rightToLeft;
         var total = this.options.numPages;
         var totalDisplay = total - this.options.pageNumberOffset;
@@ -1697,9 +1651,9 @@ FLIPBOOK.Main.prototype = {
 
             this.flippingPage = false;
         }
-    },
+    }
 
-    initJpg: async function () {
+    async initJpg() {
         const o = this.options;
         let pages = o.pages || [];
 
@@ -1746,9 +1700,9 @@ FLIPBOOK.Main.prototype = {
         }
 
         this.start();
-    },
+    }
 
-    initPdf: async function () {
+    async initPdf() {
         if (this.started) {
             return;
         }
@@ -1772,9 +1726,9 @@ FLIPBOOK.Main.prototype = {
         pdfjsLib.GlobalWorkerOptions.workerSrc = this.options.pdfjsworkerSrc || FLIPBOOK.pdfjsworkerSrc;
 
         this.pdfService = new FLIPBOOK.PdfService(this, this.options);
-    },
+    }
 
-    initPageHTML: function (index) {
+    initPageHTML(index) {
         const page = this.options.pages[index];
         if (page.htmlInitialized) {
             return;
@@ -1784,21 +1738,21 @@ FLIPBOOK.Main.prototype = {
         this.addPageNotes(page);
 
         page.htmlInitialized = true;
-    },
+    }
 
-    addPageLinks: function (page) {
-        },
+    addPageLinks(page) {
+        }
 
-    pauseGlobalSound: function () {
+    pauseGlobalSound() {
         this.toggleSound(false);
         this.soundPaused = true;
-    },
+    }
 
-    resumeGlobalSound: function () {
+    resumeGlobalSound() {
         if (this.soundPaused) this.toggleSound(true);
-    },
+    }
 
-    addPageNames: function () {
+    addPageNames() {
         const offset = this.options.pageNumberOffset;
 
         function convertToRoman(num) {
@@ -1838,18 +1792,18 @@ FLIPBOOK.Main.prototype = {
                 }
             }
         });
-    },
+    }
 
-    loadPageHTML: async function (index, callback) {
+    async loadPageHTML(index, callback) {
         var self = this;
         var options = this.options;
 
-        if (!this.options.cover) {
+        if (!options.cover) {
             index--;
         }
 
-        if (this.options.pdfMode) {
-            if (!this.options.pages[index]) {
+        if (options.pdfMode) {
+            if (!options.pages[index]) {
                 callback.call(this, {});
             } else {
                 self.initPageHTML(index);
@@ -1861,13 +1815,13 @@ FLIPBOOK.Main.prototype = {
 
             callback.call(this, options.pages[index].htmlContent, index);
         }
-    },
+    }
 
-    loadPageJSON: async function (index) {
+    async loadPageJSON(index) {
         const options = this.options;
         const page = options.pages[index] || {};
 
-        if (this.options.matchProtocol !== false) {
+        if (options.matchProtocol !== false) {
             const currentProtocol = location.protocol;
             page.json = page.json.replace(/^http:/, currentProtocol);
             page.json = page.json.replace(/^https:/, currentProtocol);
@@ -1894,28 +1848,43 @@ FLIPBOOK.Main.prototype = {
         })();
 
         return page.jsonLoadingPromise;
-    },
+    }
 
-    fetchAndCacheImage: function (url) {
-        this.imageCache = this.imageCache || {};
-        if (!this.imageCache[url]) {
-            const imagePromise = fetch(url)
-                .then((response) => response.blob())
-                .then((blob) => {
-                    let params = {
-                        imageOrientation: 'flipY',
-                    };
-                    const { bitmapResizeHeight, bitmapResizeQuality } = this.options;
-                    if (bitmapResizeHeight) params.resizeHeight = bitmapResizeHeight;
-                    if (bitmapResizeQuality) params.resizeQuality = bitmapResizeQuality;
-                    return createImageBitmap(blob, params);
-                });
-            this.imageCache[url] = imagePromise;
+    async fetchAndCacheImage(url) {
+        // Initialize cache as Map for better performance over object
+        this.imageCache ??= new Map();
+
+        // Early return for cached image
+        let cached = this.imageCache.get(url);
+        if (cached) return cached;
+
+        try {
+            // Create and cache promise immediately to prevent duplicate fetches
+            const imagePromise = (async () => {
+                const response = await fetch(url, { cache: 'force-cache' });
+                if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+
+                const blob = await response.blob();
+                const { bitmapResizeHeight, bitmapResizeQuality } = this.options ?? {};
+
+                // Only create params object if needed
+                const params = {};
+                if (bitmapResizeHeight) params.resizeHeight = bitmapResizeHeight;
+                if (bitmapResizeQuality) params.resizeQuality = bitmapResizeQuality;
+
+                return createImageBitmap(blob, Object.keys(params).length ? params : undefined);
+            })();
+
+            this.imageCache.set(url, imagePromise);
+            return await imagePromise;
+        } catch (error) {
+            // Remove failed promise from cache to allow retry
+            this.imageCache.delete(url);
+            throw error;
         }
-        return this.imageCache[url];
-    },
+    }
 
-    loadPage: function (index, size, callback) {
+    loadPage(index, size, callback) {
         if (!this.options.cover) {
             index--;
         }
@@ -1934,7 +1903,8 @@ FLIPBOOK.Main.prototype = {
         } else {
             if (size == this.options.thumbTextureSize && page.thumb) {
                 if (!page.thumbImg && page.thumb) {
-                    page.thumbImg = document.createElement('img');
+                    page.thumbImg = new Image();
+                    page.thumbImg.decoding = 'async';
                     page.thumbImg.setAttribute('data-id', index);
 
                     page.thumbImg.onload = function () {
@@ -1992,7 +1962,8 @@ FLIPBOOK.Main.prototype = {
                             );
                         });
                     } else {
-                        page.img = document.createElement('img');
+                        page.img = new Image();
+                        page.img.decoding = 'async';
                         page.img.setAttribute('data-id', index);
 
                         page.img.onload = function () {
@@ -2017,9 +1988,9 @@ FLIPBOOK.Main.prototype = {
                 }
             }
         }
-    },
+    }
 
-    pageLoaded: function (page, callback) {
+    pageLoaded(page, callback) {
         callback.call(this, page, callback);
 
         if (this.options.loadAllPages && page.index < this.options.numPages - 1) {
@@ -2029,18 +2000,18 @@ FLIPBOOK.Main.prototype = {
         if (this.searchingString) {
             this.mark(this.searchingString, true);
         }
-    },
+    }
 
-    loadPageFromPdf: function (pageIndex, size, callback) {
+    loadPageFromPdf(pageIndex, size, callback) {
         size = size || this.options.pageTextureSize;
         this.pdfService.renderBookPage(pageIndex, size, callback);
-    },
+    }
 
-    getString: function (name) {
+    getString(name) {
         return this.options.strings[name];
-    },
+    }
 
-    mark: async function (str) {
+    async mark(str) {
         await this.loadScript(FLIPBOOK.markSrc, 'Mark');
 
         this.markedStr = str;
@@ -2079,9 +2050,9 @@ FLIPBOOK.Main.prototype = {
                 },
             });
         }
-    },
+    }
 
-    unmark: function () {
+    unmark() {
         this.searchingString = null;
         this.markedStr = null;
 
@@ -2101,9 +2072,9 @@ FLIPBOOK.Main.prototype = {
 
             this.markInstances = [];
         }
-    },
+    }
 
-    toggleSound: function (value) {
+    toggleSound(value) {
         var o = this.options;
         if (typeof value != 'undefined') o.sound = value;
         else o.sound = !o.sound;
@@ -2111,9 +2082,9 @@ FLIPBOOK.Main.prototype = {
             o.sound ? this.backgroundMusic.play() : this.backgroundMusic.pause();
         }
         this.toggleIcon(this.btnSound, o.sound);
-    },
+    }
 
-    toggleIcon: function (btn, val) {
+    toggleIcon(btn, val) {
         if (btn.$iconAlt) {
             if (val) {
                 btn.$iconAlt.classList.add('flipbook-hidden');
@@ -2130,9 +2101,9 @@ FLIPBOOK.Main.prototype = {
                 .removeClass(prev)
                 .addClass(curr);
         }
-    },
+    }
 
-    scrollPageIntoView: function (obj) {
+    scrollPageIntoView(obj) {
         let targetPage = obj.pageNumber;
 
         if (this.options.doublePage) {
@@ -2144,9 +2115,9 @@ FLIPBOOK.Main.prototype = {
         }
 
         this.goToPage(targetPage);
-    },
+    }
 
-    loadScript: function (src, globalVariable) {
+    loadScript(src, globalVariable) {
         if (src.indexOf('?ver') === -1) src += `?ver=${FLIPBOOK.version}`;
 
         FLIPBOOK.scripts = FLIPBOOK.scripts || {};
@@ -2189,9 +2160,9 @@ FLIPBOOK.Main.prototype = {
 
             document.head.appendChild(script);
         });
-    },
+    }
 
-    initGoogleAnalytics: async function () {
+    async initGoogleAnalytics() {
         if (!document.querySelector(`script[src="https://www.googletagmanager.com/gtag/js?id=${this.gaCode}"]`)) {
             return new Promise((resolve, reject) => {
                 var script = document.createElement('script');
@@ -2215,9 +2186,9 @@ FLIPBOOK.Main.prototype = {
         } else {
             return Promise.resolve();
         }
-    },
+    }
 
-    createBook: async function () {
+    async createBook() {
         var self = this;
         var options = this.options;
 
@@ -2252,7 +2223,10 @@ FLIPBOOK.Main.prototype = {
             p.title = 1;
             var newArr = [p];
 
-            for (var i = 1; i <= this.options.pages.length - 2; i++) {
+            var numPages = this.options.pages.length;
+            if (this.options.previewPages) numPages = numPages / 2;
+
+            for (var i = 1; i <= numPages - 2; i++) {
                 p = this.options.pages[i];
                 left = {
                     src: p.src,
@@ -2385,9 +2359,9 @@ FLIPBOOK.Main.prototype = {
 
         this.createLogo();
         this.onBookCreated();
-    },
+    }
 
-    destroy: async function () {
+    async destroy() {
         if (this.pdfService) {
             if (this.pdfService.pages) {
                 this.pdfService.pages.forEach(function (page) {
@@ -2426,9 +2400,9 @@ FLIPBOOK.Main.prototype = {
         this.resizeObserver.disconnect();
         this.resizeObserver.disconnect();
         this.removeEventListeners();
-    },
+    }
 
-    initNotes: function () {
+    initNotes() {
         this.noteService = new FLIPBOOK.Notes(this);
         const self = this;
         window.addEventListener('r3d-update-note-visibility', function (e) {
@@ -2439,25 +2413,25 @@ FLIPBOOK.Main.prototype = {
             });
             self.noteService.updateNoteVisibility();
         });
-    },
+    }
 
-    createTooltip: function () {
+    createTooltip() {
         this.tooltip = new FLIPBOOK.Tooltip();
         this.wrapper.appendChild(this.tooltip.domElement);
-    },
+    }
 
-    showTooltip: function (params) {
+    showTooltip(params) {
         this.tooltip.show(params);
-    },
+    }
 
-    hideTooltip: function () {
+    hideTooltip() {
         this.tooltip.hide();
-    },
+    }
 
-    addPageItems: function () {
-        },
+    addPageItems() {
+        }
 
-    addPageCaptions: function () {
+    addPageCaptions() {
         const pages = this.options.pages;
         for (let key in pages) {
             let page = pages[key];
@@ -2473,12 +2447,12 @@ FLIPBOOK.Main.prototype = {
                 page.htmlContent += caption;
             }
         }
-    },
+    }
 
-    spotlight: function (url, title, description) {
-        },
+    spotlight(url, title, description) {
+        }
 
-    resizeContainer: function () {
+    resizeContainer() {
         if (!this.lightbox && !this.options.fullscreen && !this.elemStatic) {
             var pageRatio = this.pageW / this.pageH;
             var bookRatio = 2 * pageRatio;
@@ -2497,9 +2471,9 @@ FLIPBOOK.Main.prototype = {
             this.elem.style.height = newHeight + 'px';
         }
         this.resize();
-    },
+    }
 
-    addEventListeners: function () {
+    addEventListeners() {
         this.handleResize = () => this.resizeContainer();
         this.handleKeydown = (e) => {
             if (!this.Book.enabled) {
@@ -2560,9 +2534,9 @@ FLIPBOOK.Main.prototype = {
         document.addEventListener('mozfullscreenchange', this.handleFs);
         document.addEventListener('webkitfullscreenchange', this.handleFs);
         document.addEventListener('fullscreenchange', this.handleFs);
-    },
+    }
 
-    removeEventListeners: function () {
+    removeEventListeners() {
         window.removeEventListener('resize', this.handleResize);
         document.removeEventListener('keydown', this.handleKeydown);
 
@@ -2570,9 +2544,9 @@ FLIPBOOK.Main.prototype = {
         document.removeEventListener('mozfullscreenchange', this.handleFs);
         document.removeEventListener('webkitfullscreenchange', this.handleFs);
         document.removeEventListener('fullscreenchange', this.handleFs);
-    },
+    }
 
-    onBookCreated: function () {
+    onBookCreated() {
         var o = this.options;
 
         var self = this;
@@ -2680,12 +2654,13 @@ FLIPBOOK.Main.prototype = {
             o.onbookcreated.call(this);
         }
         this.bookCreated = true;
-    },
+    }
 
-    initSound: function () {
+    initSound() {
         if (this.options.flipSound) {
             this.flipSound = document.createElement('audio');
             this.flipSound.preload = 'auto';
+
             var flipSource = document.createElement('source');
             flipSource.src = this.options.assets.flipMp3;
             flipSource.type = 'audio/mpeg';
@@ -2695,16 +2670,18 @@ FLIPBOOK.Main.prototype = {
         if (this.options.backgroundMusic) {
             this.backgroundMusic = document.createElement('audio');
             this.backgroundMusic.preload = 'auto';
+
             this.backgroundMusic.autoplay = true;
             this.backgroundMusic.loop = true;
+
             var bgMusicSource = document.createElement('source');
-            bgMusicSource.src = this.options.backgroundMusic;
+            bgMusicSource.src = this.options.assets.backgroundMp3;
             bgMusicSource.type = 'audio/mpeg';
             this.backgroundMusic.appendChild(bgMusicSource);
         }
-    },
+    }
 
-    touchSwipe: function (element, callback) {
+    touchSwipe(element, callback) {
         let startX;
         let startY;
         let startDistance;
@@ -2855,9 +2832,9 @@ FLIPBOOK.Main.prototype = {
         element.addEventListener('touchend', endHandler);
         element.addEventListener('mouseleave', cancelHandler);
         element.addEventListener('touchcancel', cancelHandler);
-    },
+    }
 
-    initSwipe: function () {
+    initSwipe() {
         var self = this;
 
         let zooming = false;
@@ -2918,9 +2895,9 @@ FLIPBOOK.Main.prototype = {
         });
 
         this.swipeEnabled = true;
-    },
+    }
 
-    createSVGIcon: function (name, reverse) {
+    createSVGIcon(name, reverse) {
         var icons = {
             plus: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>',
             minus: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/></svg>',
@@ -2967,9 +2944,9 @@ FLIPBOOK.Main.prototype = {
         }
 
         return svgElement;
-    },
+    }
 
-    createButton: function (btn) {
+    createButton(btn) {
         var o = this.options;
         var inToolsMenu = btn.toolsMenu && o.btnTools.enabled;
         var floating =
@@ -2983,11 +2960,10 @@ FLIPBOOK.Main.prototype = {
         var radius = btn.radius || (floating ? o.floatingBtnRadius : o.btnRadius);
         var border = btn.border || (floating ? o.floatingBtnBorder : o.btnBorder);
         var margin = floating ? o.floatingBtnMargin : o.btnMargin;
-        var paddingV = o.btnPaddingV + 2;
-        var paddingH = o.btnPaddingH + 2;
+        var paddingV = o.btnPaddingV + 4;
+        var paddingH = o.btnPaddingH + 4;
         var $btn = document.createElement('span');
-        var material = o.icons === 'material';
-        var btnSize = material ? (btn.size || o.btnSize) + 8 : btn.size || o.btnSize;
+        var btnSize = btn.size || o.btnSize;
 
         if (inToolsMenu) {
             bgColor = 'none';
@@ -3002,6 +2978,7 @@ FLIPBOOK.Main.prototype = {
             btn.style.border = border;
             btn.style.color = color;
             btn.$icon.style.fill = color;
+            if (btn.$iconAlt) btn.$iconAlt.style.fill = color;
             btn.style.background = bgColor;
             btn.style.textShadow = textShadow;
             btn.style.width = `${btnSize}px`;
@@ -3040,8 +3017,8 @@ FLIPBOOK.Main.prototype = {
                 $btn.$icon.style.fill = colorHover;
                 $btn.$icon.style.background = bgColorHover;
                 if ($btn.$iconAlt) {
-                    $btn.$icon.style.fill = colorHover;
-                    $btn.$icon.style.background = bgColorHover;
+                    $btn.$iconAlt.style.fill = colorHover;
+                    $btn.$iconAlt.style.background = bgColorHover;
                 }
             });
 
@@ -3096,9 +3073,9 @@ FLIPBOOK.Main.prototype = {
         }
 
         return $btn;
-    },
+    }
 
-    createMenu: function () {
+    createMenu() {
         if (this.menuBottom) {
             return;
         }
@@ -3112,6 +3089,7 @@ FLIPBOOK.Main.prototype = {
 
         this.menuBottom = document.createElement('div');
         this.menuBottom.classList.add('flipbook-menuBottom', menuBottomClass);
+        if (!o.menuTransparent && o.skin !== 'gradient') this.menuBottom.classList.add('flipbook-border');
         this.menuBottom.style.background = o.menuBackground;
         this.menuBottom.style.boxShadow = o.menuShadow;
         this.menuBottom.style.margin = o.menuMargin + 'px';
@@ -3128,6 +3106,7 @@ FLIPBOOK.Main.prototype = {
 
         this.menuTop = document.createElement('div');
         this.menuTop.classList.add('flipbook-menuTop', menuTopClass);
+        if (!o.menu2Transparent && o.skin !== 'gradient') this.menuTop.classList.add('flipbook-border');
         this.menuTop.style.background = o.menu2Background;
         this.menuTop.style.boxShadow = o.menu2Shadow;
         this.menuTop.style.margin = o.menu2Margin + 'px';
@@ -3159,12 +3138,14 @@ FLIPBOOK.Main.prototype = {
 
         if (this.options.btnTools.enabled) {
             this.toolsMenu = document.createElement('div');
-            this.toolsMenu.className = 'flipbook-tools flipbook-submenu skin-color skin-color-bg flipbook-font';
+            this.toolsMenu.className =
+                'flipbook-tools flipbook-submenu skin-color skin-color-bg flipbook-font flipbook-border';
         }
 
         if (this.options.btnShare.enabled) {
             this.shareMenu = document.createElement('div');
-            this.shareMenu.className = 'flipbook-share flipbook-submenu skin-color skin-color-bg flipbook-font';
+            this.shareMenu.className =
+                'flipbook-share flipbook-submenu skin-color skin-color-bg flipbook-font flipbook-border';
         }
 
         function initButton(button, onclick) {
@@ -3182,15 +3163,17 @@ FLIPBOOK.Main.prototype = {
                 onclick();
             });
 
-            button.style.width = o.arrowSize + 'px';
-            button.style.borderRadius = o.arrowRadius + 'px';
-            button.style.padding = o.arrowPadding + 'px';
-            button.style.filter = 'drop-shadow(' + o.arrowTextShadow + ')';
-            button.style.border = o.arrowBorder;
-            button.style.color = o.arrowColor;
-            button.style.fill = o.arrowColor;
-            button.style.background = o.arrowBackground;
-            button.style.boxSizing = 'initial';
+            Object.assign(button.style, {
+                width: `${o.arrowSize}px`,
+                borderRadius: `${o.arrowRadius}px`,
+                padding: `${o.arrowPadding}px`,
+                filter: `drop-shadow(${o.arrowTextShadow})`,
+                border: o.arrowBorder,
+                color: o.arrowColor,
+                fill: o.arrowColor,
+                background: o.arrowBackground,
+                boxSizing: 'initial',
+            });
 
             if (o.arrowBackgroundHover) {
                 button.addEventListener('mouseenter', function () {
@@ -3296,6 +3279,7 @@ FLIPBOOK.Main.prototype = {
             ];
             
 
+        var tools = [];
         for (var i = 0; i < o.btnOrder.length; i++) {
             var btnName = o.btnOrder[i];
             var btn = o[btnName];
@@ -3303,6 +3287,13 @@ FLIPBOOK.Main.prototype = {
             if (o.isMobile && btn.hideOnMobile) {
                 btn.enabled = false;
             }
+            if (btn.toolsMenu && btn.enabled) tools.push(btn);
+        }
+        if (tools.length <= 1) o.btnTools.enabled = false;
+
+        for (var i = 0; i < o.btnOrder.length; i++) {
+            var btnName = o.btnOrder[i];
+            var btn = o[btnName];
 
             if (btn.enabled) {
                 btn.name = btnName;
@@ -3327,9 +3318,9 @@ FLIPBOOK.Main.prototype = {
         }
 
         if (this.btnSingle) this.toggleIcon(this.btnSingle, this.options.singlePageMode);
-    },
+    }
 
-    onButtonClick: function (btn, _) {
+    onButtonClick(btn, _) {
         var name = btn.dataset.name;
         var o = this.options;
 
@@ -3450,9 +3441,9 @@ FLIPBOOK.Main.prototype = {
                 this.lightbox.closeLightbox();
                 break;
         }
-    },
+    }
 
-    handleFsChange: function () {
+    handleFsChange() {
         if (!this.Book || !this.Book.enabled) {
             return;
         }
@@ -3478,9 +3469,9 @@ FLIPBOOK.Main.prototype = {
         }
 
         this.toggleIcon(this.btnExpand, !this.fullscreenActive);
-    },
+    }
 
-    createLogo: function () {
+    createLogo() {
         const { options: o, wrapper } = this;
         const { logoImg, logoCSS, logoAlignH, logoAlignV, logoUrl, logoUrlTarget, isMobile, logoHideOnMobile } = o;
 
@@ -3515,15 +3506,11 @@ FLIPBOOK.Main.prototype = {
             return img;
         };
 
-        const primary = makeLogo({ zIndex: '-1' });
+        const primary = makeLogo();
         wrapper.appendChild(primary);
+    }
 
-        primary.addEventListener('load', () => {
-            wrapper.appendChild(makeLogo({ opacity: '0' }));
-        });
-    },
-
-    setLoadingProgress: function (percent) {
+    setLoadingProgress(percent) {
         if (this.disposed) {
             return;
         }
@@ -3537,9 +3524,9 @@ FLIPBOOK.Main.prototype = {
                 this.preloader.classList.add('flipbook-hidden');
             }
         }
-    },
+    }
 
-    setFillPreloaderProgress: function (percent) {
+    setFillPreloaderProgress(percent) {
         if (!this.$fillPreloader) {
             return;
         }
@@ -3558,9 +3545,9 @@ FLIPBOOK.Main.prototype = {
         } else {
             this.$fillPreloader.hide();
         }
-    },
+    }
 
-    playFlipSound: function () {
+    playFlipSound() {
         if (this.options.sound && this.Book.enabled && typeof this.flipSound.play != 'undefined') {
             this.flipSound.currentTime = 0;
 
@@ -3573,23 +3560,26 @@ FLIPBOOK.Main.prototype = {
                 );
             }, 70);
         }
-    },
+    }
 
-    playBgMusic: function () {
-        if (this.options.sound && this.backgroundMusic && this.backgroundMusic.play) {
-            var self = this;
-            this.backgroundMusic.play().then(
-                function () {},
-                function (_) {
-                    setTimeout(function () {
-                        self.playBgMusic();
-                    }, 100);
-                }
-            );
-        }
-    },
+    playBgMusic(retry = true) {
+        if (!this.options.sound || !this.backgroundMusic) return;
 
-    onMouseWheel: function (e) {
+        const attemptPlay = () => {
+            const playPromise = this.backgroundMusic.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch((e) => {
+                    if (retry && e && (e.name === 'NotAllowedError' || e.message?.includes('user'))) {
+                        setTimeout(attemptPlay, 200); // Retry after 200ms
+                    }
+                });
+            }
+        };
+
+        attemptPlay();
+    }
+
+    onMouseWheel(e) {
         if ('wheelDeltaX' in e) {
             wheelDeltaX = e.wheelDeltaX / 12;
             wheelDeltaY = e.wheelDeltaY / 12;
@@ -3605,9 +3595,9 @@ FLIPBOOK.Main.prototype = {
         } else {
             this.zoomOut(e);
         }
-    },
+    }
 
-    zoomTo: function (val, time, e) {
+    zoomTo(val, time, e) {
         this.zoom = val;
 
         var x;
@@ -3649,13 +3639,13 @@ FLIPBOOK.Main.prototype = {
         this.Book.zoomTo(this.zoom, time, x, y);
 
         this.onZoom(this.zoom);
-    },
+    }
 
-    zoomOut: function (e) {
-        var newZoom = this.zoom - this.options.zoomStep * 0.5;
-        if (newZoom < 1 && this.zoom > 1) {
-            newZoom = 1;
-        }
+    zoomOut(e) {
+        var newZoom = this.zoom / this.options.zoomStep;
+        // if (newZoom < 1 && this.zoom > 1) {
+        //     newZoom = 1;
+        // }
         const zoomMin = this.getZoomMin();
         newZoom = newZoom < zoomMin ? zoomMin : newZoom;
 
@@ -3665,16 +3655,14 @@ FLIPBOOK.Main.prototype = {
 
         this.zoom = newZoom;
 
-        var t = this.options.zoomTime;
+        this.zoomTo(this.zoom, this.options.zoomTime, e);
+    }
 
-        this.zoomTo(this.zoom, t, e);
-    },
-
-    zoomIn: function (e) {
-        var newZoom = this.zoom + this.options.zoomStep * 0.5;
-        if (newZoom > 1 && this.zoom < 1) {
-            newZoom = 1;
-        }
+    zoomIn(e) {
+        var newZoom = this.zoom * this.options.zoomStep;
+        // if (newZoom > 1 && this.zoom < 1) {
+        //     newZoom = 1;
+        // }
 
         if (newZoom > this.options.zoomMax) {
             newZoom = this.options.zoomMax;
@@ -3687,13 +3675,13 @@ FLIPBOOK.Main.prototype = {
         this.zoom = newZoom;
 
         this.zoomTo(this.zoom, this.options.zoomTime, e);
-    },
+    }
 
-    getZoomMin: function () {
+    getZoomMin() {
         return this.options.viewMode == 'scroll' ? this.options.zoomMin2 : this.options.zoomMin;
-    },
+    }
 
-    nextPage: function () {
+    nextPage() {
         if (!this.Book) {
             return;
         }
@@ -3702,9 +3690,9 @@ FLIPBOOK.Main.prototype = {
             this.Book.nextPage();
             window.getSelection().removeAllRanges();
         }
-    },
+    }
 
-    prevPage: function () {
+    prevPage() {
         if (!this.Book) {
             return;
         }
@@ -3713,17 +3701,17 @@ FLIPBOOK.Main.prototype = {
             this.Book.prevPage();
             window.getSelection().removeAllRanges();
         }
-    },
+    }
 
-    firstPage: function () {
+    firstPage() {
         this.goToPage(1);
-    },
+    }
 
-    lastPage: function () {
+    lastPage() {
         this.goToPage(this.options.pages.length);
-    },
+    }
 
-    goToPage: function (pageNumber, instant) {
+    goToPage(pageNumber, instant) {
         if (!this.Book) {
             return;
         }
@@ -3744,27 +3732,35 @@ FLIPBOOK.Main.prototype = {
 
         this.Book.goToPage(pageNumber, instant);
         window.getSelection().removeAllRanges();
-    },
+    }
 
-    moveBook: function (direction) {
+    moveBook(direction) {
         if (this.Book && this.Book.move) {
             this.Book.move(direction);
         }
-    },
+    }
 
-    onZoom: function (newZoom) {
+    onZoom(newZoom) {
         this.zoom = newZoom;
         const zoomMin = this.getZoomMin();
         this.enableButton(this.btnZoomIn, newZoom < this.options.zoomMax);
         this.enableButton(this.btnZoomOut, newZoom > zoomMin);
         this.enableSwipe(newZoom <= 1);
-    },
 
-    enableSwipe: function (val) {
+        this.sendGAEvent({
+            event: 'flipbook_zoom',
+            book_name: this.options.name,
+            page_number: this.currentPageValue,
+            zoom: newZoom,
+            nonInteraction: true,
+        });
+    }
+
+    enableSwipe(val) {
         this.swipeEnabled = val;
-    },
+    }
 
-    createCurrentPage: function () {
+    createCurrentPage() {
         var self = this;
         var o = this.options;
         var menu;
@@ -3861,9 +3857,9 @@ FLIPBOOK.Main.prototype = {
         if (!floating) {
             this.currentPageInput.classList.add('skin-color');
         }
-    },
+    }
 
-    createMenuHeader: function (el, title, _) {
+    createMenuHeader(el, title, _) {
         var header = document.createElement('div');
         header.className = 'flipbook-menu-header skin-clor flipbook-font';
         el.appendChild(header);
@@ -3884,13 +3880,13 @@ FLIPBOOK.Main.prototype = {
 
         var closeIcon = this.createSVGIcon('close');
         btnClose.appendChild(closeIcon);
-    },
+    }
 
-    createToc: function () {
+    createToc() {
         var tocArray = this.options.tableOfContent;
 
         this.tocHolder = document.createElement('div');
-        this.tocHolder.className = 'flipbook-tocHolder flipbook-side-menu skin-color-bg';
+        this.tocHolder.className = 'flipbook-tocHolder flipbook-side-menu skin-color-bg flipbook-border';
         this.wrapper.appendChild(this.tocHolder);
         this.tocHolder.style[this.options.sideMenuPosition] = '0';
         this.tocHolder.classList.add('flipbook-hidden');
@@ -3931,9 +3927,9 @@ FLIPBOOK.Main.prototype = {
         this.initColors();
         this.tocCreated = true;
         this.toggleToc();
-    },
+    }
 
-    buildTOC: function (items) {
+    buildTOC(items) {
         const self = this;
         const ul = document.createElement('ul');
         const expandSvg = this.createSVGIcon('next');
@@ -4024,28 +4020,28 @@ FLIPBOOK.Main.prototype = {
         });
 
         return ul;
-    },
+    }
 
-    goToDest: function (destArray) {
-        },
+    goToDest(destArray) {
+        }
 
-    enablePrev: function (val) {
+    enablePrev(val) {
         if (this.prevEnabled == val || !this.btnPrev) return;
         this.enableButton(this.btnPrev, val);
         this.enableButton(this.btnFirst, val);
         this.prevEnabled = val;
         this.Book.enablePrev(val);
-    },
+    }
 
-    enableNext: function (val) {
+    enableNext(val) {
         if (this.nextEnabled == val || !this.btnNext) return;
         this.enableButton(this.btnNext, val);
         this.enableButton(this.btnLast, val);
         this.nextEnabled = val;
         this.Book.enableNext(val);
-    },
+    }
 
-    enableButton: function (button, enabled) {
+    enableButton(button, enabled) {
         if (typeof button === 'undefined') {
             return;
         }
@@ -4057,9 +4053,9 @@ FLIPBOOK.Main.prototype = {
         }
 
         button.enabled = enabled;
-    },
+    }
 
-    resize: function (force) {
+    resize(force) {
         var o = this.options;
 
         this.updateWrapperDimensions();
@@ -4109,15 +4105,15 @@ FLIPBOOK.Main.prototype = {
         if (o.zoomReset) {
             this.Book.zoomTo(o.zoomMin);
         }
-    },
+    }
 
-    updateWrapperDimensions: function () {
+    updateWrapperDimensions() {
         let rect = this.bookLayer.getBoundingClientRect();
         this.wrapperW = rect.width;
         this.wrapperH = rect.height;
-    },
+    }
 
-    adjustZoomLimits: function () {
+    adjustZoomLimits() {
         var o = this.options;
         var wrapperRatio = this.wrapperW / this.wrapperH;
         var pageRatio = this.pageW / this.pageH;
@@ -4137,18 +4133,18 @@ FLIPBOOK.Main.prototype = {
         }
 
         o.zoomMax = Math.max(o.zoomMax, o.zoomMin);
-    },
+    }
 
-    pdfResize: function () {
+    pdfResize() {
         var self = this;
         self.Book.onZoom();
-    },
+    }
 
-    createThumbs: function () {
+    createThumbs() {
         this.thumbs = new FLIPBOOK.Thumbnails(this);
-    },
+    }
 
-    toggleThumbs: function (value) {
+    toggleThumbs(value) {
         if (!this.thumbs) {
             this.createThumbs();
         }
@@ -4167,9 +4163,9 @@ FLIPBOOK.Main.prototype = {
         }
 
         this.resize();
-    },
+    }
 
-    toggleToc: function (value) {
+    toggleToc(value) {
         if (!this.tocCreated) {
             this.createToc();
             return;
@@ -4185,15 +4181,15 @@ FLIPBOOK.Main.prototype = {
         }
 
         this.resize();
-    },
+    }
 
-    toggleSearch: function (value) {
-        },
+    toggleSearch(value) {
+        }
 
-    toggleBookmark: function (value) {
-        },
+    toggleBookmark(value) {
+        }
 
-    closeMenus: function () {
+    closeMenus() {
         if (this.thumbsShowing) {
             this.toggleThumbs();
         }
@@ -4225,9 +4221,9 @@ FLIPBOOK.Main.prototype = {
         if (this.passwordMenuShowing) {
             this.togglePasswordMenu();
         }
-    },
+    }
 
-    toggleToolsMenu: function () {
+    toggleToolsMenu() {
         var self = this;
 
         if (!this.toolsMenu.parentNode) {
@@ -4263,14 +4259,14 @@ FLIPBOOK.Main.prototype = {
             this.btnTools.classList.remove('flipbook-btn-active');
             this.btnTools.classList.add('flipbook-has-tooltip');
         }
-    },
+    }
 
-    togglePrintMenu: function () {
+    togglePrintMenu() {
         var self = this;
 
         if (!this.printMenu) {
             this.printMenu = document.createElement('div');
-            this.printMenu.className = 'flipbook-sub-menu flipbook-font';
+            this.printMenu.className = 'flipbook-sub-menu flipbook-font flipbook-border';
             this.wrapper.appendChild(this.printMenu);
 
             var center = document.createElement('div');
@@ -4327,12 +4323,12 @@ FLIPBOOK.Main.prototype = {
             this.printMenu.style.display = 'none';
             this.printMenuShowing = false;
         }
-    },
+    }
 
-    toggleDownloadMenu: function () {
-        },
+    toggleDownloadMenu() {
+        }
 
-    toggleShareMenu: function () {
+    toggleShareMenu() {
         var self = this;
         if (!this.shareMenu.parentNode) {
             this.btnShare.appendChild(this.shareMenu);
@@ -4378,6 +4374,9 @@ FLIPBOOK.Main.prototype = {
                     btn.className = 'flipbook-menu-btn-wrapper flipbook-has-tooltip';
                     btn.setAttribute('data-network', network);
                     btn.setAttribute('data-tooltip', o[network].title || o.strings[network]);
+
+                    btn.style.width = `${o.btnSize}px`;
+                    btn.style.height = `${o.btnSize}px`;
 
                     let svg = self.createSVGIcon(network);
                     btn.appendChild(svg);
@@ -4427,6 +4426,13 @@ FLIPBOOK.Main.prototype = {
                             } else {
                                 fallbackCopyTextToClipboard(currentUrl);
                             }
+
+                            self.sendGAEvent({
+                                event: 'flipbook_share',
+                                book_name: self.options.name,
+                                url: currentUrl,
+                                nonInteraction: true,
+                            });
                         } else {
                             var text = encodeURIComponent(
                                 o.shareTitle || o[network].description || 'Check out this flipbook'
@@ -4454,6 +4460,13 @@ FLIPBOOK.Main.prototype = {
                                     ', left=' +
                                     left
                             );
+
+                            self.sendGAEvent({
+                                event: 'flipbook_share',
+                                book_name: self.options.name,
+                                url: shareUrl,
+                                nonInteraction: true,
+                            });
                         }
                     });
                 }
@@ -4470,45 +4483,45 @@ FLIPBOOK.Main.prototype = {
             this.btnShare.classList.remove('flipbook-btn-active');
             this.btnShare.classList.add('flipbook-has-tooltip');
         }
-    },
+    }
 
-    toggleNotesMenu: function () {
-        },
+    toggleNotesMenu() {
+        }
 
-    updateNoteSettings: function (noteType) {
+    updateNoteSettings(noteType) {
         this.options.noteTypes.forEach(function (type) {
             if (type.id == noteType.id) {
                 type.enabled = noteType.enabled;
             }
         });
         this.noteService.updateNoteVisibility();
-    },
+    }
 
-    bookmarkPage: function (index) {
-        },
+    bookmarkPage(index) {
+        }
 
-    removeBookmark: function (index) {
-        },
+    removeBookmark(index) {
+        }
 
-    isBookmarked: function (index) {
+    isBookmarked(index) {
         var arr = this.getBookmarkedPages();
         return arr.indexOf(String(index)) > 0;
-    },
+    }
 
-    getBookmarkedPages: function () {
+    getBookmarkedPages() {
         var str = localStorage.getItem(this.options.name + '_flipbook_bookmarks');
         if (str) {
             return str.split(';');
         } else {
             return [];
         }
-    },
+    }
 
-    setBookmarkedPages: function (arr) {
+    setBookmarkedPages(arr) {
         localStorage.setItem(this.options.name + '_flipbook_bookmarks', arr.join(';'));
-    },
+    }
 
-    printPage: function (index, _) {
+    printPage(index, _) {
         var url;
         var page = this.options.pages[index];
         var size = this.options.pageTextureSize;
@@ -4542,12 +4555,12 @@ FLIPBOOK.Main.prototype = {
                 self.printPage(index);
             });
         }
-    },
+    }
 
-    downloadPage: function (index) {
-        },
+    downloadPage(index) {
+        }
 
-    printFile: function (url) {
+    printFile(url) {
         var printIframe = document.createElement('iframe');
         printIframe.classList.add('flipbook-hidden');
         printIframe.src = url;
@@ -4558,9 +4571,9 @@ FLIPBOOK.Main.prototype = {
                 self.print();
             }, 100);
         };
-    },
+    }
 
-    togglePrintWindow: function (url) {
+    togglePrintWindow(url) {
         var self = this;
         var printContent = '';
 
@@ -4628,15 +4641,15 @@ FLIPBOOK.Main.prototype = {
         }
 
         printme();
-    },
+    }
 
-    thumbsVertical: function () {
+    thumbsVertical() {
         if (!this.thumbsCreated) {
             return;
         }
-    },
+    }
 
-    toggleExpand: function () {
+    toggleExpand() {
         const elem = this.fullscreenElement;
 
         const requestFullscreen = (element) => {
@@ -4713,15 +4726,15 @@ FLIPBOOK.Main.prototype = {
         if (this.toolsMenuShowing) {
             this.toggleToolsMenu();
         }
-    },
+    }
 
-    expand: function () {},
+    expand() {}
 
-    toggleSinglePage: function () {
-        },
+    toggleSinglePage() {
+        }
 
-    toggleAutoplay: function (value) {
-        },
+    toggleAutoplay(value) {
+        }
 };
 
 FLIPBOOK.Book = function () {};
@@ -4790,7 +4803,7 @@ FLIPBOOK.Book.prototype = {
                                 if (this.autoplay) {
                                     this.play();
                                 }
-                                item.style.visibility = 'visible';
+                                this.style.visibility = 'visible';
                             };
                         } else {
                             if (item.currentTime == item.duration) {
@@ -5065,19 +5078,19 @@ FLIPBOOK.Notes.prototype = {
     },
 };
 
-FLIPBOOK.Tooltip = function () {
-    this.domElement = document.createElement('div');
-    this.domElement.className = 'flipbook-tooltip flipbook-noselect';
-    this.domElement.classList.add('flipbook-hidden');
-    const self = this;
-    this.currentPosition = { x: 0, y: 0 };
-    document.addEventListener('scroll', function () {
-        self.position();
-    });
-};
+FLIPBOOK.Tooltip = class {
+    constructor() {
+        this.domElement = document.createElement('div');
+        this.domElement.className = 'flipbook-tooltip flipbook-noselect';
+        this.domElement.classList.add('flipbook-hidden');
+        const self = this;
+        this.currentPosition = { x: 0, y: 0 };
+        document.addEventListener('scroll', function () {
+            self.position();
+        });
+    }
 
-FLIPBOOK.Tooltip.prototype = {
-    show: function (params) {
+    show(params) {
         if (!this.showing) {
             this.domElement.classList.remove('flipbook-hidden');
             this.showing = true;
@@ -5098,318 +5111,318 @@ FLIPBOOK.Tooltip.prototype = {
             this.currentPosition = params.position;
             this.position();
         }
-    },
-    hide: function () {
+    }
+    hide() {
         if (this.showing) {
             this.domElement.classList.add('flipbook-hidden');
             this.showing = false;
         }
-    },
-    position: function () {
+    }
+    position() {
         const wrapperRect = this.domElement.parentNode.getBoundingClientRect();
         this.domElement.style.top = this.currentPosition.y - wrapperRect.top - scrollY + 'px';
         this.domElement.style.left = this.currentPosition.x - wrapperRect.left - scrollX + 'px';
-    },
+    }
 };
 
-FLIPBOOK.Thumbnails = function (main) {
-    var self = this;
-    var options = main.options;
-    var wrapper = main.wrapper;
+FLIPBOOK.Thumbnails = class {
+    constructor(main) {
+        var self = this;
+        var options = main.options;
+        var wrapper = main.wrapper;
 
-    this.main = main;
-    this.options = options;
-    this.wrapper = wrapper;
-    this.active = null;
+        this.main = main;
+        this.options = options;
+        this.wrapper = wrapper;
+        this.active = null;
 
-    this.thumbHolder = document.createElement('div');
-    this.thumbHolder.className = 'flipbook-thumbHolder flipbook-side-menu skin-color-bg';
-    wrapper.appendChild(this.thumbHolder);
-    this.thumbHolder.style[options.sideMenuPosition] = '0';
-    this.thumbHolder.classList.add('flipbook-hidden');
+        this.thumbHolder = document.createElement('div');
+        this.thumbHolder.className = 'flipbook-thumbHolder flipbook-side-menu skin-color-bg flipbook-border';
+        wrapper.appendChild(this.thumbHolder);
+        this.thumbHolder.style[options.sideMenuPosition] = '0';
+        this.thumbHolder.classList.add('flipbook-hidden');
 
-    main.createMenuHeader(this.thumbHolder, main.strings.thumbnails, main.toggleThumbs);
+        main.createMenuHeader(this.thumbHolder, main.strings.thumbnails, main.toggleThumbs);
 
-    this.bookmark = document.createElement('div');
-    this.bookmark.className = 'flipbook-font';
-    this.thumbHolder.appendChild(this.bookmark);
-    this.bookmark.classList.add('flipbook-hidden');
+        this.bookmark = document.createElement('div');
+        this.bookmark.className = 'flipbook-font';
+        this.thumbHolder.appendChild(this.bookmark);
+        this.bookmark.classList.add('flipbook-hidden');
 
-    var currentBookmark = document.createElement('a');
-    currentBookmark.innerHTML =
-        '<div class="c-p skin-color flipbook-btn">' + options.strings.bookmarkCurrentPage + '</div>';
-    this.bookmark.appendChild(currentBookmark);
-    currentBookmark.addEventListener('click', function (e) {
-        main.bookmarkPage(main.cPage[0], this);
-        e.preventDefault();
-        e.stopPropagation();
-    });
+        var currentBookmark = document.createElement('a');
+        currentBookmark.innerHTML =
+            '<div class="c-p skin-color flipbook-btn">' + options.strings.bookmarkCurrentPage + '</div>';
+        this.bookmark.appendChild(currentBookmark);
+        currentBookmark.addEventListener('click', function (e) {
+            main.bookmarkPage(main.cPage[0], this);
+            e.preventDefault();
+            e.stopPropagation();
+        });
 
-    var leftBookmark = document.createElement('a');
-    leftBookmark.innerHTML =
-        '<div class="c-l-p skin-color flipbook-btn">' + options.strings.bookmarkLeftPage + '</div>';
-    this.bookmark.appendChild(leftBookmark);
-    leftBookmark.addEventListener('click', function (e) {
-        main.bookmarkPage(main.cPage[0], this);
-        e.preventDefault();
-        e.stopPropagation();
-    });
+        var leftBookmark = document.createElement('a');
+        leftBookmark.innerHTML =
+            '<div class="c-l-p skin-color flipbook-btn">' + options.strings.bookmarkLeftPage + '</div>';
+        this.bookmark.appendChild(leftBookmark);
+        leftBookmark.addEventListener('click', function (e) {
+            main.bookmarkPage(main.cPage[0], this);
+            e.preventDefault();
+            e.stopPropagation();
+        });
 
-    var rightBookmark = document.createElement('a');
-    rightBookmark.innerHTML =
-        '<div class="c-r-p skin-color flipbook-btn">' + options.strings.bookmarkRightPage + '</div>';
-    this.bookmark.appendChild(rightBookmark);
-    rightBookmark.addEventListener('click', function (e) {
-        main.bookmarkPage(main.cPage[1], this);
-        e.preventDefault();
-        e.stopPropagation();
-    });
+        var rightBookmark = document.createElement('a');
+        rightBookmark.innerHTML =
+            '<div class="c-r-p skin-color flipbook-btn">' + options.strings.bookmarkRightPage + '</div>';
+        this.bookmark.appendChild(rightBookmark);
+        rightBookmark.addEventListener('click', function (e) {
+            main.bookmarkPage(main.cPage[1], this);
+            e.preventDefault();
+            e.stopPropagation();
+        });
 
-    this.search = document.createElement('div');
-    this.search.className = 'flipbook-search';
-    this.thumbHolder.appendChild(this.search);
-    this.search.classList.add('flipbook-hidden');
+        this.search = document.createElement('div');
+        this.search.className = 'flipbook-search';
+        this.thumbHolder.appendChild(this.search);
+        this.search.classList.add('flipbook-hidden');
 
-    this.searchBar = document.createElement('div');
-    this.searchBar.className = 'flipbook-findbar';
-    this.search.appendChild(this.searchBar);
+        this.searchBar = document.createElement('div');
+        this.searchBar.className = 'flipbook-findbar';
+        this.search.appendChild(this.searchBar);
 
-    this.findInputCotainer = document.createElement('div');
-    this.findInputCotainer.id = 'findbarInputContainer';
-    this.searchBar.appendChild(this.findInputCotainer);
+        this.findInputCotainer = document.createElement('div');
+        this.findInputCotainer.id = 'findbarInputContainer';
+        this.searchBar.appendChild(this.findInputCotainer);
 
-    this.findInput = document.createElement('input');
-    this.findInput.className = 'toolbarField skin-color skin-color-bg';
-    this.findInput.title = 'Find';
-    this.findInput.autocapitalize = 'none';
-    this.findInput.placeholder = `${options.strings.findInDocument}...`;
-    this.findInputCotainer.appendChild(this.findInput);
+        this.findInput = document.createElement('input');
+        this.findInput.className = 'toolbarField skin-color skin-color-bg';
+        this.findInput.title = 'Find';
+        this.findInput.autocapitalize = 'none';
+        this.findInput.placeholder = `${options.strings.findInDocument}...`;
+        this.findInputCotainer.appendChild(this.findInput);
 
-    this.clearInput = document.createElement('span');
-    this.clearInput.className = 'flipbook-search-clear flipbook-hidden skin-color skin-color-bg';
+        this.clearInput = document.createElement('span');
+        this.clearInput.className = 'flipbook-search-clear flipbook-hidden skin-color skin-color-bg';
 
-    var closeIcon = main.createSVGIcon('close');
-    this.clearInput.appendChild(closeIcon);
-    this.clearInput.addEventListener('click', function () {
-        self.findInput.value = '';
-        self.hideAllThumbs();
-        self.clearSearchResults();
-        main.unmark();
-        main.searchingString = '';
-        self.clearInput.classList.add('flipbook-hidden');
-        self.findInput.focus();
-    });
-
-    this.findInputCotainer.appendChild(this.clearInput);
-
-    this.thumbsWrapper = document.createElement('div');
-    this.thumbsWrapper.className = 'flipbook-thumbsWrapper';
-    this.thumbHolder.appendChild(this.thumbsWrapper);
-
-    this.closeGrid = document.createElement('div');
-    this.closeGrid.className = 'flipbook-thumbs-grid-close skin-color flipbook-menu-btn';
-    this.thumbsWrapper.appendChild(this.closeGrid);
-    this.closeGrid.addEventListener('click', function (e) {
-        e.stopPropagation();
-        e.preventDefault();
-        self.main.closeMenus();
-    });
-
-    var closeIcon = this.main.createSVGIcon('close');
-    this.closeGrid.appendChild(closeIcon);
-
-    this.thumbsScroller = document.createElement('div');
-    this.thumbsScroller.className = 'flipbook-thumbsScroller skin-color';
-    this.thumbsWrapper.appendChild(this.thumbsScroller);
-
-    var searchTimeout = 0;
-
-    this.findInput.addEventListener('keyup', function () {
-        var str = this.value;
-        if (str) {
-            self.clearInput.classList.remove('flipbook-hidden');
-        } else {
+        var closeIcon = main.createSVGIcon('close');
+        this.clearInput.appendChild(closeIcon);
+        this.clearInput.addEventListener('click', function () {
+            self.findInput.value = '';
+            self.hideAllThumbs();
+            self.clearSearchResults();
+            main.unmark();
+            main.searchingString = '';
             self.clearInput.classList.add('flipbook-hidden');
-        }
-        clearTimeout(searchTimeout);
+            self.findInput.focus();
+        });
 
-        searchTimeout = setTimeout(function () {
-            var main = self.main;
-            var pdfService = main.pdfService;
-            if (str !== '') {
-                var options = main.options;
-                var matchesFound = 0;
+        this.findInputCotainer.appendChild(this.clearInput);
 
-                self.hideAllThumbs();
-                self.clearSearchResults();
-                self.pagesFound = 0;
-                main.unmark();
-                main.searchingString = str;
+        this.thumbsWrapper = document.createElement('div');
+        this.thumbsWrapper.className = 'flipbook-thumbsWrapper';
+        this.thumbHolder.appendChild(this.thumbsWrapper);
 
-                if (pdfService) {
-                    for (var i = 0; i < pdfService.info.numPages; i++) {
-                        pdfService.findInPage(str, i, function (matches, htmlContent, index, pageText) {
-                            if (matches.length > 0) {
-                                self.pagesFound++;
-                                matchesFound += matches.length;
-                                main.mark(str);
-                                if (options.searchResultsThumbs) self.showThumb(index);
-                                else self.showSearchResults(matches, index, pageText);
+        this.closeGrid = document.createElement('div');
+        this.closeGrid.className = 'flipbook-thumbs-grid-close skin-color flipbook-menu-btn';
+        this.thumbsWrapper.appendChild(this.closeGrid);
+        this.closeGrid.addEventListener('click', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            self.main.closeMenus();
+        });
+
+        var closeIcon = this.main.createSVGIcon('close');
+        this.closeGrid.appendChild(closeIcon);
+
+        this.thumbsScroller = document.createElement('div');
+        this.thumbsScroller.className = 'flipbook-thumbsScroller skin-color';
+        this.thumbsWrapper.appendChild(this.thumbsScroller);
+
+        var searchTimeout = 0;
+
+        this.findInput.addEventListener('keyup', function () {
+            var str = this.value;
+            if (str) {
+                self.clearInput.classList.remove('flipbook-hidden');
+            } else {
+                self.clearInput.classList.add('flipbook-hidden');
+            }
+            clearTimeout(searchTimeout);
+
+            searchTimeout = setTimeout(function () {
+                var main = self.main;
+                var pdfService = main.pdfService;
+                if (str !== '') {
+                    var options = main.options;
+                    var matchesFound = 0;
+
+                    self.hideAllThumbs();
+                    self.clearSearchResults();
+                    self.pagesFound = 0;
+                    main.unmark();
+                    main.searchingString = str;
+
+                    if (pdfService) {
+                        for (var i = 0; i < pdfService.info.numPages; i++) {
+                            pdfService.findInPage(str, i, function (matches, htmlContent, index, pageText) {
+                                if (matches.length > 0) {
+                                    self.pagesFound++;
+                                    matchesFound += matches.length;
+                                    main.mark(str);
+                                    if (options.searchResultsThumbs) self.showThumb(index);
+                                    else self.showSearchResults(matches, index, pageText);
+                                }
+                            });
+                        }
+                    } else {
+                        options.pagesOriginal.forEach((_, index) => {
+                            if (!options.cover) {
+                                index++;
                             }
+                            var pi = index;
+                            if (options.doublePage) {
+                                pi *= 2;
+                            }
+                            if (options.doublePage && pi === options.pagesOriginal.length * 2 - 2) {
+                                pi--;
+                            }
+
+                            main.loadPageHTML(pi, function (htmlContent, index) {
+                                var matches = htmlContent.innerText
+                                    .toUpperCase()
+                                    .search(main.searchingString.toUpperCase());
+                                if (matches > -1) {
+                                    if (options.doublePage) {
+                                        index /= 2;
+                                    }
+                                    self.showThumb(index);
+                                    self.pagesFound++;
+                                    main.mark(str);
+                                }
+                            });
                         });
                     }
                 } else {
-                    options.pagesOriginal.forEach((_, index) => {
-                        if (!options.cover) {
-                            index++;
-                        }
-                        var pi = index;
-                        if (options.doublePage) {
-                            pi *= 2;
-                        }
-                        if (options.doublePage && pi === options.pagesOriginal.length * 2 - 2) {
-                            pi--;
-                        }
-
-                        main.loadPageHTML(pi, function (htmlContent, index) {
-                            var matches = htmlContent.innerText
-                                .toUpperCase()
-                                .search(main.searchingString.toUpperCase());
-                            if (matches > -1) {
-                                if (options.doublePage) {
-                                    index /= 2;
-                                }
-                                self.showThumb(index);
-                                self.pagesFound++;
-                                main.mark(str);
-                            }
-                        });
-                    });
+                    self.hideAllThumbs();
+                    self.clearSearchResults();
+                    main.unmark();
+                    main.searchingString = str;
+                    self.clearInput.classList.add('flipbook-hidden');
                 }
+            }, 700);
+        });
+
+        this.thumbs = [];
+
+        var arr2 = options.pages;
+        var arr = [];
+
+        if (options.doublePage) {
+            for (var i = 0; i < arr2.length; i++) {
+                if (i === 0 || i % 2 !== 0) {
+                    arr.push(arr2[i]);
+                }
+            }
+        } else {
+            arr = arr2;
+        }
+
+        if (options.pdfMode) {
+            this.loadThumbsFromPdf(arr);
+        }
+
+        var h = options.thumbSize;
+        var w = (options.thumbSize * options.pageWidth) / options.pageHeight;
+
+        arr.forEach((item, i) => {
+            if (item.empty) return;
+
+            var thumb = document.createElement('div');
+            thumb.className = 'flipbook-thumb';
+            thumb.setAttribute('data-thumb-index', i);
+            thumb.style.width = w + 'px';
+            thumb.style.height = h + 'px';
+            self.thumbsScroller.appendChild(thumb);
+
+            var btnClose = document.createElement('span');
+            btnClose.className = 'thumb-btn-close skin-color skin-color-bg';
+            thumb.appendChild(btnClose);
+            btnClose.addEventListener('click', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                main.removeBookmark(thumb.getAttribute('data-thumb-index'));
+            });
+
+            var iconClose = main.createSVGIcon('close');
+            btnClose.appendChild(iconClose);
+
+            this.thumbs.push(thumb);
+
+            var thumbImg;
+            if (item.thumbCanvas) {
+                thumbImg = item.thumbCanvas;
+            } else if (item.thumb) {
+                thumbImg = document.createElement('img');
+                thumbImg.src = item.thumb;
             } else {
-                self.hideAllThumbs();
-                self.clearSearchResults();
-                main.unmark();
-                main.searchingString = str;
-                self.clearInput.classList.add('flipbook-hidden');
+                return;
             }
-        }, 700);
-    });
 
-    this.thumbs = [];
+            thumb.appendChild(thumbImg);
+            thumbImg.style.height = h + 'px';
 
-    var arr2 = options.pages;
-    var arr = [];
+            var hasBackCover = options.doublePage && options.pages.length % 2 === 0;
+            var isBackCover = hasBackCover && i === arr.length - 1;
+            var isCover = options.doublePage && i === 0;
+            var isDouble = options.doublePage && !isCover && !isBackCover;
 
-    if (options.doublePage) {
-        for (var i = 0; i < arr2.length; i++) {
-            if (i === 0 || i % 2 !== 0) {
-                arr.push(arr2[i]);
+            if (isBackCover) {
+                thumbImg.setAttribute('page-title', 2 * i);
+                var span = document.createElement('span');
+                span.textContent = String(2 * i);
+                span.className = 'skin-color flipbook-thumb-num';
+                thumb.appendChild(span);
+            } else if (isDouble) {
+                thumb.style.width = 2 * w + 'px';
+                thumbImg.setAttribute('page-title', 2 * i + 1);
+                var span = document.createElement('span');
+                span.textContent = String(2 * i) + '-' + String(2 * i + 1);
+                span.className = 'skin-color flipbook-thumb-num';
+                thumb.appendChild(span);
+            } else {
+                thumbImg.setAttribute('page-title', i + 1);
+                var title = String(i + 1);
+                if (this.options.pages[i] && this.options.pages[i].name) {
+                    title = this.options.pages[i].name;
+                }
+
+                var span = document.createElement('span');
+                span.textContent = title;
+                span.className = 'skin-color flipbook-thumb-num';
+                thumb.appendChild(span);
             }
-        }
-    } else {
-        arr = arr2;
-    }
 
-    if (options.pdfMode) {
-        this.loadThumbsFromPdf(arr);
-    }
+            if (options.thumbsStyle === 'overlay') {
+                options.thumbsCloseOnClick = true;
+            }
 
-    var h = options.thumbSize;
-    var w = (options.thumbSize * options.pageWidth) / options.pageHeight;
+            thumbImg.addEventListener('click', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                var clickedPage = Number(thumbImg.getAttribute('page-title'));
+                if (options.rightToLeft) {
+                    clickedPage = options.pages.length - clickedPage + 1;
+                }
+                main.goToPage(clickedPage);
 
-    arr.forEach((item, i) => {
-        if (item.empty) return;
-
-        var thumb = document.createElement('div');
-        thumb.className = 'flipbook-thumb';
-        thumb.setAttribute('data-thumb-index', i);
-        thumb.style.width = w + 'px';
-        thumb.style.height = h + 'px';
-        self.thumbsScroller.appendChild(thumb);
-
-        var btnClose = document.createElement('span');
-        btnClose.className = 'thumb-btn-close skin-color skin-color-bg';
-        thumb.appendChild(btnClose);
-        btnClose.addEventListener('click', function (e) {
-            e.stopPropagation();
-            e.preventDefault();
-            main.removeBookmark(thumb.getAttribute('data-thumb-index'));
+                if (self.active !== 'search' && options.thumbsCloseOnClick) {
+                    main.toggleThumbs(false);
+                }
+            });
         });
 
-        var iconClose = main.createSVGIcon('close');
-        btnClose.appendChild(iconClose);
+        main.initColors();
+    }
 
-        this.thumbs.push(thumb);
-
-        var thumbImg;
-        if (item.thumbCanvas) {
-            thumbImg = item.thumbCanvas;
-        } else if (item.thumb) {
-            thumbImg = document.createElement('img');
-            thumbImg.src = item.thumb;
-        } else {
-            return;
-        }
-
-        thumb.appendChild(thumbImg);
-        thumbImg.style.height = h + 'px';
-
-        var hasBackCover = options.doublePage && options.pages.length % 2 === 0;
-        var isBackCover = hasBackCover && i === arr.length - 1;
-        var isCover = options.doublePage && i === 0;
-        var isDouble = options.doublePage && !isCover && !isBackCover;
-
-        if (isBackCover) {
-            thumbImg.setAttribute('page-title', 2 * i);
-            var span = document.createElement('span');
-            span.textContent = String(2 * i);
-            span.className = 'skin-color flipbook-thumb-num';
-            thumb.appendChild(span);
-        } else if (isDouble) {
-            thumb.style.width = 2 * w + 'px';
-            thumbImg.setAttribute('page-title', 2 * i + 1);
-            var span = document.createElement('span');
-            span.textContent = String(2 * i) + '-' + String(2 * i + 1);
-            span.className = 'skin-color flipbook-thumb-num';
-            thumb.appendChild(span);
-        } else {
-            thumbImg.setAttribute('page-title', i + 1);
-            var title = String(i + 1);
-            if (this.options.pages[i] && this.options.pages[i].name) {
-                title = this.options.pages[i].name;
-            }
-
-            var span = document.createElement('span');
-            span.textContent = title;
-            span.className = 'skin-color flipbook-thumb-num';
-            thumb.appendChild(span);
-        }
-
-        if (options.thumbsStyle === 'overlay') {
-            options.thumbsCloseOnClick = true;
-        }
-
-        thumbImg.addEventListener('click', function (e) {
-            e.stopPropagation();
-            e.preventDefault();
-            var clickedPage = Number(thumbImg.getAttribute('page-title'));
-            if (options.rightToLeft) {
-                clickedPage = options.pages.length - clickedPage + 1;
-            }
-            main.goToPage(clickedPage);
-
-            if (self.active !== 'search' && options.thumbsCloseOnClick) {
-                main.toggleThumbs(false);
-            }
-        });
-    });
-
-    main.initColors();
-};
-
-FLIPBOOK.Thumbnails.prototype = {
-    loadThumbsFromPdf: function (arr) {
+    loadThumbsFromPdf(arr) {
         var numPages = this.main.pdfService.info.numPages;
 
         for (var i = 0; i < numPages; i++) {
@@ -5418,11 +5431,11 @@ FLIPBOOK.Thumbnails.prototype = {
         }
 
         this.loadThumbFromPdf(0, arr);
-    },
+    }
 
-    loadVisibleThumbs: function () {},
+    loadVisibleThumbs() {}
 
-    loadThumbFromPdf: function (i, arr) {
+    loadThumbFromPdf(i, arr) {
         var self = this;
 
         this.main.pdfService.pdfDocument.getPage(i + 1).then(function (page) {
@@ -5452,22 +5465,22 @@ FLIPBOOK.Thumbnails.prototype = {
                 }
             });
         });
-    },
+    }
 
-    showAllThumbs: function () {
+    showAllThumbs() {
         document.querySelectorAll('.flipbook-thumb').forEach((thumb) => thumb.classList.remove('flipbook-hidden'));
         this.clearSearchResults();
-    },
+    }
 
-    hideAllThumbs: function () {
+    hideAllThumbs() {
         document.querySelectorAll('.flipbook-thumb').forEach((thumb) => thumb.classList.add('flipbook-hidden'));
-    },
+    }
 
-    clearSearchResults: function () {
+    clearSearchResults() {
         document.querySelectorAll('.flipbook-search-match').forEach((match) => match.remove());
-    },
+    }
 
-    showSearchResults: function (matches, pageIndex, str) {
+    showSearchResults(matches, pageIndex, str) {
         var self = this;
         var o = this.main.options;
 
@@ -5495,19 +5508,19 @@ FLIPBOOK.Thumbnails.prototype = {
 
             self.main.goToPage(targetPage);
         });
-    },
+    }
 
-    showThumb: function (index) {
+    showThumb(index) {
         if (this.thumbs[index]) {
             this.thumbs[index].classList.remove('flipbook-hidden');
         }
-    },
+    }
 
-    hideThumb: function (index) {
+    hideThumb(index) {
         this.thumbs[index].classList.add('flipbook-hidden');
-    },
+    }
 
-    showBookmarks: function () {
+    showBookmarks() {
         document.querySelectorAll('.thumb-btn-close').forEach((btn) => btn.classList.remove('flipbook-hidden'));
         this.showBookmarkedThumbs();
         this.clearSearchResults();
@@ -5516,9 +5529,9 @@ FLIPBOOK.Thumbnails.prototype = {
         this.main.updateCurrentPage();
         this.active = 'bookmarks';
         this.thumbHolder.classList.remove('flipbook-thumbs-grid');
-    },
+    }
 
-    showSearch: function () {
+    showSearch() {
         this.clearSearchResults();
         this.hideAllThumbs();
         this.search.classList.remove('flipbook-hidden');
@@ -5529,9 +5542,9 @@ FLIPBOOK.Thumbnails.prototype = {
         this.findInput.focus();
         this.active = 'search';
         this.thumbHolder.classList.remove('flipbook-thumbs-grid');
-    },
+    }
 
-    showBookmarkedThumbs: function () {
+    showBookmarkedThumbs() {
         var arr = this.main.getBookmarkedPages();
 
         this.hideAllThumbs();
@@ -5542,9 +5555,9 @@ FLIPBOOK.Thumbnails.prototype = {
                 this.showThumb(index);
             }
         }
-    },
+    }
 
-    show: function () {
+    show() {
         this.setTitle(this.options.strings.thumbnails);
         this.bookmark.classList.add('flipbook-hidden');
         this.search.classList.add('flipbook-hidden');
@@ -5559,81 +5572,81 @@ FLIPBOOK.Thumbnails.prototype = {
         if (this.main.options.thumbsStyle === 'overlay') {
             this.thumbHolder.classList.add('flipbook-thumbs-grid');
         }
-    },
+    }
 
-    hide: function () {
+    hide() {
         this.thumbHolder.classList.add('flipbook-hidden');
         this.main.resize();
         this.active = null;
-    },
+    }
 
-    setTitle: function (str) {
+    setTitle(str) {
         this.thumbHolder.querySelector('.flipbook-menu-title').textContent = str;
-    },
+    }
 };
 
-FLIPBOOK.Lightbox = function (context, content, options) {
-    var self = this;
-    this.context = context;
-    this.options = options;
+FLIPBOOK.Lightbox = class {
+    constructor(context, content, options) {
+        var self = this;
+        this.context = context;
+        this.options = options;
 
-    this.$document = document;
-    this.$body = document.body;
-    this.$html = document.documentElement;
-    this.$window = window;
+        this.$document = document;
+        this.$body = document.body;
+        this.$html = document.documentElement;
+        this.$window = window;
 
-    self.overlay = document.createElement('div');
-    self.overlay.className = 'flipbook-overlay';
-    self.overlay.classList.add('flipbook-hidden');
-    self.overlay.style.top = self.options.lightboxMarginV;
-    self.overlay.style.bottom = self.options.lightboxMarginV;
-    self.overlay.style.left = self.options.lightboxMarginH;
-    self.overlay.style.right = self.options.lightboxMarginH;
-    Object.assign(self.overlay.style, options.lightboxCSS);
-    document.body.appendChild(self.overlay);
+        self.overlay = document.createElement('div');
+        self.overlay.className = 'flipbook-overlay';
+        self.overlay.classList.add('flipbook-hidden');
+        self.overlay.style.top = self.options.lightboxMarginV;
+        self.overlay.style.bottom = self.options.lightboxMarginV;
+        self.overlay.style.left = self.options.lightboxMarginH;
+        self.overlay.style.right = self.options.lightboxMarginH;
+        Object.assign(self.overlay.style, options.lightboxCSS);
+        document.body.appendChild(self.overlay);
 
-    if (options.lightboxBackground) {
-        self.overlay.style.background = options.lightboxBackground;
-    }
-
-    if (options.lightboxBackgroundColor) {
-        self.overlay.style.background = options.lightboxBackgroundColor;
-    }
-
-    if (options.lightboxBackgroundPattern) {
-        self.overlay.style.background = 'url(' + options.lightboxBackgroundPattern + ') repeat';
-    }
-
-    if (options.lightboxBackgroundImage) {
-        self.overlay.style.background = 'url(' + options.lightboxBackgroundImage + ') no-repeat';
-        self.overlay.style.backgroundSize = 'cover';
-        self.overlay.style.backgroundPosition = 'center center';
-    }
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            self.closeLightbox();
+        if (options.lightboxBackground) {
+            self.overlay.style.background = options.lightboxBackground;
         }
-    });
 
-    self.wrapper = document.createElement('div');
-    self.wrapper.style.height = 'auto';
-    self.wrapper.className = 'flipbook-wrapper-transparent';
-    self.wrapper.style.margin = '0px auto';
-    self.wrapper.style.padding = '0px';
-    self.wrapper.style.height = '100%';
-    self.wrapper.style.width = '100%';
-    self.overlay.appendChild(self.wrapper);
+        if (options.lightboxBackgroundColor) {
+            self.overlay.style.background = options.lightboxBackgroundColor;
+        }
 
-    self.wrapper.appendChild(content);
+        if (options.lightboxBackgroundPattern) {
+            self.overlay.style.background = 'url(' + options.lightboxBackgroundPattern + ') repeat';
+        }
 
-    var toolbar = document.createElement('div');
-    toolbar.className = 'flipbook-lightbox-toolbar';
-    self.wrapper.appendChild(toolbar);
-};
+        if (options.lightboxBackgroundImage) {
+            self.overlay.style.background = 'url(' + options.lightboxBackgroundImage + ') no-repeat';
+            self.overlay.style.backgroundSize = 'cover';
+            self.overlay.style.backgroundPosition = 'center center';
+        }
 
-FLIPBOOK.Lightbox.prototype = {
-    openLightbox: function () {
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                self.closeLightbox();
+            }
+        });
+
+        self.wrapper = document.createElement('div');
+        self.wrapper.style.height = 'auto';
+        self.wrapper.className = 'flipbook-wrapper-transparent';
+        self.wrapper.style.margin = '0px auto';
+        self.wrapper.style.padding = '0px';
+        self.wrapper.style.height = '100%';
+        self.wrapper.style.width = '100%';
+        self.overlay.appendChild(self.wrapper);
+
+        self.wrapper.appendChild(content);
+
+        var toolbar = document.createElement('div');
+        toolbar.className = 'flipbook-lightbox-toolbar';
+        self.wrapper.appendChild(toolbar);
+    }
+
+    openLightbox() {
         if (FLIPBOOK.lightboxOpened) {
             return;
         }
@@ -5652,9 +5665,9 @@ FLIPBOOK.Lightbox.prototype = {
         if (this.context.options.password && !this.context.pdfinitStarted && this.context.initialized) {
             this.context.initPdf();
         }
-    },
+    }
 
-    showOverlay: function () {
+    showOverlay() {
         var element = this.overlay;
         element.classList.remove('flipbook-hidden');
         element.classList.add('flipbook-overlay-visible');
@@ -5664,9 +5677,9 @@ FLIPBOOK.Lightbox.prototype = {
 
         document.body.classList.add('flipbook-overflow-hidden');
         this.$html.classList.add('flipbook-overflow-hidden');
-    },
+    }
 
-    hideOverlay: function () {
+    hideOverlay() {
         var element = this.overlay;
         element.classList.remove('flipbook-overlay-visible');
         element.addEventListener('transitionend', function handleTransitionEnd() {
@@ -5676,9 +5689,9 @@ FLIPBOOK.Lightbox.prototype = {
 
         document.body.classList.remove('flipbook-overflow-hidden');
         this.$html.classList.remove('flipbook-overflow-hidden');
-    },
+    }
 
-    closeLightbox: function (popState) {
+    closeLightbox(popState) {
         if (!FLIPBOOK.lightboxOpened /*|| !this.context.Book || !this.context.Book.enabled*/) {
             return;
         }
@@ -5699,9 +5712,9 @@ FLIPBOOK.Lightbox.prototype = {
         if (!popState && !this.options.deeplinkingEnabled) {
             history.back();
         }
-    },
+    }
 
-    disposeLightbox: function () {
+    disposeLightbox() {
         FLIPBOOK.lightboxOpened = false;
 
         this.hideOverlay();
@@ -5716,7 +5729,7 @@ FLIPBOOK.Lightbox.prototype = {
         this.context.lightboxEnd();
 
         this.context.disposed = true;
-    },
+    }
 };
 
 FLIPBOOK.onPageLinkClick = function (link) {
@@ -5877,30 +5890,6 @@ FLIPBOOK.animate = function (params) {
         stop,
     };
 };
-
-FLIPBOOK.Linkify = function (element, linkTarget) {
-    const urlRegex = /\b(?:https?|ftp):\/\/[^\s<>\"]+|\bwww\.[^\s<>\"]+/gi;
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}/gi;
-
-    linkTarget = linkTarget || '_blank';
-
-    let htmlContent = element.innerHTML;
-
-    htmlContent = htmlContent.replace(urlRegex, function (url) {
-        let fullUrl = url;
-        if (url.startsWith('www.')) {
-            fullUrl = 'http://' + url;
-        }
-        return `<a href="${fullUrl}" target="${linkTarget}" class="flipbook-page-auto-link">${url}</a>`;
-    });
-
-    htmlContent = htmlContent.replace(emailRegex, function (email) {
-        return `<a href="mailto:${email}" target="${linkTarget}" class="flipbook-page-auto-link">${email}</a>`;
-    });
-
-    element.innerHTML = htmlContent;
-};
-
 FLIPBOOK.extend = function () {
     function isPlainObject(obj) {
         return Object.prototype.toString.call(obj) === '[object Object]';
@@ -5973,4 +5962,112 @@ FLIPBOOK.extend = function () {
 
     // Return the modified object
     return target;
+};
+
+FLIPBOOK.Tooltip2 = class {
+    constructor(wrapper) {
+        this.wrapper = wrapper;
+        this.tooltipEl = null;
+        this.init();
+    }
+
+    init() {
+        this.tooltipEl = document.createElement('span');
+        this.tooltipEl.className = 'flipbook-tooltip-element skin-color skin-color-bg';
+        this.tooltipEl.setAttribute('role', 'tooltip');
+        this.tooltipEl.id = 'flipbook-tooltip';
+        this.wrapper.appendChild(this.tooltipEl);
+
+        this.wrapper.addEventListener('mouseover', this.handleMouseOver.bind(this));
+        this.wrapper.addEventListener('mouseout', this.handleMouseOut.bind(this));
+        this.wrapper.addEventListener('focusin', this.handleFocusIn.bind(this));
+        this.wrapper.addEventListener('focusout', this.handleMouseOut.bind(this));
+        this.wrapper.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: true });
+    }
+
+    handleMouseOver(e) {
+        const target = e.target.closest('.flipbook-has-tooltip');
+        if (target && !target.classList.contains('disabled')) {
+            this.showTooltip(target);
+        }
+    }
+
+    handleFocusIn(e) {
+        const target = e.target.closest('.flipbook-has-tooltip');
+        if (target && !target.classList.contains('disabled')) {
+            target.setAttribute('aria-describedby', 'flipbook-tooltip');
+            this.showTooltip(target);
+        }
+    }
+
+    handleTouchStart(e) {
+        const target = e.target.closest('.flipbook-has-tooltip');
+        if (target && !target.classList.contains('disabled')) {
+            // e.preventDefault();
+            this.showTooltip(target);
+            setTimeout(() => {
+                this.hideTooltip();
+            }, 2000);
+        }
+    }
+
+    handleMouseOut() {
+        this.hideTooltip();
+    }
+
+    showTooltip(target) {
+        this.tooltipEl.innerText = target.dataset.tooltip;
+        this.tooltipEl.style.opacity = 0;
+        this.tooltipEl.style.display = 'block';
+
+        const targetRect = target.getBoundingClientRect();
+        const tooltipRect = this.tooltipEl.getBoundingClientRect();
+        const wrapperRect = this.wrapper.getBoundingClientRect();
+
+        let top = targetRect.top - wrapperRect.top - tooltipRect.height - 10;
+        let left = targetRect.left - wrapperRect.left + (targetRect.width - tooltipRect.width) / 2;
+        let isBelow = false;
+
+        // Calculate arrow position (center of target relative to tooltip)
+        let arrowLeft = targetRect.left - wrapperRect.left + targetRect.width / 2 - left;
+        arrowLeft = Math.max(6, Math.min(tooltipRect.width - 6, arrowLeft));
+
+        // WRAPPER boundary checks instead of viewport
+        // If tooltip goes above wrapper
+        if (top < 0) {
+            top = targetRect.bottom - wrapperRect.top + 10;
+            isBelow = true;
+        }
+        // If tooltip goes below wrapper
+        if (top + tooltipRect.height > wrapperRect.height) {
+            top = wrapperRect.height - tooltipRect.height - 5;
+        }
+        // If tooltip goes left of wrapper
+        if (left < 0) {
+            left = 5;
+            arrowLeft = targetRect.left - wrapperRect.left + targetRect.width / 2 - left;
+            arrowLeft = Math.max(6, Math.min(tooltipRect.width - 6, arrowLeft));
+        }
+        // If tooltip goes right of wrapper
+        if (left + tooltipRect.width > wrapperRect.width) {
+            left = wrapperRect.width - tooltipRect.width - 5;
+            arrowLeft = targetRect.left - wrapperRect.left + targetRect.width / 2 - left;
+            arrowLeft = Math.max(6, Math.min(tooltipRect.width - 6, arrowLeft));
+        }
+
+        top += this.wrapper.scrollTop;
+        left += this.wrapper.scrollLeft;
+
+        this.tooltipEl.style.top = `${top}px`;
+        this.tooltipEl.style.left = `${left}px`;
+        this.tooltipEl.style.setProperty('--arrow-left', `${arrowLeft}px`);
+        this.tooltipEl.style.opacity = 1;
+        this.tooltipEl.classList.toggle('below', isBelow);
+    }
+
+    hideTooltip() {
+        this.tooltipEl.style.opacity = 0;
+        this.tooltipEl.style.display = 'none';
+        this.tooltipEl.removeAttribute('aria-describedby');
+    }
 };

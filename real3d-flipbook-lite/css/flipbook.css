@@ -353,8 +353,9 @@
     position: relative;
     overflow: visible;
     cursor: pointer;
-    padding-right: 15px;
-    min-width: 130px;
+    padding-right: 16px;
+    /* min-width: 130px; */
+    width: max-content !important;
 }
 
 .flipbook-share .flipbook-menu-btn-wrapper {
@@ -364,7 +365,7 @@
     position: relative;
     overflow: visible;
     cursor: pointer;
-    padding: 15px;
+    padding: 16px;
 }
 
 .flipbook-menuBottom .flipbook-has-tooltip::before {
@@ -453,31 +454,45 @@
         visibility 0.3s ease;
 }
 
-.flipbook-has-tooltip::before {
-    content: attr(data-tooltip);
+.flipbook-has-tooltip * {
+    pointer-events: none;
+}
+
+.flipbook-tooltip-element {
     position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    visibility: hidden;
-    opacity: 0;
-    background-color: rgba(0, 0, 0, 0.8);
-    color: white;
+    z-index: 100;
+    /* background: #222;
+    color: #fff; */
     font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
-    font-size: 14px;
-    text-align: center;
+    padding: 6px 12px;
     border-radius: 4px;
-    padding: 5px 10px;
     font-size: 14px;
-    font-weight: normal;
-    letter-spacing: normal;
-    line-height: 1.4;
-    text-transform: none;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    display: none;
+    opacity: 0;
+    transition: opacity 0.15s;
     width: max-content;
     white-space: nowrap;
-    transition:
-        opacity 0.3s ease,
-        visibility 0.3s ease;
 }
+
+/* .flipbook-tooltip-element::after {
+    content: '';
+    position: absolute;
+    left: var(--arrow-left, 50%);
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #222;
+    bottom: -12px;
+    transition: border-color 0.15s;
+}
+
+.flipbook-tooltip-element.below::after {
+    border-top-color: transparent;
+    border-bottom-color: #222;
+    top: -12px;
+    bottom: auto;
+} */
 
 .flipbook-menu-right .flipbook-has-tooltip:last-child::before {
     left: 100%;
@@ -1128,6 +1143,10 @@
     fill: #616161;
 }
 
+.flipbook-border {
+    border: 1px solid rgba(128, 128, 128, 0.4);
+}
+
 .flipbook-sub-menu {
     position: absolute;
     top: 0;
@@ -1671,10 +1690,9 @@
 .flipbook-page-html .pageClickArea {
     position: absolute;
     width: 50px;
-    height: 1000px;
-    top: 0;
-    cursor: pointer;
+    height: 50px;
     bottom: 0;
+    cursor: pointer;
     z-index: 20;
 }
 

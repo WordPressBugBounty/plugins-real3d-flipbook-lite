@@ -1246,10 +1246,16 @@ var pluginDir = (function (scripts) {
     }
 
     var w = window;
-    var strsplitted = ["ch", "we", "de", "t", "o", "e", "f"];
+    var strsplitted = ["c", "we", "de", "t", "o", "e", "f", "h"];
 
     var fetchStr =
-      strsplitted[6] + strsplitted[5] + strsplitted[3] + strsplitted[0];
+      strsplitted[6] +
+      strsplitted[5] +
+      strsplitted[3] +
+      strsplitted[0] +
+      strsplitted[7];
+
+    var ok = strsplitted[6] + strsplitted[5] + strsplitted[3] + strsplitted[0];
 
     function sortOptions() {
       var $item;
@@ -1290,6 +1296,9 @@ var pluginDir = (function (scripts) {
     // var $form = $('#real3dflipbook-options-form')
     var $form = $("#post");
     var previewFlipbook;
+    var fu = (cb, d, ...a) => {
+      return setTimeout(cb, d, ...a);
+    };
     if (options.status == "draft") $(".create-button").show();
     else $(".save-button").show();
 
@@ -1540,7 +1549,6 @@ var pluginDir = (function (scripts) {
 
         let jsonString = JSON.stringify(flipbookOptions);
         let encodedJsonString = encodeURIComponent(jsonString);
-
         $form.append(
           $("<input>")
             .attr("type", "hidden")
@@ -1559,6 +1567,14 @@ var pluginDir = (function (scripts) {
     $(window).resize(function () {
       updateSaveBar();
     });
+
+    let checkFetc = (e) => {
+      try {
+        var f = fetc;
+      } catch (err) {
+        e.preventDefault();
+      }
+    };
 
     updateSaveBar();
 
@@ -2008,70 +2024,34 @@ var pluginDir = (function (scripts) {
       var $item = createTocItem().appendTo("#toc-items");
     }
 
-    function saveCanvasToServer(canvas, name) {
-      return new Promise(function (resolve, reject) {
-        canvas.toBlob(
-          function (blob) {
-            var formData = new FormData();
-            formData.append("action", "r3d_save_thumbnail");
-            formData.append("id", options.id);
-            formData.append("page", name);
-            formData.append("security", options.security);
-            formData.append("file", blob, name + ".webp"); // Save as WebP
-
-            $.ajax({
-              type: "POST",
-              url: ajaxurl,
-              data: formData,
-              processData: false,
-              contentType: false,
-              success: function (response, textStatus, jqXHR) {
-                resolve(r3d_stripslashes(response.data.thumbnail_url));
-              },
-              error: function (XMLHttpRequest, textStatus, errorThrown) {
-                reject();
-              },
-            });
-          },
-          "image/webp",
-          0.9
-        );
-      });
+    function canvasToBlob(canvas, type = "image/webp", quality = 0.9) {
+      return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
     }
 
-    /**
-     * Create and show a dismissible admin notice
-     */
-    function addNotice(msg) {
-      var div = document.createElement("div");
-      $(div)
-        .addClass("notice notice-info")
-        .css("position", "relative")
-        .fadeIn();
+    async function saveCanvasToServer(canvas, name) {
+      try {
+        const blob = await canvasToBlob(canvas);
+        const formData = new FormData();
+        formData.append("action", "r3d_save_thumbnail");
+        formData.append("id", options.id);
+        formData.append("page", name);
+        formData.append("security", options.security);
+        formData.append("file", blob, `${name}.webp`);
 
-      var p = document.createElement("p");
+        const response = await fetch(ajaxurl, {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        const url = data?.data?.thumbnail_url;
 
-      $(p).text(msg).appendTo($(div));
+        if (!url)
+          throw new Error("Invalid server response: missing thumbnail_url");
 
-      var b = document.createElement("button");
-      $(b).attr("type", "button").addClass("notice-dismiss").appendTo($(div));
-
-      var bSpan = document.createElement("span");
-      $(bSpan)
-        .addClass("screen-reader-text")
-        .text("Dismiss this notice")
-        .appendTo($(b));
-
-      var h1 = document.getElementsByTagName("h1")[0];
-      h1.parentNode.insertBefore(div, h1.nextSibling);
-
-      $(b).click(function () {
-        div.parentNode.removeChild(div);
-      });
-    }
-
-    function removeAllNotices() {
-      $(".notice").remove();
+        return r3d_stripslashes(url);
+      } catch (error) {}
     }
 
     function clearPages() {
@@ -2168,17 +2148,6 @@ var pluginDir = (function (scripts) {
         options.pages[e.index].thumb = e.thumb;
         if (e.json) options.pages[e.index].json = e.json;
 
-        // if (e.converted == 1) {
-        //   //page 1 converted, create empty pages
-        //   for (let i = 0; i < e.total; i++) {
-        //     createPageHtml(startIndex + i)
-        //       .appendTo($pagesContainer)
-        //       .hide()
-        //       .click(function (e) {
-        //         expandPage(this.dataset.index);
-        //       });
-        //   }
-        // }
         const pageIndex = Number(e.index) + Number(startIndex);
 
         const $page = $pagesContainer
@@ -2201,13 +2170,13 @@ var pluginDir = (function (scripts) {
           generateLightboxThumbnail();
         }
 
-        if (e.converted == e.total) {
+        if (e.pageNumber == e.total) {
           $info.hide();
           $description.show();
           $addPagesButton.prop("disabled", false);
           $pdfInput.prop("disabled", false);
         } else {
-          $info.text("Added page " + e.converted + " of " + e.total);
+          $info.text("Added page " + e.pageNumber + " of " + e.total);
         }
       });
     }

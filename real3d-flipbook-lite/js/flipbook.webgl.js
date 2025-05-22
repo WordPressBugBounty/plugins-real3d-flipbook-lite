@@ -149,45 +149,62 @@ var FLIPBOOK = FLIPBOOK || {};
         }
     };
 
-    FLIPBOOK.PageWebGL.prototype.load = function (side = 'front', c = function () {}, _) {
-        var o = this.options;
-        const { p, main, cover } = o;
-        const { disposed, sizeFront, indexF, sizeBack, indexB, index, book } = this;
-        if (!main.wrapperH || !main.zoom) {
+    FLIPBOOK.PageWebGL.prototype.load = function (side, callback, _) {
+        var main = this.book.main;
+
+        if (!main.wrapperH) {
+            return;
+        }
+        if (!main.zoom) {
             return;
         }
 
         var self = this;
-        var d = this.updateBend;
+        var options = this.book.options;
+        var main = options.main;
+
+        this.disposed = false;
+
+        var o = options;
         var pageSize = main.wrapperH * main.zoom;
-        var size = pageSize < o.pageTextureSizeSmall * 0.8 ? o.pageTextureSizeSmall : o.pageTextureSize,
-            c = p ? d : c;
+        var size = pageSize < o.pageTextureSizeSmall * 0.8 ? o.pageTextureSizeSmall : o.pageTextureSize;
+        const { p: texture } = o;
+
         if (side == 'front') {
-            if (!cover && index == 0) {
+            if (!this.options.cover && this.index == 0) {
                 return;
             }
 
-            if (sizeFront >= size) {
-                c && c.call(this);
+            if (this.sizeFront == size) {
+                if (callback) {
+                    callback.call(this);
+                }
             } else {
-                main.loadPage(indexF, size, function (page) {
-                    if (disposed) return;
-                    if (!page) {
-                        c && c.call(self);
+                main.loadPage(this.indexF, size, function (page) {
+                    if (self.disposed) return;
+                    if (!page || texture) {
+                        if (callback) {
+                            callback.call(self);
+                        }
                         return;
                     }
 
-                    if (sizeFront == size) {
-                        c && c.call(self);
+                    if (self.sizeFront == size) {
+                        if (callback) {
+                            callback.call(self);
+                        }
                         return;
                     }
 
-                    this.sizeFront = size;
+                    self.sizeFront = size;
 
                     var t1;
 
                     if (page.imageBitmap) {
-                        t1 = new THREE.CanvasTexture(page.imageBitmap);
+                        const bitmap = page.imageBitmap[size] || page.imageBitmap;
+                        t1 = new THREE.Texture(bitmap);
+                        t1.offset.y = 1;
+                        t1.repeat.y = -1;
                     } else {
                         t1 = new THREE.Texture();
 
@@ -200,45 +217,60 @@ var FLIPBOOK = FLIPBOOK || {};
 
                     t1.needsUpdate = true;
 
-                    var pageIndex = 2 * index;
-                    if (!o.cover) {
+                    var pageIndex = 2 * self.index;
+                    if (!self.options.cover) {
                         pageIndex--;
                     }
 
-                    if (o.pages[pageIndex].side == 'left') {
+                    if (self.options.pages[pageIndex].side == 'left') {
                         t1.repeat.x = 0.5;
-                    } else if (o.pages[pageIndex].side == 'right') {
+                    } else if (self.options.pages[pageIndex].side == 'right') {
                         t1.repeat.x = 0.5;
                         t1.offset.x = 0.5;
                     }
                     self.frontMaterial = self.createMaterial(t1);
+
                     self.setFrontMat(self.frontMaterial);
-                    c && c.call(self);
+                    if (callback) {
+                        callback.call(self);
+                    }
                 });
             }
         } else if (side == 'back') {
-            if (!cover && index == book.pages.length - 1) {
+            if (!options.cover && this.index == this.book.pages.length - 1) {
                 return;
             }
-            if (sizeBack >= size) {
-                c && c.call(this);
+
+            if (this.sizeBack == size) {
+                if (callback) {
+                    callback.call(this);
+                }
             } else {
-                main.loadPage(indexB, size, function (page) {
-                    if (!page) {
-                        c && c.call(self);
+                main.loadPage(this.indexB, size, function (page) {
+                    if (self.disposed) return;
+                    if (!page || texture) {
+                        if (callback) {
+                            callback.call(self);
+                        }
                         return;
                     }
 
-                    if (sizeBack == size) {
-                        c && c.call(self);
+                    if (self.sizeBack == size) {
+                        if (callback) {
+                            callback.call(self);
+                        }
                         return;
                     }
 
-                    this.sizeBack = size;
+                    self.sizeBack = size;
 
                     var t2;
+
                     if (page.imageBitmap) {
-                        t2 = new THREE.CanvasTexture(page.imageBitmap);
+                        const bitmap = page.imageBitmap[size] || page.imageBitmap;
+                        t2 = new THREE.Texture(bitmap);
+                        t2.offset.y = 1;
+                        t2.repeat.y = -1;
                     } else {
                         t2 = new THREE.Texture();
 
@@ -251,19 +283,22 @@ var FLIPBOOK = FLIPBOOK || {};
                     t2.needsUpdate = true;
 
                     var pageIndex = 2 * self.index + 1;
-                    if (!o.cover) {
+                    if (!self.options.cover) {
                         pageIndex--;
                     }
 
-                    if (o.pages[pageIndex].side == 'left') {
+                    if (self.options.pages[pageIndex].side == 'left') {
                         t2.repeat.x = 0.5;
-                    } else if (o.pages[pageIndex].side == 'right') {
+                    } else if (self.options.pages[pageIndex].side == 'right') {
                         t2.repeat.x = 0.5;
                         t2.offset.x = 0.5;
                     }
                     self.backMaterial = self.createMaterial(t2, 'back');
                     self.setBackMat(self.backMaterial);
-                    c && c.call(self);
+
+                    if (callback) {
+                        callback.call(self);
+                    }
                 });
             }
         }
@@ -391,6 +426,7 @@ var FLIPBOOK = FLIPBOOK || {};
     };
 
     FLIPBOOK.PageWebGL.prototype.updateBend = function () {
+        // console.log(this.bendF);
         if (Math.abs(this.bendF.force) < 0.0001) {
             this.bendF.force = 0;
         }
@@ -711,11 +747,6 @@ var FLIPBOOK = FLIPBOOK || {};
         this.pan = o.pan;
         this.tilt = o.tilt;
 
-        // window.bk = this;
-        // window.sc = this.Scene;
-
-        // this.updateCameraPosition();
-
         var container = this.wrapper;
         var c = document.createElement('canvas');
         c.getContext('webgl');
@@ -781,17 +812,18 @@ var FLIPBOOK = FLIPBOOK || {};
             if (this.options.shadows) {
                 sl.castShadow = true;
                 sl.shadow.bias = -0.000002;
-                sl.shadow.mapSize.x = this.options.shadowMapSize;
-                sl.shadow.mapSize.y = this.options.shadowMapSize;
+                sl.shadow.mapSize.width = this.options.shadowMapSize;
+                sl.shadow.mapSize.height = this.options.shadowMapSize;
+
+                sl.shadow.radius = 2;
+                sl.angle = Math.PI * 0.25; // Narrower cone
 
                 var mat = new THREE.ShadowMaterial();
                 mat.opacity = this.options.shadowOpacity;
-
-                var bg = new THREE.Mesh(new THREE.BoxGeometry(10000, 10000, 1, 1, 1, 1), mat);
-
-                bg.position.set(0, 0, -o.shadowDistance);
-                this.Scene.add(bg);
-                bg.receiveShadow = true;
+                this.shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(3000, 1500, 1, 1), mat);
+                this.shadowPlane.position.set(0, 0, -30);
+                this.centerContainer.add(this.shadowPlane);
+                this.shadowPlane.receiveShadow = true;
             }
 
             this.Scene.add(sl);
@@ -802,9 +834,6 @@ var FLIPBOOK = FLIPBOOK || {};
         this.bookWidth = 1;
 
         this.onResize();
-
-        // align flipBook center container
-        // this.centerContainer.position.x = -this.pageW * 0.5 * this.centerContainer.scale.x;
 
         this.updateHtmlLayerPosition();
 
@@ -847,27 +876,51 @@ var FLIPBOOK = FLIPBOOK || {};
         this.pages[sheetIndex].unload(side);
     };
 
-    FLIPBOOK.BookWebGL.prototype.correctZOrder = function () {
-        var left = [];
-        var right = [];
-        for (var i = 0; i < this.pages.length; i++) {
-            var page = this.pages[i];
-            if (page.angle > Math.PI / 2) {
-                left.unshift(page);
-            } else {
-                right.push(page);
+    FLIPBOOK.BookWebGL.prototype.correctZOrder = (function () {
+        const halfPI = Math.PI * 0.5;
+        const pow = Math.pow;
+        let basePowTh = 1;
+
+        return function () {
+            const pages = this.pages;
+            const n = pages.length;
+            const th = FLIPBOOK.th();
+            const shadowPlane = this.shadowPlane;
+            basePowTh = basePowTh === 1 || this._lastTh !== th ? pow(th, 0.85) : basePowTh;
+            this._lastTh = th;
+
+            const left = (this._zLeft ||= []);
+            const right = (this._zRight ||= []);
+            let min = 0;
+            left.length = 0;
+            right.length = 0;
+
+            for (let i = 0; i < n; i++) {
+                const page = pages[i];
+                if (page.angle > halfPI) {
+                    left.push(page);
+                } else {
+                    right.push(page);
+                }
             }
-        }
-        var th = FLIPBOOK.th();
 
-        left.forEach((page, index) => {
-            page.position.z = -Math.pow(index * th, 0.85);
-        });
+            left.reverse();
 
-        right.forEach((page, i) => {
-            page.position.z = -Math.pow(i * th, 0.85);
-        });
-    };
+            for (let i = 0, L = left.length; i < L; i++) {
+                const p = left[i];
+                p.position.z = -basePowTh * pow(i, 0.85);
+                min = Math.min(p.position.z, min);
+                p.cube.castShadow = i < 2;
+            }
+            for (let i = 0, R = right.length; i < R; i++) {
+                const p = right[i];
+                p.position.z = -basePowTh * pow(i, 0.85);
+                p.cube.castShadow = i < 2;
+                min = Math.min(p.position.z, min);
+            }
+            if (shadowPlane) shadowPlane.position.z = min - 20;
+        };
+    })();
 
     FLIPBOOK.BookWebGL.prototype.initHtmlContent = function () {
         var htmlLayer = document.createElement('div');
@@ -1170,8 +1223,8 @@ var FLIPBOOK = FLIPBOOK || {};
         var hardness;
         var page;
         var i;
-        var options = self.options;
-        var e = options;
+        var options = self.options,
+            e = options;
         var marginW = options.pageMiddleShadowSize;
         var c = document.createElement('canvas');
         var w = window;
@@ -1197,7 +1250,8 @@ var FLIPBOOK = FLIPBOOK || {};
         ctx2.fillStyle = grd2;
         ctx2.fillRect(0, 0, 64, 64);
         var t2 = new THREE.CanvasTexture(c2);
-        var d = (typeof e.s === 'string' && e.s) || '';
+        e.d = (typeof e.s === 'string' && e.s) || '';
+        const { d } = e;
         t2.needsUpdate = true;
         self.specularF = t2;
 
@@ -1269,6 +1323,7 @@ var FLIPBOOK = FLIPBOOK || {};
             page = new FLIPBOOK.PageWebGL(self, i, hardness, self.options, preloaderMatF, preloaderMatB);
             self.pages.push(page);
             self.centerContainer.add(page);
+
             self.flippedright++;
         }
 

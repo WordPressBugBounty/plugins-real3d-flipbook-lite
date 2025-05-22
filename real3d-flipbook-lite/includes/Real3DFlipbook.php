@@ -1269,7 +1269,7 @@ a:hover .link-icon {
 
 		$id = (int) $args['id'];
 		$name = $args['name'];
-
+		$g = $this->flipbook_global;
 		$flipbook = get_option('real3dflipbook_' . $id);
 			if (!$flipbook) {
 			$flipbook = array();
@@ -1355,11 +1355,11 @@ a:hover .link-icon {
 			$flipbook['date'] = get_the_date('Y-m-d', get_post($flipbook['post_id']));
 
 		if ($args['previewpages'] == -1) {
-			if (!$this->flipbook_global['previewMode']) $flipbook['previewPages'] = "";
-			else if ($this->flipbook_global['previewMode'] == 'logged_out' && is_user_logged_in()) $flipbook['previewPages'] = "";
+			if (!$g['previewMode']) $flipbook['previewPages'] = "";
+			else if ($g['previewMode'] == 'logged_out' && is_user_logged_in()) $flipbook['previewPages'] = "";
 		}
 
-		$deeplinking = isset($flipbook['deeplinking']) ? $flipbook['deeplinking'] : $this->flipbook_global['deeplinking'];
+		$deeplinking = isset($flipbook['deeplinking']) ? $flipbook['deeplinking'] : $g['deeplinking'];
 
 		if (($deeplinking['enabled'] ?? null) === "true") {
 			if (empty($deeplinking['prefix'] ?? '') && isset($flipbook['post_id'])) {
@@ -1370,15 +1370,8 @@ a:hover .link-icon {
 			}
 		}
 
-
-
 		$output = '<div class="real3dflipbook" id="' . esc_attr($bookId) . '" style="position:absolute;"></div>';
-
-
-
 		$script_handle = 'real3d-flipbook-options-' . esc_js($bookId);
-
-
 		if (!wp_script_is($script_handle, 'registered')) {
 			wp_register_script($script_handle, false); // No source, as it's localized data only
 			wp_enqueue_script($script_handle);
@@ -1389,7 +1382,7 @@ a:hover .link-icon {
 		if (!wp_script_is('real3d-flipbook-global', 'registered')) {
 			wp_register_script('real3d-flipbook-global', false); // No source, as it's localized data only
 			wp_enqueue_script('real3d-flipbook-global');
-			wp_localize_script('real3d-flipbook-global', 'flipbookOptions_global', $this->flipbook_global);
+			wp_localize_script('real3d-flipbook-global', 'flipbookOptions_global', $g);
 		}
 
 		if (!wp_script_is('real3d-flipbook', 'enqueued')) {
@@ -1457,10 +1450,10 @@ function r3dfb_getDefaults()
 		'lightboxThumbnailUrl' => '',
 		'mode' => 'normal',
 		'viewMode' => 'webgl',
-		'pageTextureSize' => '2048',
+		'pageTextureSize' => '3000',
 		'pageTextureSizeSmall' => '1500',
-		'pageTextureSizeMobile' => '',
-		'pageTextureSizeMobileSmall' => '1024',
+		'pageTextureSizeMobile' => '1500',
+		'pageTextureSizeMobileSmall' => '1000',
 		'minPixelRatio' => '1',
 		'pdfTextLayer' => 'true',
 		'zoomMin' => '0.9',
