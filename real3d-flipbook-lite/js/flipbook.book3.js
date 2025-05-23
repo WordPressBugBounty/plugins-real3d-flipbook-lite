@@ -1095,37 +1095,6 @@ FLIPBOOK.Page3.prototype = {
     pauseHtml: function (side) {
         if (!this.htmlPaused[side]) {
             this.htmlPaused[side] = true;
-            const htmlContainer = this.html[side];
-            if (!htmlContainer) {
-                return;
-            }
-            this.main.trigger('hidepagehtml', { page: this });
-
-            var mediaElements = htmlContainer.querySelectorAll('video, audio');
-            mediaElements.forEach(function (media) {
-                media.pause();
-            });
-
-            var iframes = htmlContainer.querySelectorAll('iframe');
-            for (var i = 0; i < iframes.length; i++) {
-                var iframe = iframes[i];
-                var src = iframe.src;
-                var youtubeRegex = /(?:youtube\.com\/embed\/|youtu\.be\/)/;
-                // var youtubeRegex =
-                //     /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-
-                // if (youtubeRegex.test(src)) {
-                //     var youtubeVideo = iframe.contentWindow;
-                //     youtubeVideo.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-                // } else {
-                this.removedIframes = this.removedIframes || [];
-                this.removedIframes.push({
-                    iframe: iframe,
-                    parentNode: iframe.parentNode,
-                });
-                iframe.parentNode.removeChild(iframe);
-                // }
-            }
         }
     },
 

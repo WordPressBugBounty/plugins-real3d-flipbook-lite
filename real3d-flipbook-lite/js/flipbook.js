@@ -1066,7 +1066,8 @@ FLIPBOOK.Main = class {
                 preload();
             }
 
-            this.fullscreenElement = document.documentElement;
+            // this.fullscreenElement = document.documentElement;
+            this.fullscreenElement = document.body;
         } else {
             o.btnClose.enabled = false;
             this.wrapper.appendChild(this.preloader);
@@ -1456,14 +1457,29 @@ FLIPBOOK.Main = class {
     }
 
     pauseMediaPlayback() {
-        const mediaElements = this.wrapper.querySelectorAll('video, audio, iframe');
-        mediaElements.forEach((media) => {
-            if (media.tagName.toLowerCase() === 'video' || media.tagName.toLowerCase() === 'audio') {
-                media.pause();
-            } else if (media.tagName.toLowerCase() === 'iframe') {
-                media.src = media.src;
-            }
-        });
+        if (this.mediaElements)
+            this.mediaElements.forEach((media) => {
+                if (media.tagName.toLowerCase() === 'video' || media.tagName.toLowerCase() === 'audio') {
+                    media.pause();
+                } else if (media.tagName.toLowerCase() === 'iframe') {
+                    const src = media.src || media.getAttribute('src') || '';
+                    if (
+                        (src.includes('youtube.com/embed') || src.includes('youtube-nocookie.com/embed')) &&
+                        media.contentWindow
+                    ) {
+                        try {
+                            media.contentWindow.postMessage(
+                                JSON.stringify({
+                                    event: 'command',
+                                    func: 'pauseVideo',
+                                    args: [],
+                                }),
+                                '*'
+                            );
+                        } catch (e) {}
+                    }
+                }
+            });
         if (this.pageAudioPlayer) {
             this.pageAudioPlayer.pause();
         }
@@ -1736,8 +1752,17 @@ FLIPBOOK.Main = class {
 
         this.addPageLinks(page);
         this.addPageNotes(page);
+        this.addMediaListeners(page);
 
         page.htmlInitialized = true;
+    }
+
+    addMediaListeners(page) {
+        if (page.htmlContent && page.htmlContent instanceof Element) {
+            const mediaElementsOnThisPage = page.htmlContent.querySelectorAll('video, audio, iframe');
+            this.mediaElements = this.mediaElements || [];
+            this.mediaElements.push(...mediaElementsOnThisPage);
+        }
     }
 
     addPageLinks(page) {
@@ -2312,17 +2337,12 @@ FLIPBOOK.Main = class {
             this.Book = new FLIPBOOK.BookWebGL(this.book, this, bookOptions);
             this.webglMode = true;
 
-            this.initSwipe();
             this.initSound();
         } else if (this.options.viewMode == 'swipe') {
             this.Book = new FLIPBOOK.BookSwipe(this.book, this.bookLayer, this, options);
-
-            this.initSwipe();
         } else if (this.options.viewMode == 'scroll') {
             this.options.singlePageMode = true;
             this.Book = new FLIPBOOK.BookScroll(this.book, this.bookLayer, this, options);
-
-            this.initSwipe();
         } else {
             if (this.options.viewMode != '2d') {
                 this.options.viewMode = '3d';
@@ -2330,11 +2350,10 @@ FLIPBOOK.Main = class {
 
             this.Book = new FLIPBOOK.Book3(this.book, this, options);
 
-            this.initSwipe();
-
             this.webglMode = false;
             this.initSound();
         }
+        this.initSwipe();
 
         this.resize();
 
@@ -4649,46 +4668,66 @@ FLIPBOOK.Main = class {
         }
     }
 
+    isIOS() {
+        return /iP(ad|hone|od)/.test(navigator.userAgent);
+    }
+
+    fakeScrollToHideToolbar() {
+        if (!this.isIOS()) return;
+        // Scroll down a bit, then immediately scroll back up
+        const x = window.scrollX || window.pageXOffset;
+        const y = window.scrollY || window.pageYOffset;
+        window.scrollTo(x, y + 1);
+        setTimeout(() => {
+            window.scrollTo(x, y);
+        }, 10);
+    }
+
+    fakeScrollToShowToolbar() {
+        if (!this.isIOS()) return;
+        // Scroll up a bit, then immediately scroll back down
+        const x = window.scrollX || window.pageXOffset;
+        const y = window.scrollY || window.pageYOffset;
+        window.scrollTo(x, y - 1);
+        setTimeout(() => {
+            window.scrollTo(x, y);
+        }, 10);
+    }
+
+    requestFullscreen(element) {
+        const methods = ['requestFullscreen', 'mozRequestFullScreen', 'webkitRequestFullscreen', 'msRequestFullscreen'];
+        for (const method of methods) {
+            if (element[method]) {
+                try {
+                    element[method]();
+                    return;
+                } catch (error) {
+                    this.handleFullscreenError(error);
+                    return;
+                }
+            }
+        }
+        this.handleFullscreenError(new Error('Fullscreen API is not supported on this element.'));
+    }
+
+    exitFullscreen() {
+        const methods = ['exitFullscreen', 'mozCancelFullScreen', 'webkitExitFullscreen', 'msExitFullscreen'];
+        for (const method of methods) {
+            if (document[method]) {
+                try {
+                    document[method]();
+                    return;
+                } catch (error) {
+                    this.handleFullscreenError(error);
+                    return;
+                }
+            }
+        }
+        this.handleFullscreenError(new Error('Exiting fullscreen API is not supported in this document.'));
+    }
+
     toggleExpand() {
         const elem = this.fullscreenElement;
-
-        const requestFullscreen = (element) => {
-            const methods = [
-                'requestFullscreen',
-                'mozRequestFullScreen',
-                'webkitRequestFullscreen',
-                'msRequestFullscreen',
-            ];
-            for (const method of methods) {
-                if (element[method]) {
-                    try {
-                        element[method]();
-                        return;
-                    } catch (error) {
-                        handleFullscreenError(error);
-                        return;
-                    }
-                }
-            }
-            handleFullscreenError(new Error('Fullscreen API is not supported on this element.'));
-        };
-
-        const exitFullscreen = () => {
-            const methods = ['exitFullscreen', 'mozCancelFullScreen', 'webkitExitFullscreen', 'msExitFullscreen'];
-            for (const method of methods) {
-                if (document[method]) {
-                    try {
-                        document[method]();
-                        return;
-                    } catch (error) {
-                        handleFullscreenError(error);
-                        return;
-                    }
-                }
-            }
-            handleFullscreenError(new Error('Exiting fullscreen API is not supported in this document.'));
-        };
-
         const isFullscreen = () => {
             return !!(
                 document.fullscreenElement ||
@@ -4698,33 +4737,57 @@ FLIPBOOK.Main = class {
             );
         };
 
-        const handleFullscreenError = (error) => {
-            console.error('Fullscreen API error:', error);
-            elem.classList.toggle('flipbook-browser-fullscreen');
-            document.body.classList.toggle('flipbook-overflow-hidden');
-            this.fullscreenActive = !this.fullscreenActive;
-            if (this.fullscreenActive) {
-                this.elemParent = elem.parentNode;
-                document.body.appendChild(elem);
-            } else if (this.elemParent) {
-                this.elemParent.appendChild(elem);
-                this.elemParent = null;
-            }
-            this.toggleIcon(this.btnExpand, !this.fullscreenActive);
-        };
-
         try {
             if (isFullscreen()) {
-                exitFullscreen();
+                this.exitFullscreen();
             } else {
-                requestFullscreen(elem);
+                this.requestFullscreen(elem);
             }
         } catch (error) {
-            handleFullscreenError(error);
+            this.handleFullscreenError(error);
         }
 
         if (this.toolsMenuShowing) {
             this.toggleToolsMenu();
+        }
+    }
+
+    handleFullscreenError(error) {
+        const elem = this.fullscreenElement;
+        this.fullscreenActive = !this.fullscreenActive;
+        if (this.fullscreenActive) {
+            if (elem !== document.body) {
+                this.saveScrollPosition();
+                document.body.classList.add('flipbook-overflow-hidden');
+                elem.classList.add('flipbook-browser-fullscreen');
+                this.elemParent = elem.parentNode;
+                document.body.appendChild(elem);
+                // this.fakeScrollToHideToolbar();
+            }
+        } else if (this.elemParent) {
+            this.elemParent.appendChild(elem);
+            this.elemParent = null;
+            // this.fakeScrollToShowToolbar();
+            document.body.classList.remove('flipbook-overflow-hidden');
+            elem.classList.remove('flipbook-browser-fullscreen');
+            this.restoreScrollPosition();
+        }
+        this.toggleIcon(this.btnExpand, !this.fullscreenActive);
+    }
+
+    saveScrollPosition() {
+        document.body.dataset.flipbookScrollX = window.scrollX || window.pageXOffset;
+        document.body.dataset.flipbookScrollY = window.scrollY || window.pageYOffset;
+    }
+
+    restoreScrollPosition() {
+        const scrollX = parseInt(document.body.dataset.flipbookScrollX || 0, 10);
+        const scrollY = parseInt(document.body.dataset.flipbookScrollY || 0, 10);
+
+        if (!isNaN(scrollX) && !isNaN(scrollY)) {
+            window.scrollTo(scrollX, scrollY);
+            delete document.body.dataset.flipbookScrollX;
+            delete document.body.dataset.flipbookScrollY;
         }
     }
 
@@ -5668,27 +5731,36 @@ FLIPBOOK.Lightbox = class {
     }
 
     showOverlay() {
-        var element = this.overlay;
+        if (!this.overlay || !this.$html) return;
+
+        const element = this.overlay;
         element.classList.remove('flipbook-hidden');
         element.classList.add('flipbook-overlay-visible');
-        element.addEventListener('transitionend', function handleTransitionEnd() {
-            element.removeEventListener('transitionend', handleTransitionEnd);
-        });
+
+        this.context.saveScrollPosition();
 
         document.body.classList.add('flipbook-overflow-hidden');
         this.$html.classList.add('flipbook-overflow-hidden');
     }
 
     hideOverlay() {
-        var element = this.overlay;
+        if (!this.overlay || !this.$html) return;
+
+        const element = this.overlay;
         element.classList.remove('flipbook-overlay-visible');
-        element.addEventListener('transitionend', function handleTransitionEnd() {
-            element.classList.add('flipbook-hidden');
-            element.removeEventListener('transitionend', handleTransitionEnd);
-        });
+
+        element.addEventListener(
+            'transitionend',
+            () => {
+                element.classList.add('flipbook-hidden');
+            },
+            { once: true }
+        );
 
         document.body.classList.remove('flipbook-overflow-hidden');
         this.$html.classList.remove('flipbook-overflow-hidden');
+
+        this.context.restoreScrollPosition();
     }
 
     closeLightbox(popState) {

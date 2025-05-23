@@ -1040,6 +1040,16 @@
     font-size: 14px;
 }
 
+.flipbook-fullscreen {
+    /* Prevent text scaling on pinch */
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+    /* Allow horizontal and vertical scrolling, block pinch zoom */
+    touch-action: pan-x pan-y;
+    /* Prevent scroll-based zoom or pull-to-refresh */
+    overscroll-behavior: none;
+}
+
 .flipbook-btn {
     text-transform: uppercase;
     font-weight: bold;
@@ -1264,6 +1274,23 @@
     scrollbar-width: none;
     /* Firefox */
     overflow: hidden;
+
+    /* Prevent text scaling on pinch */
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+    /* Allow horizontal and vertical scrolling, block pinch zoom */
+    touch-action: pan-x pan-y;
+    /* Prevent scroll-based zoom or pull-to-refresh */
+    overscroll-behavior: none;
+
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    /* Prevent default scrolling from affecting toolbar */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
 }
 
 /*share*/
