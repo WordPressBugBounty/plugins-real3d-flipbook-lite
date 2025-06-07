@@ -1956,6 +1956,7 @@ var pluginDir = (function (scripts) {
       var pagesContainer = $("#pages-container");
 
       var page = JSON.parse(localStorage.getItem("copiedFlipbookPage"));
+      convertStrings(page);
       options.pages.push(page);
       var pagesCount = pagesContainer.find(".page").length;
       var pageItem = createPageHtml(pagesCount, page);

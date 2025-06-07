@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '4.9.6';
+FLIPBOOK.version = '4.10.4';
 
 // eslint-disable-next-line no-shadow-restricted-names
 (function init(window, document, undefined) {
@@ -77,6 +77,7 @@ FLIPBOOK.Main = class {
         menu2Padding: 0,
         menu2Transparent: true,
         skinColor: '#222',
+        skinColorHover: '#111',
         skinBackground: '#FFF',
         floatingBtnColor: '#FFF',
         floatingBtnBackground: '#00000055',
@@ -113,6 +114,7 @@ FLIPBOOK.Main = class {
         floatingBtnBorder: '',
         btnOrder: [
             'currentPage',
+            'progressBar',
             'btnFirst',
             'btnPrev',
             'btnNext',
@@ -137,6 +139,17 @@ FLIPBOOK.Main = class {
             hAlign: 'left',
             marginH: 0,
             marginV: 0,
+            color: '',
+            background: '',
+        },
+        progressBar: {
+            enabled: true,
+            // title: '',
+            vAlign: 'bottom',
+            // hAlign: 'left',
+            // marginH: 0,
+            // marginV: 0,
+            height: 5,
             color: '',
             background: '',
         },
@@ -220,8 +233,8 @@ FLIPBOOK.Main = class {
         btnDownloadPages: {
             enabled: true,
             title: 'Download',
-            url: 'images/pages.zip',
-            name: 'allPages.zip',
+            url: '',
+            name: '',
             svg: 'download',
             toolsMenu: true,
         },
@@ -314,6 +327,7 @@ FLIPBOOK.Main = class {
         viewMode: 'webgl',
         singlePageMode: false,
         singlePageModeIfMobile: false,
+        bookMargin: 20,
         zoomMin: 0.95,
         zoomMin2: 0.15,
         zoomMax2: null,
@@ -573,7 +587,7 @@ FLIPBOOK.Main = class {
                 skinColor: '#EEE',
                 btnColor: '#EEE',
                 btnColorHover: '#FFF',
-                skinBackground: '#313538DD',
+                skinBackground: 'rgba(0,0,0,.7)',
                 menuOverBook: true,
                 menu2OverBook: true,
                 sideMenuOverMenu: true,
@@ -755,7 +769,42 @@ FLIPBOOK.Main = class {
         this.wrapper = document.createElement('div');
         this.wrapper.classList.add('flipbook-main-wrapper');
 
-        new FLIPBOOK.Tooltip2(this.wrapper);
+        let themes = {
+            light: {
+                color: '#222',
+                bg: '#fff',
+            },
+            dark: {
+                color: 'rgba(255, 255, 255, 0.75)',
+                bg: 'rgb(49, 53, 56)',
+            },
+            gradient: {
+                color: '#eee',
+                bg: 'rgba(30,30,30,.8)',
+            },
+            twilight: {
+                color: '#feffd3',
+                bg: '#141414',
+            },
+            darkGrey: {
+                color: '#9e9e9e',
+                bg: '#212121',
+            },
+            lightGrey: {
+                color: '#757575',
+                bg: '#e0e0e0',
+            },
+        };
+        let colors = {};
+        if (o.skinColor) colors.color = o.skinColor;
+        if (o.skinBackground) colors.bg = o.skinBackground;
+
+        if (o.skin) Object.assign(colors, themes[o.skin]);
+
+        this.wrapper.style.setProperty('--flipbook-bg', colors.bg);
+        this.wrapper.style.setProperty('--flipbook-color', colors.color);
+
+        this.tooltip2 = new FLIPBOOK.Tooltip2(this.wrapper);
 
         if (o.backgroundColor !== '') {
             this.wrapper.style.background = o.backgroundColor;
@@ -966,6 +1015,9 @@ FLIPBOOK.Main = class {
                     o.btnToc.enabled = false;
                 }
             }
+
+            if (o.doublePage || o.numPages % 2 == 1) o.cover = true;
+
             self.start();
         });
 
@@ -1206,8 +1258,6 @@ FLIPBOOK.Main = class {
         if (this.options.btnNotes.enabled) {
             this.initNotes();
         }
-
-        this.updateSkinColors();
     }
 
     async checkHash() {
@@ -1328,25 +1378,6 @@ FLIPBOOK.Main = class {
         return this.zoom > 1;
     }
 
-    updateSkinColors() {
-        var o = this.options,
-            wrapper = this.wrapper;
-
-        if (o.skinColor) {
-            const skinColorElements = wrapper.querySelectorAll('.skin-color');
-            skinColorElements.forEach((element) => {
-                element.style.color = o.skinColor;
-            });
-        }
-
-        if (o.skinBackground) {
-            const skinColorBgElements = wrapper.querySelectorAll('.skin-color-bg');
-            skinColorBgElements.forEach((element) => {
-                element.style.background = o.skinBackground;
-            });
-        }
-    }
-
     async lightboxStart() {
         var self = this,
             o = this.options;
@@ -1361,20 +1392,9 @@ FLIPBOOK.Main = class {
             return;
         }
 
-        var targetPage;
-        if (!window.location.hash) {
-            targetPage = this.lightboxStartPage || this.options.lightboxStartPage;
-        }
         this.Book.enable();
 
-        if (this.backgroundMusic) {
-            this.backgroundMusic.play();
-        }
-
-        if (targetPage) {
-            targetPage = o.rightToLeft && o.pages && o.pages.length ? o.pages.length - targetPage + 1 : targetPage;
-            this.goToPage(targetPage, true);
-        }
+        this.playBgMusic();
 
         this.lightboxStartedTimes++;
 
@@ -1385,9 +1405,18 @@ FLIPBOOK.Main = class {
         });
 
         this.updateCurrentPage();
-        this.initColors();
-        this.resize();
         this.lightbox.openLightbox();
+        this.resize();
+
+        var targetPage;
+        if (!window.location.hash) {
+            targetPage = this.lightboxStartPage || this.options.lightboxStartPage;
+        }
+
+        if (targetPage) {
+            targetPage = o.rightToLeft && o.pages && o.pages.length ? o.pages.length - targetPage + 1 : targetPage;
+            this.goToPage(targetPage, true);
+        }
     }
 
     setHash(page) {
@@ -1401,8 +1430,15 @@ FLIPBOOK.Main = class {
 
         if (this.options.deeplinkingEnabled && this.Book.enabled && this.hash != page) {
             window.location.hash = '#' + this.options.deeplinkingPrefix + String(page);
+            this.historyStateChange();
             this.hash = page;
         }
+    }
+
+    historyStateChange(changes) {
+        this.historyStateChanges = this.historyStateChanges || 0;
+        if (typeof changes != 'undefined') this.historyStateChanges = changes;
+        else this.historyStateChanges++;
     }
 
     clearHash() {
@@ -1416,22 +1452,6 @@ FLIPBOOK.Main = class {
     async sendGAEvent(params) {
         }
 
-    initColors() {
-        const wrapper = this.wrapper;
-        const skinColorBgElements = wrapper.querySelectorAll('.skin-color-bg');
-        skinColorBgElements.forEach((element) => {
-            element.classList.remove('flipbook-bg-light', 'flipbook-bg-dark');
-            element.classList.add('flipbook-bg-' + this.options.skin);
-        });
-        const skinColorElements = wrapper.querySelectorAll('.skin-color');
-        skinColorElements.forEach((element) => {
-            element.classList.remove('flipbook-color-light', 'flipbook-color-dark');
-            element.classList.add('flipbook-color-' + this.options.skin);
-        });
-
-        this.updateSkinColors();
-    }
-
     lightboxEnd() {
         if (document.fullscreenElement) {
             this.toggleExpand();
@@ -1440,6 +1460,11 @@ FLIPBOOK.Main = class {
 
         if (window.location.hash) {
             this.clearHash();
+        }
+
+        if (this.historyStateChanges) {
+            // history.go(-this.historyStateChanges);
+            this.historyStateChange(0);
         }
 
         this.setLoadingProgress(1);
@@ -1520,7 +1545,7 @@ FLIPBOOK.Main = class {
         }
 
         if (rtl) {
-            rightIndex = this.options.pages.length - rightIndex;
+            rightIndex = this.Book.numSheets * 2 - rightIndex;
         }
 
         let ri = this.options.cover ? rightIndex : rightIndex - 1;
@@ -1553,15 +1578,8 @@ FLIPBOOK.Main = class {
             this.setHash(ri);
         }
 
-        var firstRi = this.options.cover ? 0 : 2;
-
-        if (rtl) {
-            this.enableNext(ri > firstRi);
-            this.enablePrev(this.Book.canFlipPrev() || rightIndex < total - 1);
-        } else {
-            this.enablePrev(ri > firstRi);
-            this.enableNext(this.Book.canFlipNext() || rightIndex < total - 1);
-        }
+        this.enableNext(this.Book.canFlipNext());
+        this.enablePrev(this.Book.canFlipPrev());
 
         if (this.cPage.length === 2) {
             this.wrapper.querySelectorAll('.c-l-p').forEach(function (element) {
@@ -1681,9 +1699,8 @@ FLIPBOOK.Main = class {
         }
         o.pages = pages;
         const count = pages.length;
-        const offset = o.cover ? 0 : 1;
 
-        const loadPage = (idx) => new Promise((resolve) => this.loadPage(idx + offset, o.pageTextureSize, resolve));
+        const loadPage = (idx) => new Promise((resolve) => this.loadPage(idx, o.pageTextureSize, resolve));
 
         if (!o.hasHtmlContent && !pages.some((p) => p.json)) o.btnSearch.enabled = false;
         if (!o.tableOfContent.length && !pages.some((p) => p.title)) o.btnToc.enabled = false;
@@ -1707,13 +1724,15 @@ FLIPBOOK.Main = class {
         Object.assign(o, { pageWidth2: pw2, pageHeight2: ph2 });
         const ratio = pw / ph;
         o.doublePage = o.scaleCover || pw2 / ph2 / ratio > 1.5;
-        if (!o.doublePage) o.backCover = (count % 2 === 0) === !!o.cover;
+        if (!o.doublePage) o.backCover = count % 2 === 0;
 
         if (count > 2 && o.doublePage) {
             await loadPage(count - 1);
             const [pwL, phL] = getDims(pages[count - 1]);
             o.backCover = pw2 / ph2 / (pwL / phL) > 1.5;
         }
+
+        if (o.doublePage || count % 2 == 1) o.cover = true;
 
         this.start();
     }
@@ -1823,8 +1842,9 @@ FLIPBOOK.Main = class {
         var self = this;
         var options = this.options;
 
-        if (!options.cover) {
-            index--;
+        if (index < 0) {
+            callback.call(this, {});
+            return;
         }
 
         if (options.pdfMode) {
@@ -1840,39 +1860,6 @@ FLIPBOOK.Main = class {
 
             callback.call(this, options.pages[index].htmlContent, index);
         }
-    }
-
-    async loadPageJSON(index) {
-        const options = this.options;
-        const page = options.pages[index] || {};
-
-        if (options.matchProtocol !== false) {
-            const currentProtocol = location.protocol;
-            page.json = page.json.replace(/^http:/, currentProtocol);
-            page.json = page.json.replace(/^https:/, currentProtocol);
-        }
-
-        if (page.jsonLoadingPromise) {
-            return page.jsonLoadingPromise;
-        }
-
-        page.jsonLoadingPromise = (async () => {
-            try {
-                const response = await fetch(page.json);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const json = await response.json();
-                return json;
-            } catch (error) {
-                console.error('Error loading JSON:', error);
-                throw error;
-            } finally {
-                page.jsonLoadingPromise = null;
-            }
-        })();
-
-        return page.jsonLoadingPromise;
     }
 
     async fetchAndCacheImage(url) {
@@ -1910,10 +1897,6 @@ FLIPBOOK.Main = class {
     }
 
     loadPage(index, size, callback) {
-        if (!this.options.cover) {
-            index--;
-        }
-
         var self = this;
         var pageSrc = this.options.pages && this.options.pages[index] && this.options.pages[index].src;
         var page = this.options.pages[index];
@@ -2306,14 +2289,9 @@ FLIPBOOK.Main = class {
         this.options.numPages = this.options.pages.length;
         if (this.options.numPages % 2 != 0 && !this.options.singlePageMode) {
             this.options.backCover = false;
-            if (!this.options.cover) {
-                this.options.backCover = !this.options.backCover;
-            }
-            this.options.pages.push({
-                src: this.options.assets.preloader,
-                thumb: this.options.assets.preloader,
-                empty: true,
-            });
+        }
+        if (!this.options.cover) {
+            this.options.backCover = !this.options.backCover;
         }
 
         this.options.pages.forEach((page) => {
@@ -2359,6 +2337,14 @@ FLIPBOOK.Main = class {
 
         this.Book.enable();
         this.book.classList.remove('flipbook-hidden');
+
+        if (!options.cover && options.startPage < 2) options.startPage = 2;
+
+        if (options.rightToLeft) {
+            this.goToPage(Number(options.pages.length - Number(options.startPage) + 1), true);
+        } else {
+            this.goToPage(Number(options.startPage), true);
+        }
 
         this.tocCreated = false;
 
@@ -2570,10 +2556,6 @@ FLIPBOOK.Main = class {
 
         var self = this;
 
-        if (!o.cover && Number(o.startPage) < 2) {
-            o.startPage = 2;
-        }
-
         var root = document.documentElement;
         root.style.setProperty('--flipbook-link-color', this.options.linkColor);
         root.style.setProperty('--flipbook-link-color-hover', this.options.linkColorHover);
@@ -2596,12 +2578,6 @@ FLIPBOOK.Main = class {
         });
 
         this.resizeObserver2.observe(this.bookLayer);
-
-        if (o.rightToLeft) {
-            this.goToPage(Number(o.pages.length - Number(o.startPage) + 1), true);
-        } else {
-            this.goToPage(Number(o.startPage), true);
-        }
 
         this.playBgMusic();
 
@@ -2653,16 +2629,17 @@ FLIPBOOK.Main = class {
             this.toggleThumbs(true);
         } else if (self.options.searchOnStart) {
             this.toggleSearch(true);
-            if (typeof self.options.searchOnStart == 'string') {
-                this.thumbs.$findInput.val(this.options.searchOnStart).trigger('keyup');
+            if (typeof this.options.searchOnStart == 'string') {
+                const input = this.thumbs.findInput;
+                input.value = this.options.searchOnStart;
+                const event = new KeyboardEvent('keyup', { bubbles: true });
+                input.dispatchEvent(event);
             }
         }
 
         if (o.autoplayOnStart) {
             this.toggleAutoplay(true);
         }
-
-        this.initColors();
 
         this.resize();
         this.Book.updateVisiblePages();
@@ -2687,16 +2664,32 @@ FLIPBOOK.Main = class {
         }
 
         if (this.options.backgroundMusic) {
-            this.backgroundMusic = document.createElement('audio');
-            this.backgroundMusic.preload = 'auto';
+            // Determine the URL
+            let bgMusicUrl = null;
 
-            this.backgroundMusic.autoplay = true;
-            this.backgroundMusic.loop = true;
+            // If it's a string (i.e., a custom URL)
+            if (typeof this.options.backgroundMusic === 'string') {
+                bgMusicUrl = this.options.backgroundMusic;
+            }
+            // If it's true/boolean and you have a default mp3 set up in assets
+            else if (this.options.assets && this.options.assets.backgroundMp3) {
+                bgMusicUrl = this.options.assets.backgroundMp3;
+            }
 
-            var bgMusicSource = document.createElement('source');
-            bgMusicSource.src = this.options.assets.backgroundMp3;
-            bgMusicSource.type = 'audio/mpeg';
-            this.backgroundMusic.appendChild(bgMusicSource);
+            if (bgMusicUrl) {
+                this.backgroundMusic = document.createElement('audio');
+                this.backgroundMusic.preload = 'auto';
+                this.backgroundMusic.autoplay = true;
+                this.backgroundMusic.loop = true;
+
+                var bgMusicSource = document.createElement('source');
+                bgMusicSource.src = bgMusicUrl;
+                bgMusicSource.type = 'audio/mpeg';
+                this.backgroundMusic.appendChild(bgMusicSource);
+
+                // Optionally, append to document to trigger playback on some browsers
+                document.body.appendChild(this.backgroundMusic);
+            }
         }
     }
 
@@ -3147,6 +3140,11 @@ FLIPBOOK.Main = class {
             return div;
         }
 
+        if (o.progressBar.enabled && o.progressBar.vAlign === 'bottom') {
+            // new FLIPBOOK.ProgressBar({wrapper:this.menuBottom})
+        }
+        // this.progress = createAndAppendMenu('flipbook-progress', this.menuBottom);
+
         this.menuBL = createAndAppendMenu('flipbook-menu flipbook-menu-left', this.menuBottom);
         this.menuBC = createAndAppendMenu('flipbook-menu flipbook-menu-center', this.menuBottom);
         this.menuBR = createAndAppendMenu('flipbook-menu flipbook-menu-right', this.menuBottom);
@@ -3277,6 +3275,8 @@ FLIPBOOK.Main = class {
             o.btnDownloadPdf.url = o.pdfUrl;
         }
 
+        if (!o.btnDownloadPdf.url) o.btnDownloadPdf.enabled = false;
+
         if (!o.pdfTextLayer && o.btnSearch) {
             o.btnSearch.enabled = false;
         }
@@ -3284,6 +3284,7 @@ FLIPBOOK.Main = class {
         
         o.btnOrder = [
                 'currentPage',
+                'progressBar',
                 'btnZoomOut',
                 'btnZoomIn',
                 'btnThumbs',
@@ -3318,6 +3319,8 @@ FLIPBOOK.Main = class {
                 btn.name = btnName;
                 if (btn.name === 'currentPage') {
                     this.createCurrentPage();
+                } else if (btn.name === 'progressBar') {
+                    // append div to menu bottom
                 } else if (btn.name === 'search') {
                     } else {
                     this[btnName] = this.createButton(btn);
@@ -3404,8 +3407,7 @@ FLIPBOOK.Main = class {
                     this.toggleDownloadMenu();
                 } else {
                     var link = document.createElement('a');
-                    link.href = o.btnDownloadPages.url;
-                    link.download = o.btnDownloadPages.name;
+                    link.href = o.pdfUrl || o.btnDownloadPages.url;
                     link.dispatchEvent(new MouseEvent('click'));
                 }
 
@@ -3705,7 +3707,7 @@ FLIPBOOK.Main = class {
             return;
         }
         this.flippingPage = true;
-        if (this.nextEnabled) {
+        if (this.Book.canFlipNext()) {
             this.Book.nextPage();
             window.getSelection().removeAllRanges();
         }
@@ -3716,7 +3718,7 @@ FLIPBOOK.Main = class {
             return;
         }
         this.flippingPage = true;
-        if (this.prevEnabled) {
+        if (this.Book.canFlipPrev()) {
             this.Book.prevPage();
             window.getSelection().removeAllRanges();
         }
@@ -3889,7 +3891,7 @@ FLIPBOOK.Main = class {
         header.appendChild(titleSpan);
 
         var btnClose = document.createElement('span');
-        btnClose.className = 'flipbook-btn-close skin-color skin-color-bg';
+        btnClose.className = 'flipbook-btn-close skin-color';
         header.appendChild(btnClose);
         btnClose.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -3943,7 +3945,6 @@ FLIPBOOK.Main = class {
         this.tocScroller.className = 'flipbook-toc-scroller';
         this.toc.appendChild(this.tocScroller);
 
-        this.initColors();
         this.tocCreated = true;
         this.toggleToc();
     }
@@ -4083,6 +4084,11 @@ FLIPBOOK.Main = class {
             return;
         }
 
+        // if (o.viewMode == 'webgl') {
+        //     o.menuOverBook = true;
+        //     o.menu2OverBook = true;
+        // }
+
         if (this.menuShowing) {
             this.bookLayer.style.bottom =
                 !o.menuOverBook && this.menuBottom ? this.menuBottom.offsetHeight + 'px' : '0px';
@@ -4121,9 +4127,9 @@ FLIPBOOK.Main = class {
         this.adjustZoomLimits();
 
         this.Book.onResize(force);
-        if (o.zoomReset) {
-            this.Book.zoomTo(o.zoomMin);
-        }
+        // if (o.zoomReset) {
+        this.Book.zoomTo(o.zoomMin);
+        // }
     }
 
     updateWrapperDimensions() {
@@ -4137,6 +4143,15 @@ FLIPBOOK.Main = class {
         var wrapperRatio = this.wrapperW / this.wrapperH;
         var pageRatio = this.pageW / this.pageH;
         var bookRatio = 2 * pageRatio;
+
+        var menuTopHeight = this.menuTop.offsetHeight;
+        var menuBottomHeight = this.menuBottom.offsetHeight;
+        var manuHeight = Math.max(menuTopHeight, menuBottomHeight);
+        var bookMargin = o.bookMargin || 20;
+
+        if (o.menuOverBook && o.menu2OverBook)
+            o.zoomMin = (this.wrapperH - 2 * manuHeight - bookMargin) / this.wrapperH;
+        else o.zoomMin = (this.wrapperH - bookMargin) / this.wrapperH;
 
         if (o.viewMode == 'scroll') {
             o.zoomMax = (2 * ((o.zoomSize * o.pageWidth) / o.pageHeight)) / this.wrapperW;
@@ -4240,6 +4255,7 @@ FLIPBOOK.Main = class {
         if (this.passwordMenuShowing) {
             this.togglePasswordMenu();
         }
+        this.tooltip2.hideTooltip();
     }
 
     toggleToolsMenu() {
@@ -4247,12 +4263,6 @@ FLIPBOOK.Main = class {
 
         if (!this.toolsMenu.parentNode) {
             this.btnTools.appendChild(this.toolsMenu);
-            this.initColors();
-            this.closeMenus();
-            this.toolsMenu.classList.remove('flipbook-hidden');
-            this.btnTools.classList.add('flipbook-btn-active');
-            this.btnTools.classList.remove('flipbook-has-tooltip');
-            this.toolsMenuShowing = true;
 
             this.toolsMenu.addEventListener('click', function (event) {
                 event.stopPropagation();
@@ -4266,7 +4276,9 @@ FLIPBOOK.Main = class {
                     self.toggleShareMenu();
                 }
             });
-        } else if (!this.toolsMenuShowing) {
+        }
+
+        if (!this.toolsMenuShowing) {
             this.closeMenus();
             this.toolsMenu.classList.remove('flipbook-hidden');
             this.toolsMenuShowing = true;
@@ -4331,7 +4343,6 @@ FLIPBOOK.Main = class {
 
             this.closeMenus();
             this.printMenuShowing = true;
-            this.initColors();
             this.updateCurrentPage();
         } else if (!this.printMenuShowing) {
             this.closeMenus();
@@ -4351,12 +4362,6 @@ FLIPBOOK.Main = class {
         var self = this;
         if (!this.shareMenu.parentNode) {
             this.btnShare.appendChild(this.shareMenu);
-            this.initColors();
-            this.closeMenus();
-            this.shareMenu.classList.remove('flipbook-hidden');
-            this.shareMenu.classList.add('flipbook-btn-active');
-            this.shareMenu.classList.remove('flipbook-has-tooltip');
-            this.shareMenuShowing = true;
 
             this.shareMenu.addEventListener('click', function (event) {
                 event.stopPropagation();
@@ -4490,12 +4495,25 @@ FLIPBOOK.Main = class {
                     });
                 }
             });
-        } else if (!this.shareMenuShowing) {
+        }
+
+        if (!this.shareMenuShowing) {
             this.closeMenus();
             this.shareMenu.classList.remove('flipbook-hidden');
             this.shareMenuShowing = true;
             this.btnShare.classList.add('flipbook-btn-active');
             this.btnShare.classList.remove('flipbook-has-tooltip');
+
+            setTimeout(function () {
+                self.shareMenu.style.right = '0';
+                const wrapperRect = self.wrapper.getBoundingClientRect();
+                const menuRect = self.shareMenu.getBoundingClientRect();
+
+                if (menuRect.left < wrapperRect.left) {
+                    self.shareMenu.style.right =
+                        menuRect.left - wrapperRect.left - (wrapperRect.width - menuRect.width) / 2 + 'px';
+                }
+            }, 0);
         } else {
             this.shareMenu.classList.add('flipbook-hidden');
             this.shareMenuShowing = false;
@@ -4800,16 +4818,23 @@ FLIPBOOK.Main = class {
         }
 };
 
-FLIPBOOK.Book = function () {};
+FLIPBOOK.Book = class {
+    constructor(main, options) {
+        this.rightIndex = 0;
+        this.options = options;
+        this.main = main;
+        this.pageWidth = options.pageWidth;
+        this.pageHeight = options.pageHeight;
+        this.singlePage = options.singlePageMode;
+        this.numSheets = Math.ceil(options.pages.length / 2);
+        if (!options.cover && options.pages.length % 2 == 0) this.numSheets++;
+    }
 
-FLIPBOOK.Book.prototype = {
-    rightIndex: 0,
+    goToPage() {}
 
-    goToPage: function () {},
+    getRightIndex() {}
 
-    getRightIndex: function () {},
-
-    canFlipNext: function () {
+    canFlipNext() {
         if (this.flippedright > 0) {
             if (this.singlePage && this.flippedright == 1) {
                 return false;
@@ -4817,14 +4842,16 @@ FLIPBOOK.Book.prototype = {
                 return true;
             } else if (this.flippedright == 1 && !this.options.rightToLeft && !this.options.backCover) {
                 return false;
+            } else if (this.flippedright == 1 && this.options.rightToLeft && !this.options.cover) {
+                return false;
             } else {
                 return true;
             }
         }
         return false;
-    },
+    }
 
-    canFlipPrev: function () {
+    canFlipPrev() {
         const first = this.options.cover ? 0 : 1;
         if (this.flippedleft > first) {
             if (this.view == 1 && this.isFocusedRight && this.isFocusedRight()) {
@@ -4836,9 +4863,9 @@ FLIPBOOK.Book.prototype = {
             }
         }
         return false;
-    },
+    }
 
-    getCurrentPageNumber: function () {
+    getCurrentPageNumber() {
         var ri = this.rightIndex % 2 == 1 ? this.rightIndex + 1 : this.rightIndex;
         if (this.options.rightToLeft) {
             ri = this.options.pages.length - ri;
@@ -4846,9 +4873,9 @@ FLIPBOOK.Book.prototype = {
         } else {
             return this.isFocusedLeft() ? ri : ri + 1;
         }
-    },
+    }
 
-    startPageItems: function (htmlContent) {
+    startPageItems(htmlContent) {
         if (htmlContent && !htmlContent.dataset.pageItemsStarted)
             htmlContent.querySelectorAll('.flipbook-page-item').forEach(function (item) {
                 if (item.nodeName == 'VIDEO' || item.nodeName == 'AUDIO') {
@@ -4881,66 +4908,106 @@ FLIPBOOK.Book.prototype = {
                 }
                 htmlContent.dataset.pageItemsStarted = true;
             });
-    },
+    }
 
-    destroy: function () {},
+    loadPageAsync(page, side) {
+        if (!page) return Promise.resolve();
+
+        if (!page._sidePromises) page._sidePromises = {};
+
+        if (!page._sidePromises[side]) {
+            page._sidePromises[side] = new Promise((resolve, reject) => {
+                if (side) {
+                    page.load(side, () => {
+                        resolve();
+                    });
+                } else {
+                    resolve();
+                }
+            });
+        }
+
+        return page._sidePromises[side];
+    }
+
+    loadHTMLAsync(page, side) {
+        if (!page) return Promise.resolve();
+
+        if (!page._sideHTMLPromises) page._sideHTMLPromises = {};
+
+        if (!page._sideHTMLPromises[side]) {
+            page._sideHTMLPromises[side] = new Promise((resolve) => {
+                if (side) {
+                    page.loadHTML(side, () => {
+                        resolve();
+                    });
+                } else {
+                    resolve();
+                }
+            });
+        }
+
+        return page._sideHTMLPromises[side];
+    }
+
+    destroy() {}
 };
 
-FLIPBOOK.Notes = function (main) {
-    const self = this;
-    this.main = main;
-    this.notes = Object.values(main.options.notes || []);
+FLIPBOOK.Notes = class {
+    constructor(main) {
+        const self = this;
+        this.main = main;
+        this.notes = Object.values(main.options.notes || []);
 
-    this.textSelectionRect = document.createElement('span');
-    this.textSelectionRect.className = 'flipbook-add-note-rect hover';
-    const btn = document.createElement('span');
-    btn.className = 'add-note-btn';
-    btn.innerText = main.options.strings.addNote;
-    btn.onclick = function () {
-        self.hideButton();
-        self.createNote();
-    };
-    btn.onmousedown = function () {};
-    this.noteButton = btn;
-    this.textSelectionRect.appendChild(btn);
-    this.hideButton();
+        this.textSelectionRect = document.createElement('span');
+        this.textSelectionRect.className = 'flipbook-add-note-rect hover';
+        const btn = document.createElement('span');
+        btn.className = 'add-note-btn';
+        btn.innerText = main.options.strings.addNote;
+        btn.onclick = function () {
+            self.hideButton();
+            self.createNote();
+        };
+        btn.onmousedown = function () {};
+        this.noteButton = btn;
+        this.textSelectionRect.appendChild(btn);
+        this.hideButton();
 
-    this.notePopup = document.createElement('div');
-    this.notePopup.className = 'flipbook-note-display';
-    this.notePopup.innerHTML =
-        '<div class="note-content"><textarea role="textbox" maxlength="500" placeholder="' +
-        main.options.strings.typeInYourNote +
-        '" tabindex="0" class="note-article"></textarea></div> ' +
-        '<div  aria-hidden="true" class="note-footer"> ' +
-        '<span title="Delete Note" class="icon icon-trash-can note-button note-delete-button">' +
-        '<svg version="1.1" viewBox="0 0 24 24" class="svg-icon svg-fill" focusable="false">' +
-        '<path pid="0" d="M15.976 17.862c0 .607-.414 1.138-.885 1.138H8.893c-.47 ' +
-        '0-.869-.513-.869-1.12L8.002 8H16l-.023 9.862zM20 6h-5V4.466C15 3.66 14.853 3 14.013 ' +
-        '3h-3.858C9.315 3 9 3.659 9 4.466V6H4v2h2v10c0 1.843 1.153 3 2.893 3h6.198C16.84 21 18 ' +
-        '19.852 18 18V8h2V6z"></path>' +
-        '<path pid="1" d="M13 18h1V9h-1zM10 18h1V9h-1z"></path></svg></span></div>';
-    this.notePopup.onmouseup = function (e) {
-        e.stopPropagation();
-    };
-    this.noteDelete = this.notePopup.getElementsByClassName('note-delete-button')[0];
-    this.noteDelete.onclick = function () {
-        self.deleteNote();
-    };
-    this.noteInput = this.notePopup.querySelectorAll('textarea')[0];
-    this.noteInput.onchange = function () {
-        const noteId = this.dataset.note;
-        const noteText = this.value;
-        self.getNoteById(noteId).text = noteText;
-        self.main.trigger('r3d-update-note', {
-            note: self.getNoteById(noteId),
-        });
-    };
+        this.notePopup = document.createElement('div');
+        this.notePopup.className = 'flipbook-note-display';
+        this.notePopup.innerHTML =
+            '<div class="note-content"><textarea role="textbox" maxlength="500" placeholder="' +
+            main.options.strings.typeInYourNote +
+            '" tabindex="0" class="note-article"></textarea></div> ' +
+            '<div  aria-hidden="true" class="note-footer"> ' +
+            '<span title="Delete Note" class="icon icon-trash-can note-button note-delete-button">' +
+            '<svg version="1.1" viewBox="0 0 24 24" class="svg-icon svg-fill" focusable="false">' +
+            '<path pid="0" d="M15.976 17.862c0 .607-.414 1.138-.885 1.138H8.893c-.47 ' +
+            '0-.869-.513-.869-1.12L8.002 8H16l-.023 9.862zM20 6h-5V4.466C15 3.66 14.853 3 14.013 ' +
+            '3h-3.858C9.315 3 9 3.659 9 4.466V6H4v2h2v10c0 1.843 1.153 3 2.893 3h6.198C16.84 21 18 ' +
+            '19.852 18 18V8h2V6z"></path>' +
+            '<path pid="1" d="M13 18h1V9h-1zM10 18h1V9h-1z"></path></svg></span></div>';
+        this.notePopup.onmouseup = function (e) {
+            e.stopPropagation();
+        };
+        this.noteDelete = this.notePopup.getElementsByClassName('note-delete-button')[0];
+        this.noteDelete.onclick = function () {
+            self.deleteNote();
+        };
+        this.noteInput = this.notePopup.querySelectorAll('textarea')[0];
+        this.noteInput.onchange = function () {
+            const noteId = this.dataset.note;
+            const noteText = this.value;
+            self.getNoteById(noteId).text = noteText;
+            self.main.trigger('r3d-update-note', {
+                note: self.getNoteById(noteId),
+            });
+        };
 
-    this.updateNoteVisibility();
-};
+        this.updateNoteVisibility();
+    }
 
-FLIPBOOK.Notes.prototype = {
-    initPageNotes: function (page) {
+    initPageNotes(page) {
         const self = this;
         this.notes.forEach(function (note) {
             if (note.page == page.index + 1) {
@@ -4948,9 +5015,9 @@ FLIPBOOK.Notes.prototype = {
             }
         });
         this.addPageNoteListeners(page);
-    },
+    }
 
-    getNodeColor: function (note) {
+    getNodeColor(note) {
         let result = 'green';
         this.main.options.noteTypes.forEach(function (type) {
             if (type.id == note.type) {
@@ -4958,26 +5025,26 @@ FLIPBOOK.Notes.prototype = {
             }
         });
         return result;
-    },
+    }
 
-    updateNoteVisibility: function () {
+    updateNoteVisibility() {
         let root = document.documentElement;
         this.main.options.noteTypes.forEach(function (type) {
             root.style.setProperty(`--note-${type.id}-opacity`, type.enabled ? '1' : '0');
             root.style.setProperty(`--note-${type.id}-pointer-events`, type.enabled ? 'auto' : 'none');
         });
-    },
+    }
 
-    addPageNote: function (note) {
-        },
+    addPageNote(note) {
+        }
 
-    showButton: function () {
+    showButton() {
         this.noteButton.classList.remove('flipbook-hidden');
-    },
+    }
 
-    hideButton: function () {
+    hideButton() {
         this.noteButton.classList.add('flipbook-hidden');
-    },
+    }
 
     showNote(target, page, id) {
         const pageRect = page.htmlContent.getBoundingClientRect();
@@ -5009,26 +5076,26 @@ FLIPBOOK.Notes.prototype = {
         } else {
             this.enableNoteEdit();
         }
-    },
+    }
 
-    enableNoteEdit: function () {
+    enableNoteEdit() {
         this.noteDelete.classList.remove('flipbook-hidden');
         this.noteInput.readOnly = false;
-    },
+    }
 
-    disableNoteEdit: function () {
+    disableNoteEdit() {
         this.noteDelete.classList.add('flipbook-hidden');
         this.noteInput.readOnly = true;
-    },
+    }
 
-    hideNote: function () {
+    hideNote() {
         if (this.notePopup.parentNode) {
             this.notePopup.parentNode.removeChild(this.notePopup);
         }
         this.activeNote = null;
-    },
+    }
 
-    createNote: function () {
+    createNote() {
         this.textSelectionRect.appendChild(this.notePopup);
         this.notePopup.style.left = '50%';
         if (this.textSelectionRect.offsetTop < 150) {
@@ -5050,9 +5117,9 @@ FLIPBOOK.Notes.prototype = {
         this.activeNote = note;
         this.enableNoteEdit();
         this.main.trigger('r3d-update-note', { note: note });
-    },
+    }
 
-    deleteNote: function () {
+    deleteNote() {
         const page = this.main.options.pages[this.activeNote.page - 1];
         const $htmlContent = jQuery(page.htmlContent);
         const $textLayer = $htmlContent.find('.textLayer');
@@ -5067,9 +5134,9 @@ FLIPBOOK.Notes.prototype = {
         this.main.trigger('r3d-delete-note', {
             note: this.activeNote,
         });
-    },
+    }
 
-    getNoteById: function (id) {
+    getNoteById(id) {
         let toReturn = null;
         this.notes.forEach(function (note) {
             if (Number(note.id) == Number(id)) {
@@ -5077,15 +5144,15 @@ FLIPBOOK.Notes.prototype = {
             }
         });
         return toReturn;
-    },
+    }
 
-    removeTextRect: function () {
+    removeTextRect() {
         if (this.textSelectionRect.parentNode) {
             this.textSelectionRect.parentNode.removeChild(this.textSelectionRect);
         }
-    },
+    }
 
-    addPageNoteListeners: function (page) {
+    addPageNoteListeners(page) {
         const self = this;
 
         if (!page.textLayerDiv || page.notesInitialized) {
@@ -5138,7 +5205,7 @@ FLIPBOOK.Notes.prototype = {
         });
 
         page.notesInitialized = true;
-    },
+    }
 };
 
 FLIPBOOK.Tooltip = class {
@@ -5185,6 +5252,117 @@ FLIPBOOK.Tooltip = class {
         const wrapperRect = this.domElement.parentNode.getBoundingClientRect();
         this.domElement.style.top = this.currentPosition.y - wrapperRect.top - scrollY + 'px';
         this.domElement.style.left = this.currentPosition.x - wrapperRect.left - scrollX + 'px';
+    }
+};
+
+FLIPBOOK.ProgressBar = class {
+    constructor(options = {}) {
+        this.value = options.value || 0; // 0..100
+        this.min = options.min || 0;
+        this.max = options.max || 100;
+        this.onChange = options.onChange || function (val) {};
+        this.colors = options.colors || {};
+        this.wrapper = options.wrapper || document.body;
+        this.el = null;
+        this._dragging = false;
+
+        this._render();
+        this.setValue(this.value);
+        this._bindEvents();
+    }
+
+    _render() {
+        // Create the structure
+        const bar = document.createElement('div');
+        bar.className = 'flipbook-progress-bar';
+        bar.tabIndex = 0;
+
+        // Theming via CSS variables
+        if (this.colors.bg) bar.style.setProperty('--progress-bg', this.colors.bg);
+        if (this.colors.fill) bar.style.setProperty('--progress-fill', this.colors.fill);
+        if (this.colors.thumb) bar.style.setProperty('--progress-thumb', this.colors.thumb);
+        if (this.colors.thumbBorder) bar.style.setProperty('--progress-thumb-border', this.colors.thumbBorder);
+
+        bar.innerHTML = `
+      <div class="progress-track"></div>
+      <div class="progress-filled"></div>
+      <div class="progress-thumb" tabindex="0" role="slider" aria-valuenow="0" aria-valuemin="${this.min}" aria-valuemax="${this.max}"></div>
+    `;
+
+        this.wrapper.appendChild(bar);
+
+        // Save refs
+        this.el = bar;
+        this.track = bar.querySelector('.progress-track');
+        this.filled = bar.querySelector('.progress-filled');
+        this.thumb = bar.querySelector('.progress-thumb');
+    }
+
+    _bindEvents() {
+        // Mouse/touch events for dragging
+        this.thumb.addEventListener('mousedown', this._startDrag.bind(this));
+        this.el.addEventListener('mousedown', this._startDrag.bind(this));
+        window.addEventListener('mousemove', this._onDrag.bind(this));
+        window.addEventListener('mouseup', this._endDrag.bind(this));
+
+        this.thumb.addEventListener('touchstart', this._startDrag.bind(this), { passive: false });
+        this.el.addEventListener('touchstart', this._startDrag.bind(this), { passive: false });
+        window.addEventListener('touchmove', this._onDrag.bind(this), { passive: false });
+        window.addEventListener('touchend', this._endDrag.bind(this));
+
+        // Keyboard accessibility
+        this.thumb.addEventListener('keydown', (e) => {
+            let step = (this.max - this.min) / 100 || 1;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                this.setValue(this.value + step);
+                e.preventDefault();
+            }
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                this.setValue(this.value - step);
+                e.preventDefault();
+            }
+        });
+    }
+
+    _startDrag(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+        this._dragging = true;
+        document.body.style.userSelect = 'none';
+        this._onDrag(e);
+    }
+
+    _onDrag(e) {
+        if (!this._dragging) return;
+        let clientX;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+        } else {
+            clientX = e.clientX;
+        }
+        const rect = this.el.getBoundingClientRect();
+        let percent = ((clientX - rect.left) / rect.width) * 100;
+        let val = this.min + (this.max - this.min) * (percent / 100);
+        this.setValue(val);
+    }
+
+    _endDrag() {
+        if (!this._dragging) return;
+        this._dragging = false;
+        document.body.style.userSelect = '';
+    }
+
+    setValue(val) {
+        val = Math.max(this.min, Math.min(this.max, val));
+        this.value = val;
+        let percent = ((val - this.min) / (this.max - this.min)) * 100;
+        this.filled.style.width = percent + '%';
+        this.thumb.style.left = percent + '%';
+        this.thumb.setAttribute('aria-valuenow', Math.round(val));
+        this.onChange(val);
+    }
+
+    getValue() {
+        return this.value;
     }
 };
 
@@ -5481,8 +5659,6 @@ FLIPBOOK.Thumbnails = class {
                 }
             });
         });
-
-        main.initColors();
     }
 
     loadThumbsFromPdf(arr) {
@@ -5723,6 +5899,7 @@ FLIPBOOK.Lightbox = class {
 
         if (!this.options.deeplinkingEnabled) {
             window.history.pushState(null, '', window.location.href);
+            this.context.historyStateChange();
         }
 
         if (this.context.options.password && !this.context.pdfinitStarted && this.context.initialized) {

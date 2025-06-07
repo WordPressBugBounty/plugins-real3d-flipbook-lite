@@ -4,7 +4,7 @@ Donate link: https://codecanyon.net/item/real3d-flipbook-wordpress-plugin/694258
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 4.10.3
+Stable tag: 4.11
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -455,6 +455,18 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 * Fix: Bug with stopping youtube videos on pages
 * Improvement: Prevent website pinch zoom when flipbook is fullscreen or lightbox 
 * Improvement: Prevent auto hiding address bar on iOS when flipbook is fullscreen or lightbox 
+
+= 4.11 =
+* Fix: No cover in right to left mode
+* Fix: Thumbnails view close button
+* Improvement: Page loading optimizations
+* Fix: Background music not playing
+* Fix: Page HTML not loading when start page not 1
+* Fix: Page items have wrong settings when copy pasting flipbook pages
+* Fix: Preview pages for logged out users
+* Fix: Search on start
+* Fix: Lightbox opens on empty page
+* Improvement: Performance optimization
 
 
 

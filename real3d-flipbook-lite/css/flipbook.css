@@ -50,6 +50,18 @@
 
     cursor: -webkit-grab;
     cursor: grab;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.flipbook-page-html {
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
 }
 
 .flipbook-zoomLayer-inside {
@@ -81,6 +93,7 @@
     position: absolute;
     background: #eee;
     will-change: transform;
+    transform-style: preserve-3d;
     transform: rotateY(var(--page3-rotate-y, 0));
     transform-origin: 0 50%;
     -webkit-transform-origin: 0 50%;
@@ -170,6 +183,13 @@
 .flipbook-book3 {
     display: block;
     position: relative;
+}
+
+.flipbook-book-webgl {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
 .flipbook-center-container3 {
@@ -314,6 +334,14 @@
     outline: 2px solid #88888885;
 }
 
+.flipbook-progress {
+    width: 100%;
+    height: 5px;
+    position: relative;
+    background: red;
+    margin: 0px 5px;
+}
+
 .flipbook-color-transparent {
     color: transparent !important;
 }
@@ -338,6 +366,7 @@
     pointer-events: none;
     display: flex;
     overflow: visible;
+    flex-wrap: wrap;
 }
 
 .flipbook-menu-btn-wrapper {
@@ -666,6 +695,7 @@
     top: 0;
     z-index: 9;
     min-width: 170px;
+    max-width: 50%;
     display: flex;
     flex-direction: column;
     font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif !important;
@@ -688,17 +718,27 @@
     justify-content: center;
 }
 
+.flipbook-thumbs-grid {
+    max-width: initial;
+}
+
 .flipbook-thumbs-grid .flipbook-thumbsWrapper {
-    width: calc(100% - 100px);
     max-width: 1600px;
+    width: auto;
     margin: auto;
-    padding-top: 20px;
-    padding-bottom: 50px;
+    padding: 1.5rem;
     height: max-content;
+}
+
+@media (max-width: 450px) {
+    .flipbook-thumbs-grid .flipbook-thumbsWrapper {
+        padding: 0.5rem;
+    }
 }
 
 .flipbook-thumbs-grid .flipbook-thumbsScroller {
     display: block;
+    padding: 1rem 2rem;
 }
 .flipbook-thumbs-grid {
     background-color: rgba(0, 0, 0, 0.5) !important;
@@ -725,7 +765,7 @@
     display: flex;
     justify-content: end;
     top: 10px;
-    right: 40px;
+    position: sticky;
     z-index: 1;
 }
 
@@ -766,7 +806,7 @@
 .flipbook-search-clear {
     position: absolute;
     top: 7px;
-    right: 7px;
+    right: 15px;
 }
 
 .flipbook-search-match {
@@ -954,9 +994,9 @@
 }
 
 .flipbook-findbar input {
-    width: 210px;
     padding: 5px;
     font-size: 14px;
+    width: calc(100% - 10px);
     line-height: initial;
     border: 1px solid rgba(128, 128, 128, 0.7);
 }
@@ -1067,90 +1107,6 @@
     -o-transition: none;
     transition: none;
     font-size: 12px;
-}
-
-.flipbook-bg-gradient {
-    background: #313538dd;
-}
-
-.flipbook-color-gradient {
-    color: #eee;
-    fill: #eee;
-}
-
-.flipbook-color-gradient:hover {
-    color: #eee;
-    fill: #eee;
-}
-
-.flipbook-bg-dark {
-    background: rgb(49, 53, 56);
-}
-
-.flipbook-color-dark {
-    color: rgba(255, 255, 255, 0.75);
-    fill: rgba(255, 255, 255, 0.75);
-}
-
-.flipbook-color-dark:hover {
-    color: #fff;
-    fill: #fff;
-}
-
-.flipbook-bg-light {
-    /* background: rgb(255, 255, 255); */
-}
-
-.flipbook-color-light {
-    color: rgba(50, 50, 50, 0.75);
-    fill: rgba(50, 50, 50, 0.75);
-}
-
-.flipbook-color-light:hover {
-    color: rgb(50, 50, 50);
-    fill: rgb(50, 50, 50);
-}
-
-.flipbook-bg-twilight {
-    background: #141414;
-}
-
-.flipbook-color-twilight {
-    color: #feffd3;
-    fill: #feffd3;
-}
-
-.flipbook-color-twilight:hover {
-    color: #feffd3;
-    fill: #feffd3;
-}
-
-.flipbook-bg-darkgrey {
-    background: #212121;
-}
-
-.flipbook-color-darkgrey {
-    color: #9e9e9e;
-    fill: #9e9e9e;
-}
-
-.flipbook-color-darkgrey:hover {
-    color: #bdbdbd;
-    fill: #bdbdbd;
-}
-
-.flipbook-bg-lightgrey {
-    background: #e0e0e0;
-}
-
-.flipbook-color-lightgrey {
-    color: #757575;
-    fill: #757575;
-}
-
-.flipbook-color-lightgrey:hover {
-    color: #616161;
-    fill: #616161;
 }
 
 .flipbook-border {
@@ -1845,6 +1801,76 @@
 .flipbook-add-note-rect.hover .add-note-btn {
     opacity: 1;
     pointer-events: auto;
+}
+
+.skin-color-bg {
+    background: var(--flipbook-bg);
+}
+.skin-color {
+    color: var(--flipbook-color);
+    fill: var(--flipbook-color);
+}
+.flipbook-progress {
+    background: var(--flipbook-color);
+    opacity: 0.5;
+    position: relative;
+}
+
+.flipbook-progress-bar {
+    position: relative;
+    width: 320px;
+    height: 12px;
+    margin: 0 20px;
+    --progress-bg: #e0e0e0;
+    --progress-fill: #3471f7;
+    --progress-thumb: #fff;
+    --progress-thumb-border: #3471f7;
+    --progress-thumb-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    user-select: none;
+    width: 100%;
+}
+
+.flipbook-progress-bar .progress-track {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: var(--progress-bg);
+    border-radius: 3px;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+.flipbook-progress-bar .progress-filled {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 6px;
+    background: var(--progress-fill);
+    border-radius: 3px;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 0%; /* Will be set by JS */
+    transition: width 0.15s;
+}
+.flipbook-progress-bar .progress-thumb {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    width: 20px;
+    height: 20px;
+    background: var(--progress-thumb);
+    border: 2px solid var(--progress-thumb-border);
+    border-radius: 50%;
+    box-shadow: var(--progress-thumb-shadow);
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.flipbook-progress-bar .progress-thumb:focus {
+    border-color: #ff9800;
+    outline: none;
 }
 
 .flipbook-note-display {
