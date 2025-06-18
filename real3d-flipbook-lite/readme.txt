@@ -4,7 +4,7 @@ Donate link: https://codecanyon.net/item/real3d-flipbook-wordpress-plugin/694258
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 4.11
+Stable tag: 4.11.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -468,9 +468,11 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 * Fix: Lightbox opens on empty page
 * Improvement: Performance optimization
 
+= 4.11.1 =
+* Fix: PHP error for PHP versions < 7.4
 
-
-
+= 4.11.2 =
+* New: French translation
 
 == Upgrade to PRO for More Features ==
 Unlock advanced features like PDF hyperlinks, text search, custom toolbar configurations, and much more. Enhance your content presentation with [Real3D FlipBook PRO](https://real3dflipbook.com).

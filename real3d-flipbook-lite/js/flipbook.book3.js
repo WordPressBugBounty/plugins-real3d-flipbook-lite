@@ -73,8 +73,10 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             numSheets += 1;
         }
         if (this.options.singlePageMode) numSheets = p.length;
+        this.numSheets = numSheets;
 
-        for (let i = 0; i < numSheets; i++) {
+        // for (let i = 0; i < numSheets; i++) {
+        for (let i = 0; i < p.length; i++) {
             const page = new FLIPBOOK.Page3(this, i);
             this.pagesArr.push(page);
             this.centerContainer.appendChild(page.wrapper);
@@ -298,7 +300,18 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
     }
 
     updateSinglePage(singlePage) {
+        if (singlePage == this.singlePage) return;
         this.singlePage = singlePage;
+
+        var p = this.options.pages;
+        var evenPages = p.length % 2 == 0;
+        var numSheets = evenPages ? p.length / 2 : (p.length + 1) / 2;
+        if (!this.options.cover && evenPages) {
+            numSheets += 1;
+        }
+        if (this.options.singlePageMode || this.singlePage) numSheets = p.length;
+        this.numSheets = numSheets;
+
         let ri = this.rightIndex;
         if (ri > 0) {
             if (this.singlePage) {
@@ -330,6 +343,8 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
                 page.htmlLoaded.front = null;
                 page.htmlLoaded.back = null;
             }
+            page._sidePromises = null;
+            page._sideHTMLPromises = null;
         });
     }
 
@@ -344,7 +359,16 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             index /= 2;
         }
 
-        let numSheets = this.pagesArr.length;
+        // let numSheets = this.pagesArr.length;
+
+        var p = this.options.pages;
+        var evenPages = p.length % 2 == 0;
+        var numSheets = evenPages ? p.length / 2 : (p.length + 1) / 2;
+        if (!this.options.cover && evenPages) {
+            numSheets += 1;
+        }
+        if (this.options.singlePageMode || this.singlePage) numSheets = p.length;
+
         this.visibleSheets = [];
         for (let i = 0; i < numSheets; i++) {
             this.visibleSheets.push(this.pagesArr[i]);
@@ -552,29 +576,15 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
 
     animate(params) {
         FLIPBOOK.animate(params);
-        // const jq = true;
-        // if (!jq) {
-        //     FLIPBOOK.animate(params);
-        // } else {
-        //     jQuery({
-        //         someValue: params.from,
-        //     }).animate(
-        //         {
-        //             someValue: params.to,
-        //         },
-        //         params
-        //     );
-        // }
     }
 
     updateFlipped() {
         if (this.singlePage) {
             this.flippedleft = this.rightIndex;
-            this.flippedright = this.pagesArr.length * 2 - this.rightIndex;
         } else {
             this.flippedleft = (this.rightIndex + (this.rightIndex % 2)) / 2;
-            this.flippedright = this.pagesArr.length - this.flippedleft;
         }
+        this.flippedright = this.numSheets - this.flippedleft;
     }
 
     onSwipe(event, phase, distanceX, distanceY, duration, fingerCount) {
@@ -653,12 +663,12 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
                 next = this.visibleSheets[ri2];
                 if (next) {
                     next.show();
-                    next.load('front');
+                    this.loadPageAsync(next, 'front');
                 }
             } else {
                 left = this.visibleSheets[ri2];
                 left.show();
-                left.load('front');
+                this.loadPageAsync(left, 'front');
                 left._setAngle(angle / 2 + 90);
             }
 
@@ -690,16 +700,12 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
                 flippping.show();
                 flippping._setAngle(angle);
                 next = this.visibleSheets[ri2 / 2];
-                flippping.load(
-                    'back',
-                    function () {
-                        if (next) {
-                            next.show();
-                            next.load('front', null, true);
-                        }
-                    },
-                    true
-                );
+                if (next) {
+                    next.show();
+                    this.loadPageAsync(next, 'fornt');
+                }
+
+                this.loadPageAsync(flippping, 'back');
             } else {
                 if (this.view == 1 && this.isFocusedRight()) {
                     return;
@@ -717,16 +723,11 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
                 flippping.show();
                 flippping._setAngle(180 + angle);
                 prev = this.visibleSheets[ri2 / 2 - 1];
-                flippping.load(
-                    'front',
-                    function () {
-                        if (prev) {
-                            prev.show();
-                            prev.load('back', null, true);
-                        }
-                    },
-                    true
-                );
+                if (prev) {
+                    prev.show();
+                    this.loadPageAsync(prev, 'back');
+                }
+                this.loadPageAsync(flippping, 'front');
             }
 
             if (next) {
@@ -743,7 +744,7 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
     }
 
     isBackCover() {
-        return this.rightIndex == this.pagesArr.length * 2;
+        return this.rightIndex == this.numSheets * 2;
     }
 
     onPageUnloaded(index) {

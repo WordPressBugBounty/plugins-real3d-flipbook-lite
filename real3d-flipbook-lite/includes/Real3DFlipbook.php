@@ -1355,8 +1355,62 @@ class Real3DFlipbook
 			$flipbook['date'] = get_the_date('Y-m-d', get_post($flipbook['post_id']));
 
 		if ($args['previewpages'] == -1) {
-			if (!$g['previewMode']) $flipbook['previewPages'] = "";
-			else if ($g['previewMode'] == 'logged_out' && is_user_logged_in()) $flipbook['previewPages'] = "0";
+			if (!$g['previewMode']) $flipbook['previewPages'] = "0";
+			else if ($g['previewMode'] == 'logged_out') {
+				if (is_user_logged_in())
+					$flipbook['previewPages'] = "0";
+			} else if ($g['previewMode'] == 'woo_purchased_or_subscription') {
+
+
+				$full_access = apply_filters('r3d_woo_purchased_or_subscription', false);
+
+				if ($full_access) {
+					$flipbook['previewPages'] = "0";
+				}
+
+
+				$has_subscription = false;
+				$has_purchased = false;
+
+				if (is_user_logged_in()) {
+					$user_id = get_current_user_id();
+
+					if (function_exists('wcs_get_users_subscriptions')) {
+						$product_id = get_the_ID();
+						$subscriptions = wcs_get_users_subscriptions($user_id);
+						foreach ($subscriptions as $sub) {
+							if ($sub->has_product($product_id) && $sub->has_status('active')) {
+								$has_subscription = true;
+								break;
+							}
+						}
+					}
+					if (!$has_subscription && function_exists('wc_get_product')) {
+						$product_id = get_the_ID();
+						$product = wc_get_product($product_id);
+						if ($product) {
+							$orders = wc_get_orders([
+								'customer_id' => $user_id,
+								'status'      => ['completed', 'processing', 'on-hold'],
+								'limit'       => -1,
+							]);
+							foreach ($orders as $order) {
+								foreach ($order->get_items() as $item) {
+									if ($item->get_product_id() == $product_id) {
+										$has_purchased = true;
+										break 2;
+									}
+								}
+							}
+						}
+					}
+					if ($has_subscription || $has_purchased) {
+						$flipbook['previewPages'] = "0";
+					}
+				}
+			} else {
+				$flipbook['previewPages'] = "0";
+			}
 		}
 
 		$deeplinking = isset($flipbook['deeplinking']) ? $flipbook['deeplinking'] : $g['deeplinking'];

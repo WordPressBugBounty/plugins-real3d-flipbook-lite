@@ -10,22 +10,22 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 
 ?>
 
-	<div class="postbox closed">
-		<div class="postbox-header">
-			<h2 class="hndle ui-sortable-handle"><?php echo esc_html($r3d_postbox_title); ?></h2>
-			<div class="handle-actions hide-if-no-js"><button type="button" class="handle-order-higher"
-					aria-disabled="false" aria-describedby="submitdiv-handle-order-higher-description"><span
-						class="screen-reader-text"><?php esc_html_e('Toggle panel:', 'real3d-flipbook');
+<div class="postbox closed">
+	<div class="postbox-header">
+		<h2 class="hndle ui-sortable-handle"><?php echo esc_html($r3d_postbox_title); ?></h2>
+		<div class="handle-actions hide-if-no-js"><button type="button" class="handle-order-higher"
+				aria-disabled="false" aria-describedby="submitdiv-handle-order-higher-description"><span
+					class="screen-reader-text"><?php esc_html_e('Toggle panel:', 'real3d-flipbook');
 													echo esc_html(' ' . $r3d_postbox_title); ?></span><span class="toggle-indicator"
-						aria-hidden="true"></span></button></div>
-		</div>
-		<div class="inside">
-			<table class="form-table" id="<?php echo esc_attr($r3d_postbox_id); ?>">
-				<tbody></tbody>
-			</table>
-			<div class="clear"></div>
-		</div>
+					aria-hidden="true"></span></button></div>
 	</div>
+	<div class="inside">
+		<table class="form-table" id="<?php echo esc_attr($r3d_postbox_id); ?>">
+			<tbody></tbody>
+		</table>
+		<div class="clear"></div>
+	</div>
+</div>
 
 <?php
 
@@ -184,11 +184,11 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 			if (defined('R3D_PDF_TOOLS_VERSION')) {
 				if (version_compare(R3D_PDF_TOOLS_VERSION, '2.0', '>=')) {
 			?>
-					<div id="tab-pdf-tools" style="display:none;">
-						<table class="form-table" id="flipbook-pdf-tools-options">
-							<tbody></tbody>
-						</table>
-					</div>
+			<div id="tab-pdf-tools" style="display:none;">
+				<table class="form-table" id="flipbook-pdf-tools-options">
+					<tbody></tbody>
+				</table>
+			</div>
 			<?php
 				}
 			}

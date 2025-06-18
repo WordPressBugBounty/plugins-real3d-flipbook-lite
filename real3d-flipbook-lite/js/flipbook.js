@@ -4151,7 +4151,7 @@ FLIPBOOK.Main = class {
 
         if (o.menuOverBook && o.menu2OverBook)
             o.zoomMin = (this.wrapperH - 2 * manuHeight - bookMargin) / this.wrapperH;
-        else o.zoomMin = (this.wrapperH - bookMargin) / this.wrapperH;
+        // else o.zoomMin = (this.wrapperH - bookMargin) / this.wrapperH;
 
         if (o.viewMode == 'scroll') {
             o.zoomMax = (2 * ((o.zoomSize * o.pageWidth) / o.pageHeight)) / this.wrapperW;

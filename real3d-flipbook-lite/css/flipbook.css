@@ -2060,6 +2060,7 @@
     transform-origin: 0 0;
     z-index: 2;
     font-weight: initial;
+    user-select: none;
 }
 
 .flipbook-page-html .textLayer :is(span, br) {
@@ -2068,6 +2069,10 @@
     white-space: pre;
     cursor: text;
     transform-origin: 0% 0%;
+}
+
+.flipbook-page-html .textLayer * {
+    user-select: text;
 }
 
 /* Only necessary in Google Chrome, see issue 14205, and most unfortunately
