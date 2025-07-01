@@ -1252,26 +1252,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         var rightPage = this.pages[this.flippedleft];
         var leftPage = this.pages[this.flippedleft - 1];
 
-        // var R = this.options.rightToLeft ? this.options.pages.length - this.rightIndex - 1 : this.rightIndex;
+        var R = -1,
+            L = -1;
 
-        var R, L;
-
-        if (rightPage) {
-            R = rightPage.indexF;
-            L = this.options.rightToLeft ? R + 1 : R - 1;
-        } else {
-            L = leftPage.indexB;
-            R = this.options.rightToLeft ? L - 1 : L + 1;
-        }
-
-        // var R = rightPage.indexF;
-        // var L = this.options.rightToLeft ? R + 1 : R - 1;
-        // var L = leftPage.indexB;
-
-        // if (!this.options.cover) {
-        //     R--;
-        //     L--;
-        // }
+        if (rightPage) R = rightPage.indexF;
+        if (leftPage) L = leftPage.indexB;
 
         this._hideHTMLPage(this.pageL);
         this._hideHTMLPage(this.pageC);
@@ -1287,7 +1272,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             //cover
 
             if (this.rightIndex == 0) {
-                html = this.options.pages[R].htmlContent;
+                if (R > -1) html = this.options.pages[R].htmlContent;
                 if (html) {
                     this._addHTMLContent(html, this.pageRInner);
                     this._showHTMLPage(this.pageR);
@@ -1296,7 +1281,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
 
                 //back cover
             } else if (this.rightIndex == this.pages.length * 2) {
-                html = this.options.pages[L].htmlContent;
+                if (L > -1) html = this.options.pages[L].htmlContent;
                 if (html) {
                     this._addHTMLContent(html, this.pageLInner);
                     this._showHTMLPage(this.pageL);
@@ -1306,7 +1291,8 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
 
                 //spreads
             } else {
-                html = this.options.pages[L].htmlContent || this.options.pages[R].htmlContent;
+                if (L > -1) html = this.options.pages[L].htmlContent;
+                else if (R > -1) html = this.options.pages[R].htmlContent;
 
                 if (html) {
                     this._addHTMLContent(html, this.pageCInner);
@@ -1317,7 +1303,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             }
         } else {
             if (this.rightIndex != 0) {
-                html = this.options.pages[L].htmlContent;
+                if (L > -1) html = this.options.pages[L].htmlContent;
 
                 if (html) {
                     this._addHTMLContent(this.options.pages[L].htmlContent, this.pageLInner);
@@ -1328,7 +1314,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             }
 
             if (this.rightIndex != this.pages.length * 2) {
-                html = this.options.pages[R].htmlContent;
+                if (R > -1) html = this.options.pages[R].htmlContent;
 
                 if (html) {
                     this._addHTMLContent(this.options.pages[R].htmlContent, this.pageRInner);
@@ -1658,17 +1644,21 @@ FLIPBOOK.PageWebGL = class {
         this.flippingRight = false;
         this.options = options;
 
-        const { pages, rightToLeft, cover } = options;
+        const { pages, rightToLeft, cover, doublePage } = options;
         const numSheets = Math.ceil(pages.length / 2);
         const sheetIndex = rightToLeft ? numSheets - this.index - 1 : this.index;
 
         let indexF = rightToLeft ? 2 * sheetIndex + 1 : 2 * sheetIndex;
         let indexB = rightToLeft ? 2 * sheetIndex : 2 * sheetIndex + 1;
-
         if (!cover) {
             const offset = rightToLeft ? 1 : -1;
             indexF += offset;
             indexB += offset;
+        }
+
+        if (rightToLeft && doublePage) {
+            if (indexB > 0) indexB--;
+            indexF++;
         }
 
         this.indexF = indexF;

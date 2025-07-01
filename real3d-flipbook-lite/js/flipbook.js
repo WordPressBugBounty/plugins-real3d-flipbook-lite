@@ -1294,7 +1294,7 @@ FLIPBOOK.Main = class {
                     }
                 }
             } else if (this.Book) {
-                if (this.lightbox && !FLIPBOOK.lightboxOpened) {
+                if (this.lightbox && !this.lightbox.lightboxOpened) {
                     this.lightbox.openLightbox();
                     await this.lightboxStart();
                 }
@@ -2583,7 +2583,7 @@ FLIPBOOK.Main = class {
 
         if (o.lightboxCloseOnBack) {
             window.onpopstate = function () {
-                if (self.Book.enabled && FLIPBOOK.lightboxOpened) {
+                if (self.Book.enabled && self.lightbox && self.lightbox.lightboxOpened) {
                     if (!window.location.hash) {
                         self.lightbox.closeLightbox(true);
                     }
@@ -5886,11 +5886,11 @@ FLIPBOOK.Lightbox = class {
     }
 
     openLightbox() {
-        if (FLIPBOOK.lightboxOpened) {
+        if (this.lightboxOpened) {
             return;
         }
 
-        FLIPBOOK.lightboxOpened = true;
+        this.lightboxOpened = true;
 
         this.showOverlay();
 
@@ -5941,11 +5941,11 @@ FLIPBOOK.Lightbox = class {
     }
 
     closeLightbox(popState) {
-        if (!FLIPBOOK.lightboxOpened /*|| !this.context.Book || !this.context.Book.enabled*/) {
+        if (!this.lightboxOpened /*|| !this.context.Book || !this.context.Book.enabled*/) {
             return;
         }
 
-        FLIPBOOK.lightboxOpened = false;
+        this.lightboxOpened = false;
 
         this.hideOverlay();
 
@@ -5964,7 +5964,7 @@ FLIPBOOK.Lightbox = class {
     }
 
     disposeLightbox() {
-        FLIPBOOK.lightboxOpened = false;
+        this.lightboxOpened = false;
 
         this.hideOverlay();
 
