@@ -477,5 +477,8 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 = 4.11.3 =
 * Fix: Category shortcode
 
+= 4.11.4 =
+* Fix: Broken link on Settings page
+
 == Upgrade to PRO for More Features ==
 Unlock advanced features like PDF hyperlinks, text search, custom toolbar configurations, and much more. Enhance your content presentation with [Real3D FlipBook PRO](https://real3dflipbook.com).

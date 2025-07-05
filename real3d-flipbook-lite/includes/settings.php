@@ -40,9 +40,11 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 ?>
 
 <div id='real3dflipbook-admin' style="display:none;">
-	<a href="admin.php?page=real3d_flipbook_admin" class="back-to-list-link">&larr;
+
+	<a href="<?php echo esc_url(admin_url('edit.php?post_type=r3d')); ?>" class="back-to-list-link">&larr;
 		<?php esc_html_e('Back to flipbooks list', 'real3d-flipbook'); ?>
 	</a>
+
 	<h1><?php esc_html_e('Global settings', 'real3d-flipbook'); ?></h1>
 	<p><?php esc_html_e('Global default settings for all flipbooks', 'real3d-flipbook'); ?></p>
 	<form method="post" id="real3dflipbook-options-form" enctype="multipart/form-data"
