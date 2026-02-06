@@ -738,7 +738,7 @@
 
 .flipbook-thumbs-grid .flipbook-thumbsScroller {
     display: block;
-    padding: 1rem 2rem;
+    padding: 0 2rem;
 }
 .flipbook-thumbs-grid {
     background-color: rgba(0, 0, 0, 0.5) !important;
@@ -781,20 +781,50 @@
     cursor: pointer;
     position: relative;
     display: inline-block;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgb(0 0 0 / 25%);
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+    scroll-margin-top: 20px;
+    overflow: hidden;
 }
 
-.flipbook-thumb:hover,
-.flipbook-thumb-active {
-    border: 1px solid rgb(0 0 0 / 50%);
-    box-shadow: 0 0 0px 2px rgb(0 0 0 / 25%);
-    transition: 0.2s all;
-    opacity: 0.7;
+.flipbook-thumb.flipbook-thumb-active {
+    box-shadow: 0 0 0 4px var(--flipbook-accent-color);
+}
+
+.flipbook-thumb-spread {
+    display: inline-block;
+    margin: 10px;
+}
+
+.flipbook-thumb-spread .flipbook-thumb {
+    margin: 0;
+}
+
+.flipbook-thumb-spread .flipbook-thumb-left .flipbook-thumb-num {
+    left: 2px;
+    right: unset;
+}
+
+.flipbook-thumb img,
+.flipbook-thumb canvas {
+    /* opacity: 1; */
+    filter: brightness(0.98);
+}
+
+.flipbook-thumb:hover img,
+.flipbook-thumb:hover canvas,
+.flipbook-thumb.flipbook-thumb-active img,
+.flipbook-thumb.flipbook-thumb-active canvas {
+    /* opacity: 0.8; */
+    filter: brightness(1);
 }
 
 .flipbook-thumb:hover .flipbook-thumb-num {
     background: rgba(0, 0, 0, 0.8);
+}
+
+.flipbook-thumb-active .flipbook-thumb-num {
+    background: rgba(0, 0, 0, 1);
     transition: 0.2s all;
 }
 
@@ -1069,6 +1099,30 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.flipbook-center-btn-expand {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #0000003a;
+    width: 32px;
+    height: 32px;
+    padding: 16px;
+    border-radius: 100%;
+    cursor: pointer;
+    display: flex;
+    align-items: center; /* vertical centering */
+    justify-content: center;
+}
+
+.flipbook-center-btn-expand svg {
+    fill: white;
+}
+
+.flipbook-center-btn-expand:hover {
+    background: #0000007f;
 }
 
 .flipbook-btn-close .flipbook-icon {
@@ -1460,6 +1514,7 @@
     cursor: pointer;
     padding: 4px 6px;
     background: rgba(0, 0, 0, 0.6);
+    z-index: 1;
 }
 
 .thumb-btn-close:hover {

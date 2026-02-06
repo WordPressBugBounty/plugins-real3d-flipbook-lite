@@ -29,6 +29,7 @@
           });
         }
 
+        var s = o.s;
         convertStrings(o);
         convertStrings(o_global);
 
@@ -58,6 +59,7 @@
 
         o = decode(o);
         o_global = decode(o_global);
+        o.s = s;
 
         if (o.pages) {
           if (!Array.isArray(o.pages)) {

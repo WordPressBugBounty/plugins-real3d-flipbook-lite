@@ -1864,6 +1864,7 @@ var pluginDir = (function (scripts) {
 
     $(".add-pages-button").on("click", function (e) {
       e.preventDefault();
+      const addMorePages = this.classList.contains("add-more-pages");
 
       var media_uploader_1 = wp
         .media({
@@ -1883,7 +1884,7 @@ var pluginDir = (function (scripts) {
             arr[0].attributes.subtype == "pdf"
           ) {
             // pdf selected from media library
-            onPDFSelected(arr[0].attributes.url);
+            onPDFSelected(arr[0].attributes.url, addMorePages);
           } else {
             // images selected
             onImagesSelected(arr);
@@ -2077,7 +2078,7 @@ var pluginDir = (function (scripts) {
       closeModal();
     }
 
-    function convertWithPDFTools() {
+    function convertWithPDFTools(addMorePages) {
       //convert PDF flipbook
       const converter = new FLIPBOOK.PDFTools();
       const pdfToolsOptions = window.options.globals.pdfTools;
@@ -2088,17 +2089,20 @@ var pluginDir = (function (scripts) {
       const $pagesContainer = $("#pages-container").addClass("ui-sortable");
 
       const oldPages = options.pages;
-      clearPages();
-      if (oldPages)
-        oldPages.forEach(function (page, index) {
-          options.pages[index] = {};
-          if (page.items) options.pages[index].items = page.items;
-          if (page.htmlContent)
-            options.pages[index].htmlContent = page.htmlContent;
-        });
-      if (pageEditor) pageEditor.setPages(options.pages);
+      if (addMorePages) {
+      } else {
+        clearPages();
+        if (oldPages)
+          oldPages.forEach(function (page, index) {
+            options.pages[index] = {};
+            if (page.items) options.pages[index].items = page.items;
+            if (page.htmlContent)
+              options.pages[index].htmlContent = page.htmlContent;
+          });
+        if (pageEditor) pageEditor.setPages(options.pages);
 
-      clearLightboxThumbnail();
+        clearLightboxThumbnail();
+      }
 
       setOptionValue("type", "jpg");
       setOptionValue("pdfUrl");
@@ -2143,13 +2147,12 @@ var pluginDir = (function (scripts) {
       });
 
       converter.eventBus.on("pagesaved", function (e) {
-        options.pages = options.pages || [];
-        options.pages[e.index] = options.pages[e.index] || {};
-        options.pages[e.index].src = e.src;
-        options.pages[e.index].thumb = e.thumb;
-        if (e.json) options.pages[e.index].json = e.json;
-
         const pageIndex = Number(e.index) + Number(startIndex);
+        options.pages = options.pages || [];
+        options.pages[pageIndex] = options.pages[pageIndex] || {};
+        options.pages[pageIndex].src = e.src;
+        options.pages[pageIndex].thumb = e.thumb;
+        if (e.json) options.pages[pageIndex].json = e.json;
 
         const $page = $pagesContainer
           .find('.page[data-index="' + pageIndex + '"]')
@@ -2182,16 +2185,40 @@ var pluginDir = (function (scripts) {
       });
     }
 
-    async function onPDFSelected(pdfUrl) {
+    async function onPDFSelected(pdfUrl, addMorePages) {
       closeModal();
       var oldPages = options.pages;
-      clearPages();
-      clearLightboxThumbnail();
-      setOptionValue("type", "pdf");
-      setOptionValue("pdfUrl", pdfUrl);
-      $("#pages-container").removeClass("ui-sortable");
-      await previewPDFPages(pdfUrl);
-      if (pageEditor) pageEditor.setPages(oldPages);
+      if (FLIPBOOK.PDFTools && addMorePages) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          pluginDir + "js/pdf.worker.min.js";
+
+        var params = {
+          cMapPacked: true,
+          cMapUrl: pluginDir + "js/cmaps/",
+          disableRange: options.disableRange,
+          disableAutoFetch: true,
+          disableStream: true,
+          url: pdfUrl,
+        };
+        if (location.protocol == "https:")
+          params.url = params.url.replace("http://", "https://");
+        else if (location.protocol == "http:")
+          params.url = params.url.replace("https://", "http://");
+
+        try {
+          pdfDocument = await loadPDF(params);
+        } catch (error) {}
+
+        convertWithPDFTools(true);
+      } else {
+        clearPages();
+        clearLightboxThumbnail();
+        setOptionValue("type", "pdf");
+        setOptionValue("pdfUrl", pdfUrl);
+        $("#pages-container").removeClass("ui-sortable");
+        await previewPDFPages(pdfUrl);
+        if (pageEditor) pageEditor.setPages(oldPages);
+      }
     }
 
     function onImagesSelected(arr) {

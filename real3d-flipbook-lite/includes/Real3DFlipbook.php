@@ -1263,29 +1263,52 @@ a:hover .link-icon {
 				'pagerangeend' => '-1',
 				'previewpages' => '-1',
 				'securepdf' => '-1',
+				'rtl' => '-1',
+				'lang' => '-1',
 			),
 			$atts
 		);
 
-		if ($args['id'] == "all") {
 
+
+		if ($args['lang'] != '-1') {
+			// Try WPML first
+			if (defined('ICL_LANGUAGE_CODE')) {
+				$current_lang = ICL_LANGUAGE_CODE;
+			}
+			// Try Polylang
+			elseif (function_exists('pll_current_language')) {
+				$current_lang = pll_current_language();
+			}
+			// Fallback to site locale
+			else {
+				$current_lang = substr(get_locale(), 0, 2);
+			}
+
+			// If current site language doesn't match shortcode lang, stop rendering
+			if (strtolower($args['lang']) !== strtolower($current_lang)) {
+				return ''; // Nothing is rendered
+			}
+		}
+
+		if ($args['id'] === 'all') {
 			$output = '';
 
-			$real3dflipbooks_ids = get_option('real3dflipbooks_ids');
+			$real3dflipbooks_ids = (array) get_option('real3dflipbooks_ids');
 
-			foreach ($real3dflipbooks_ids as $id) {
+			foreach ($real3dflipbooks_ids as $single_id) {
+				$single_id = (int) $single_id;
+				if (!$single_id) {
+					continue;
+				}
 
-				$shortcode = '[real3dflipbook id="' . $id . '" mode="lightbox"';
+				$child_atts = $args;
+				$child_atts['id']   = (string) $single_id;
+				$child_atts['mode'] = 'lightbox';
 
-				if ($args['thumbcss'] != -1)
-					$shortcode .= ' thumbcss="' . $args['thumbcss'] . '"';
+				$child_atts['name'] = '-1';
 
-				if ($args['containercss'] != -1)
-					$shortcode .= ' containercss="' . $args['containercss'] . '"';
-
-				$shortcode .= ']';
-
-				$output .= do_shortcode($shortcode);
+				$output .= $this->on_shortcode($child_atts, $content);
 			}
 
 			return $output;
@@ -1439,6 +1462,7 @@ a:hover .link-icon {
 				if ($key == 'pagerangestart') $key = 'pageRangeStart';
 				if ($key == 'pagerangeend') $key = 'pageRangeEnd';
 				if ($key == 'previewpages') $key = 'previewPages';
+				if ($key == 'rtl') $key = 'rightToLeft';
 
 				$flipbook[$key] = $val;
 			}

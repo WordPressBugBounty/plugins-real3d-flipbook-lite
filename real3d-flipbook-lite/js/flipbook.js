@@ -27,7 +27,7 @@ FLIPBOOK.Main = class {
         tableOfContent: [],
         tableOfContentCloseOnClick: true,
         thumbsCloseOnClick: true,
-        thumbsStyle: 'overlay',
+        thumbsStyle: 'overlay', //overlay, side
         deeplinkingEnabled: false,
         deeplinkingPrefix: '',
         assets: {
@@ -37,10 +37,6 @@ FLIPBOOK.Main = class {
             backgroundMp3: 'assets/mp3/background.mp3',
         },
         pdfUrl: null,
-        pdfBrowserViewerIfMobile: false,
-        pdfBrowserViewerIfIE: false,
-        pdfBrowserViewerFullscreen: true,
-        pdfBrowserViewerFullscreenTarget: '_blank',
         rangeChunkSize: 64,
         disableRange: false,
         disableStream: true,
@@ -61,7 +57,7 @@ FLIPBOOK.Main = class {
         autoplayOnStart: false,
         autoplayInterval: 3000,
         autoplayLoop: true,
-        skin: '',
+        skin: '', // dark, light, gradient
         menuOverBook: false,
         menuFloating: false,
         menuBackground: '',
@@ -76,6 +72,7 @@ FLIPBOOK.Main = class {
         menu2Margin: 0,
         menu2Padding: 0,
         menu2Transparent: true,
+        accentColor: '#3b82f6',
         skinColor: '#222',
         skinColorHover: '#111',
         skinBackground: '#FFF',
@@ -239,12 +236,9 @@ FLIPBOOK.Main = class {
             toolsMenu: true,
         },
         btnDownloadPdf: {
-            forceDownload: false,
             enabled: true,
-            title: 'View PDF',
+            title: 'Download PDF',
             url: null,
-            openInNewWindow: true,
-            name: 'allPages.pdf',
             svg: 'pdf',
             toolsMenu: true,
         },
@@ -342,6 +336,9 @@ FLIPBOOK.Main = class {
         responsiveView: true,
         responsiveViewRatio: 1,
         responsiveViewTreshold: 768,
+        minimalView: true,
+        responsiveViewRatio: 1,
+        minimalViewTreshold: 600,
         responsiveContainer: true,
         minPixelRatio: 1,
         pageFlipDuration: 1,
@@ -417,6 +414,7 @@ FLIPBOOK.Main = class {
         cover: true,
         backCover: true,
         pdfTextLayer: true,
+        textSelect: true,
         annotationLayer: true,
         googleAnalyticsTrackingCode: null,
         linkColor: 'rgba(0, 0, 0, 0)',
@@ -460,6 +458,7 @@ FLIPBOOK.Main = class {
             matchesFound: 'matches found',
             page: 'Page',
             matches: 'matches',
+            match: 'match',
             thumbnails: 'Thumbnails',
             tableOfContent: 'Table of Contents',
             share: 'Share',
@@ -482,7 +481,40 @@ FLIPBOOK.Main = class {
             btnLast: { enabled: false },
             currentPage: { enabled: false },
             pagesInMemory: 6,
+            minimalViewTreshold: 360,
         },
+    };
+    static icons = {
+        plus: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>',
+        minus: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/></svg>',
+        close: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>',
+        next: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg>',
+        expand: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V352z"/></svg>',
+        compress:
+            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M160 64c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H32c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V64zM32 320c-17.7 0-32 14.3-32 32s14.3 32 32 32H96v64c0 17.7 14.3 32 32 32s32-14.3 32-32V352c0-17.7-14.3-32-32-32H32zM352 64c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H352V64zM320 320c-17.7 0-32 14.3-32 32v96c0 17.7 14.3 32 32 32s32-14.3 32-32V384h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H320z"/></svg>',
+        thumbs: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M448 96V224H288V96H448zm0 192V416H288V288H448zM224 224H64V96H224V224zM64 288H224V416H64V288zM64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64z"/></svg>',
+        print: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zM432 248a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>',
+        sound: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 640 512"><path d="M533.6 32.5C598.5 85.3 640 165.8 640 256s-41.5 170.8-106.4 223.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C557.5 398.2 592 331.2 592 256s-34.5-142.2-88.7-186.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM473.1 107c43.2 35.2 70.9 88.9 70.9 149s-27.7 113.8-70.9 149c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C475.3 341.3 496 301.1 496 256s-20.7-85.3-53.2-111.8c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zm-60.5 74.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3z"/></svg>',
+        mute: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 576 512"><path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"/></svg>',
+        share: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M352 224c53 0 96-43 96-96s-43-96-96-96s-96 43-96 96c0 4 .2 8 .7 11.9l-94.1 47C145.4 170.2 121.9 160 96 160c-53 0-96 43-96 96s43 96 96 96c25.9 0 49.4-10.2 66.6-26.9l94.1 47c-.5 3.9-.7 7.8-.7 11.9c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-25.9 0-49.4 10.2-66.6 26.9l-94.1-47c.5-3.9 .7-7.8 .7-11.9s-.2-8-.7-11.9l94.1-47C302.6 213.8 326.1 224 352 224z"/></svg>',
+        facebook:
+            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/></svg>',
+        twitter:
+            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/></svg>',
+        list: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M24 56c0-13.3 10.7-24 24-24H80c13.3 0 24 10.7 24 24V176h16c13.3 0 24 10.7 24 24s-10.7 24-24 24H40c-13.3 0-24-10.7-24-24s10.7-24 24-24H56V80H48C34.7 80 24 69.3 24 56zM86.7 341.2c-6.5-7.4-18.3-6.9-24 1.2L51.5 357.9c-7.7 10.8-22.7 13.3-33.5 5.6s-13.3-22.7-5.6-33.5l11.1-15.6c23.7-33.2 72.3-35.6 99.2-4.9c21.3 24.4 20.8 60.9-1.1 84.7L86.8 432H120c13.3 0 24 10.7 24 24s-10.7 24-24 24H32c-9.5 0-18.2-5.6-22-14.4s-2.1-18.9 4.3-25.9l72-78c5.3-5.8 5.4-14.6 .3-20.5zM224 64H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/></svg>',
+        pdf: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M64 464l48 0 0 48-48 0c-35.3 0-64-28.7-64-64L0 64C0 28.7 28.7 0 64 0L229.5 0c17 0 33.3 6.7 45.3 18.7l90.5 90.5c12 12 18.7 28.3 18.7 45.3L384 304l-48 0 0-144-80 0c-17.7 0-32-14.3-32-32l0-80L64 48c-8.8 0-16 7.2-16 16l0 384c0 8.8 7.2 16 16 16zM176 352l32 0c30.9 0 56 25.1 56 56s-25.1 56-56 56l-16 0 0 32c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-48 0-80c0-8.8 7.2-16 16-16zm32 80c13.3 0 24-10.7 24-24s-10.7-24-24-24l-16 0 0 48 16 0zm96-80l32 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-32 0c-8.8 0-16-7.2-16-16l0-128c0-8.8 7.2-16 16-16zm32 128c8.8 0 16-7.2 16-16l0-64c0-8.8-7.2-16-16-16l-16 0 0 96 16 0zm80-112c0-8.8 7.2-16 16-16l48 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 32 32 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 48c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-64 0-64z"/></svg>',
+        tools: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 128 512"><path d="M64 360a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm0-160a56 56 0 1 0 0 112 56 56 0 1 0 0-112zM120 96A56 56 0 1 0 8 96a56 56 0 1 0 112 0z"/></svg>',
+        linkedin:
+            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"/></svg>',
+        whatsapp:
+            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>',
+        pinterest:
+            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><path d="M204 6.5C101.4 6.5 0 74.9 0 185.6 0 256 39.6 296 63.6 296c9.9 0 15.6-27.6 15.6-35.4 0-9.3-23.7-29.1-23.7-67.8 0-80.4 61.2-137.4 140.4-137.4 68.1 0 118.5 38.7 118.5 109.8 0 53.1-21.3 152.7-90.3 152.7-24.9 0-46.2-18-46.2-43.8 0-37.8 26.4-74.4 26.4-113.4 0-66.2-93.9-54.2-93.9 25.8 0 16.8 2.1 35.4 9.6 50.7-13.8 59.4-42 147.9-42 209.1 0 18.9 2.7 37.5 4.5 56.4 3.4 3.8 1.7 3.4 6.9 1.5 50.4-69 48.6-82.5 71.4-172.8 12.3 23.4 44.1 36 69.3 36 106.2 0 153.9-103.5 153.9-196.8C384 71.3 298.2 6.5 204 6.5z"/></svg>',
+        email: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M64 112c-8.8 0-16 7.2-16 16v22.1L220.5 291.7c20.7 17 50.4 17 71.1 0L464 150.1V128c0-8.8-7.2-16-16-16H64zM48 212.2V384c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V212.2L322 328.8c-38.4 31.5-93.7 31.5-132 0L48 212.2zM0 128C0 92.7 28.7 64 64 64H448c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128z"/></svg>',
+        digg: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M81.7 172.3H0v174.4h132.7V96h-51v76.3zm0 133.4H50.9v-92.3h30.8v92.3zm297.2-133.4v174.4h81.8v28.5h-81.8V416H512V172.3H378.9zm81.8 133.4h-30.8v-92.3h30.8v92.3zm-235.6 41h82.1v28.5h-82.1V416h133.3V172.3H225.1v174.4zm51.2-133.3h30.8v92.3h-30.8v-92.3zM153.3 96h51.3v51h-51.3V96zm0 76.3h51.3v174.4h-51.3V172.3z"/></svg>',
+        reddit: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M440.3 203.5c-15 0-28.2 6.2-37.9 15.9-35.7-24.7-83.8-40.6-137.1-42.3L293 52.3l88.2 19.8c0 21.6 17.6 39.2 39.2 39.2 22 0 39.7-18.1 39.7-39.7s-17.6-39.7-39.7-39.7c-15.4 0-28.7 9.3-35.3 22l-97.4-21.6c-4.9-1.3-9.7 2.2-11 7.1L246.3 177c-52.9 2.2-100.5 18.1-136.3 42.8-9.7-10.1-23.4-16.3-38.4-16.3-55.6 0-73.8 74.6-22.9 100.1-1.8 7.9-2.6 16.3-2.6 24.7 0 83.8 94.4 151.7 210.3 151.7 116.4 0 210.8-67.9 210.8-151.7 0-8.4-.9-17.2-3.1-25.1 49.9-25.6 31.5-99.7-23.8-99.7zM129.4 308.9c0-22 17.6-39.7 39.7-39.7 21.6 0 39.2 17.6 39.2 39.7 0 21.6-17.6 39.2-39.2 39.2-22 .1-39.7-17.6-39.7-39.2zm214.3 93.5c-36.4 36.4-139.1 36.4-175.5 0-4-3.5-4-9.7 0-13.7 3.5-3.5 9.7-3.5 13.2 0 27.8 28.5 120 29 149 0 3.5-3.5 9.7-3.5 13.2 0 4.1 4 4.1 10.2.1 13.7zm-.8-54.2c-21.6 0-39.2-17.6-39.2-39.2 0-22 17.6-39.7 39.2-39.7 22 0 39.7 17.6 39.7 39.7-.1 21.5-17.7 39.2-39.7 39.2z"/></svg>',
+        copyLink:
+            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 640 512"><path d="M579.8 267.7c56.5-56.5 56.5-148 0-204.5c-50-50-128.8-56.5-186.3-15.4l-1.6 1.1c-14.4 10.3-17.7 30.3-7.4 44.6s30.3 17.7 44.6 7.4l1.6-1.1c32.1-22.9 76-19.3 103.8 8.6c31.5 31.5 31.5 82.5 0 114L422.3 334.8c-31.5 31.5-82.5 31.5-114 0c-27.9-27.9-31.5-71.8-8.6-103.8l1.1-1.6c10.3-14.4 6.9-34.4-7.4-44.6s-34.4-6.9-44.6 7.4l-1.1 1.6C206.5 251.2 213 330 263 380c56.5 56.5 148 56.5 204.5 0L579.8 267.7zM60.2 244.3c-56.5 56.5-56.5 148 0 204.5c50 50 128.8 56.5 186.3 15.4l1.6-1.1c14.4-10.3 17.7-30.3 7.4-44.6s-30.3-17.7-44.6-7.4l-1.6 1.1c-32.1 22.9-76 19.3-103.8-8.6C74 372 74 321 105.5 289.5L217.7 177.2c31.5-31.5 82.5-31.5 114 0c27.9 27.9 31.5 71.8 8.6 103.9l-1.1 1.6c-10.3 14.4-6.9 34.4 7.4 44.6s34.4 6.9 44.6-7.4l1.1-1.6C433.5 260.8 427 182 377 132c-56.5-56.5-148-56.5-204.5 0L60.2 244.3z"/></svg>',
     };
     constructor(options, elem) {
         if (elem.length) {
@@ -703,7 +735,8 @@ FLIPBOOK.Main = class {
             }
         }
 
-        if (o.viewMode == 'webgl' || o.viewMode == 'scroll' || o.viewMode == 'swipe') o.btnSingle.enabled = false;
+        if (o.viewMode == 'webgl' || o.viewMode == 'scroll' || o.viewMode == 'swipe' || o.rightToLeft)
+            o.btnSingle.enabled = false;
 
         this.webgl = o.viewMode == 'webgl';
 
@@ -803,6 +836,7 @@ FLIPBOOK.Main = class {
 
         this.wrapper.style.setProperty('--flipbook-bg', colors.bg);
         this.wrapper.style.setProperty('--flipbook-color', colors.color);
+        this.wrapper.style.setProperty('--flipbook-accent-color', o.accentColor);
 
         this.tooltip2 = new FLIPBOOK.Tooltip2(this.wrapper);
 
@@ -941,7 +975,7 @@ FLIPBOOK.Main = class {
         });
 
         this.on('showpagehtml', function () {
-            window.getSelection().removeAllRanges();
+            this.deselectText();
             if (self.searchingString) {
                 self.mark(self.searchingString);
             }
@@ -1004,7 +1038,7 @@ FLIPBOOK.Main = class {
             o.pageHeight = pageSize;
             o.pw = o.pageWidth;
             o.ph = o.pageHeight;
-            o.zoomSize = o.zoomSize || o.pageTextureSize;
+            // o.zoomSize = o.zoomSize || o.pageTextureSize;
 
             var tocArray = o.tableOfContent;
             if (o.btnToc.enabled && (!tocArray || !tocArray.length)) {
@@ -1067,6 +1101,8 @@ FLIPBOOK.Main = class {
             this.checkHash();
             window.addEventListener('hashchange', this.checkHash.bind(this));
         }
+
+        o.l = ['load', 'front', 'rgb', 'length'];
 
         if (o.lightBox) {
             o.btnClose.enabled = true;
@@ -1156,7 +1192,7 @@ FLIPBOOK.Main = class {
             o.sideNavigationButtons = false;
             o.btnAutoplay.enabled = false;
             o.singlePageMode = true;
-            o.viewMode = 'swipe';
+            o.viewMode = '3d'; //swipe not woring with 1 page
             o.rightToLeft = false;
             o.btnThumbs.enabled = false;
             o.btnToc.enabled = false;
@@ -1170,6 +1206,16 @@ FLIPBOOK.Main = class {
         if (this.started) {
             return;
         }
+
+        const pageAspect = this.options.pageWidth / this.options.pageHeight;
+
+        if (pageAspect > 1) {
+            this.options.pageTextureSize /= pageAspect;
+            this.options.pageTextureSizeSmall /= pageAspect;
+            this.options.pageWidth /= pageAspect;
+            this.options.pageHeight /= pageAspect;
+        }
+        this.options.zoomSize = this.options.zoomSize || this.options.pageTextureSize;
 
         this.pageW = this.options.pageWidth;
         this.bookW = 2 * this.options.pageWidth;
@@ -1279,8 +1325,6 @@ FLIPBOOK.Main = class {
             targetPage = this.numPages;
         }
         if (targetPage) {
-            targetPage = o.rightToLeft && o.pages && o.pages.length ? o.pages.length - targetPage + 1 : targetPage;
-
             if (!this.started) {
                 o.startPage = startPage;
 
@@ -1414,7 +1458,6 @@ FLIPBOOK.Main = class {
         }
 
         if (targetPage) {
-            targetPage = o.rightToLeft && o.pages && o.pages.length ? o.pages.length - targetPage + 1 : targetPage;
             this.goToPage(targetPage, true);
         }
     }
@@ -1507,6 +1550,14 @@ FLIPBOOK.Main = class {
             });
         if (this.pageAudioPlayer) {
             this.pageAudioPlayer.pause();
+        }
+        if (this.youtubes) {
+            this.youtubes.forEach((ytWrapper) => {
+                const player = ytWrapper.player;
+                ytWrapper.dataset.ytCurrentTime = player.getCurrentTime();
+                ytWrapper.dataset.ytMuted = player.isMuted();
+                player.pauseVideo();
+            });
         }
     }
 
@@ -1675,6 +1726,8 @@ FLIPBOOK.Main = class {
                 });
                 window.dispatchEvent(r3dPageChangeEvent);
             }
+
+            this.trigger('pagechange');
 
             this.sendGAEvent({
                 event: 'flipbook_page_view',
@@ -2012,6 +2065,7 @@ FLIPBOOK.Main = class {
 
     loadPageFromPdf(pageIndex, size, callback) {
         size = size || this.options.pageTextureSize;
+        // console.log(this.Book.getPageHeight());
         this.pdfService.renderBookPage(pageIndex, size, callback);
     }
 
@@ -2093,6 +2147,7 @@ FLIPBOOK.Main = class {
     }
 
     toggleIcon(btn, val) {
+        if (!btn) return;
         if (btn.$iconAlt) {
             if (val) {
                 btn.$iconAlt.classList.add('flipbook-hidden');
@@ -2116,10 +2171,6 @@ FLIPBOOK.Main = class {
 
         if (this.options.doublePage) {
             targetPage = 2 * targetPage - 1;
-        }
-
-        if (this.options.rightToLeft) {
-            targetPage = this.options.pages.length - targetPage + 1;
         }
 
         this.goToPage(targetPage);
@@ -2223,6 +2274,8 @@ FLIPBOOK.Main = class {
         window.define = this.define;
 
         this.setLoadingProgress(1);
+
+        this.options.pagesOriginal = this.options.pages;
 
         if (this.options.doublePage && this.options.pages.length > 2) {
             var p = this.options.pages[0];
@@ -2333,6 +2386,8 @@ FLIPBOOK.Main = class {
         }
         this.initSwipe();
 
+        this.initListeners();
+
         this.resize();
 
         this.Book.enable();
@@ -2340,18 +2395,14 @@ FLIPBOOK.Main = class {
 
         if (!options.cover && options.startPage < 2) options.startPage = 2;
 
-        if (options.rightToLeft) {
-            this.goToPage(Number(options.pages.length - Number(options.startPage) + 1), true);
-        } else {
-            this.goToPage(Number(options.startPage), true);
-        }
-
         this.tocCreated = false;
 
         if (!this.options.pdfMode) {
         }
 
         this.createMenu();
+
+        if (!this.options.sound) this.toggleSound(false);
 
         this.onZoom(this.options.zoomMin);
 
@@ -2457,12 +2508,58 @@ FLIPBOOK.Main = class {
     spotlight(url, title, description) {
         }
 
+    showMenu() {
+        this.menuTop.classList.remove('flipbook-hidden');
+        this.menuBottom.classList.remove('flipbook-hidden');
+    }
+
+    hideMenu() {
+        this.menuTop.classList.add('flipbook-hidden');
+        this.menuBottom.classList.add('flipbook-hidden');
+    }
+
+    showCenterExpandButton() {
+        if (!this.centerButtonExpand) {
+            const btn = document.createElement('div');
+            btn.className = 'flipbook-center-btn-expand';
+            const icon = this.createSVGIcon('expand');
+            btn.appendChild(icon);
+            btn.addEventListener('click', () => {
+                this.toggleExpand();
+            });
+            this.wrapper.appendChild(btn);
+            this.centerButtonExpand = btn;
+        }
+        this.centerButtonExpand.classList.remove('flipbook-hidden');
+    }
+
+    hideCenterExpandButton() {
+        if (this.centerButtonExpand) this.centerButtonExpand.classList.add('flipbook-hidden');
+    }
+
+    toggleMinimalView() {
+        if (this.wrapperW < this.options.minimalViewTreshold && !this.lightbox) {
+            if (!this.minimalViewActive) {
+                this.hideMenu();
+                this.showCenterExpandButton();
+                this.minimalViewActive = true;
+                this.goToPage(1, true);
+            }
+        } else if (this.minimalViewActive) {
+            this.showMenu();
+            this.hideCenterExpandButton();
+            this.minimalViewActive = false;
+        }
+    }
+
     resizeContainer() {
+        if (this.options.minimalView) this.toggleMinimalView();
         if (!this.lightbox && !this.options.fullscreen && !this.elemStatic) {
             var pageRatio = this.pageW / this.pageH;
             var bookRatio = 2 * pageRatio;
             let width = this.elem.getBoundingClientRect().width;
             let ratio;
+
             if (this.options.isMobile && width < this.options.responsiveViewTreshold) {
                 ratio = pageRatio;
             } else {
@@ -2595,6 +2692,10 @@ FLIPBOOK.Main = class {
             this.bookLayer.addEventListener(
                 'wheel',
                 function (e) {
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                    }
+
                     if (!this.Book.enabled) return;
 
                     if (!this.options.lightBox && !this.fullscreenActive) {
@@ -2618,7 +2719,8 @@ FLIPBOOK.Main = class {
                         }
                         return false;
                     }
-                }.bind(this)
+                }.bind(this),
+                { passive: false }
             );
         }
 
@@ -2642,9 +2744,10 @@ FLIPBOOK.Main = class {
         }
 
         this.resize();
-        this.Book.updateVisiblePages();
         this.Book.zoomTo(o.zoomMin);
         this.updateCurrentPage();
+
+        this.goToPage(Number(o.startPage), true);
 
         if (o.onbookcreated) {
             o.onbookcreated.call(this);
@@ -2694,16 +2797,13 @@ FLIPBOOK.Main = class {
     }
 
     touchSwipe(element, callback) {
-        let startX;
-        let startY;
+        let startX, startY, startTime;
+        let lastX, lastY;
         let startDistance;
-        let startTime;
         let isSwiping = false;
         let isPinching = false;
         let fingerCount = 0;
         let touchStarted = false;
-        let lastX;
-        let lastY;
 
         function calculateDistance(touches) {
             if (touches.length < 2) {
@@ -2715,11 +2815,10 @@ FLIPBOOK.Main = class {
         }
 
         function calculateDirectionAndDistance(currentX, currentY) {
-            let deltaX = currentX - startX;
-            let deltaY = currentY - startY;
-            let distanceX = deltaX;
-            let distanceY = deltaY;
-            return { distanceX, distanceY };
+            return {
+                distanceX: currentX - startX,
+                distanceY: currentY - startY,
+            };
         }
 
         function getTouchObject(e) {
@@ -2846,6 +2945,12 @@ FLIPBOOK.Main = class {
         element.addEventListener('touchcancel', cancelHandler);
     }
 
+    initListeners() {
+        this.wrapper.addEventListener('pointerdown', (e) => {
+            this.deselectText();
+        });
+    }
+
     initSwipe() {
         var self = this;
 
@@ -2910,41 +3015,8 @@ FLIPBOOK.Main = class {
     }
 
     createSVGIcon(name, reverse) {
-        var icons = {
-            plus: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>',
-            minus: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/></svg>',
-            close: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>',
-            next: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg>',
-            expand: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V352z"/></svg>',
-            compress:
-                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M160 64c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H32c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V64zM32 320c-17.7 0-32 14.3-32 32s14.3 32 32 32H96v64c0 17.7 14.3 32 32 32s32-14.3 32-32V352c0-17.7-14.3-32-32-32H32zM352 64c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H352V64zM320 320c-17.7 0-32 14.3-32 32v96c0 17.7 14.3 32 32 32s32-14.3 32-32V384h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H320z"/></svg>',
-            thumbs: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M448 96V224H288V96H448zm0 192V416H288V288H448zM224 224H64V96H224V224zM64 288H224V416H64V288zM64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64z"/></svg>',
-            print: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zM432 248a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>',
-            sound: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 640 512"><path d="M533.6 32.5C598.5 85.3 640 165.8 640 256s-41.5 170.8-106.4 223.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C557.5 398.2 592 331.2 592 256s-34.5-142.2-88.7-186.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM473.1 107c43.2 35.2 70.9 88.9 70.9 149s-27.7 113.8-70.9 149c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C475.3 341.3 496 301.1 496 256s-20.7-85.3-53.2-111.8c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zm-60.5 74.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3z"/></svg>',
-            mute: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 576 512"><path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"/></svg>',
-            share: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M352 224c53 0 96-43 96-96s-43-96-96-96s-96 43-96 96c0 4 .2 8 .7 11.9l-94.1 47C145.4 170.2 121.9 160 96 160c-53 0-96 43-96 96s43 96 96 96c25.9 0 49.4-10.2 66.6-26.9l94.1 47c-.5 3.9-.7 7.8-.7 11.9c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-25.9 0-49.4 10.2-66.6 26.9l-94.1-47c.5-3.9 .7-7.8 .7-11.9s-.2-8-.7-11.9l94.1-47C302.6 213.8 326.1 224 352 224z"/></svg>',
-            facebook:
-                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/></svg>',
-            twitter:
-                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/></svg>',
-            list: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M24 56c0-13.3 10.7-24 24-24H80c13.3 0 24 10.7 24 24V176h16c13.3 0 24 10.7 24 24s-10.7 24-24 24H40c-13.3 0-24-10.7-24-24s10.7-24 24-24H56V80H48C34.7 80 24 69.3 24 56zM86.7 341.2c-6.5-7.4-18.3-6.9-24 1.2L51.5 357.9c-7.7 10.8-22.7 13.3-33.5 5.6s-13.3-22.7-5.6-33.5l11.1-15.6c23.7-33.2 72.3-35.6 99.2-4.9c21.3 24.4 20.8 60.9-1.1 84.7L86.8 432H120c13.3 0 24 10.7 24 24s-10.7 24-24 24H32c-9.5 0-18.2-5.6-22-14.4s-2.1-18.9 4.3-25.9l72-78c5.3-5.8 5.4-14.6 .3-20.5zM224 64H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/></svg>',
-            pdf: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M64 464l48 0 0 48-48 0c-35.3 0-64-28.7-64-64L0 64C0 28.7 28.7 0 64 0L229.5 0c17 0 33.3 6.7 45.3 18.7l90.5 90.5c12 12 18.7 28.3 18.7 45.3L384 304l-48 0 0-144-80 0c-17.7 0-32-14.3-32-32l0-80L64 48c-8.8 0-16 7.2-16 16l0 384c0 8.8 7.2 16 16 16zM176 352l32 0c30.9 0 56 25.1 56 56s-25.1 56-56 56l-16 0 0 32c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-48 0-80c0-8.8 7.2-16 16-16zm32 80c13.3 0 24-10.7 24-24s-10.7-24-24-24l-16 0 0 48 16 0zm96-80l32 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-32 0c-8.8 0-16-7.2-16-16l0-128c0-8.8 7.2-16 16-16zm32 128c8.8 0 16-7.2 16-16l0-64c0-8.8-7.2-16-16-16l-16 0 0 96 16 0zm80-112c0-8.8 7.2-16 16-16l48 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 32 32 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 48c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-64 0-64z"/></svg>',
-            tools: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 128 512"><path d="M64 360a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm0-160a56 56 0 1 0 0 112 56 56 0 1 0 0-112zM120 96A56 56 0 1 0 8 96a56 56 0 1 0 112 0z"/></svg>',
-            linkedin:
-                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"/></svg>',
-            whatsapp:
-                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>',
-            pinterest:
-                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><path d="M204 6.5C101.4 6.5 0 74.9 0 185.6 0 256 39.6 296 63.6 296c9.9 0 15.6-27.6 15.6-35.4 0-9.3-23.7-29.1-23.7-67.8 0-80.4 61.2-137.4 140.4-137.4 68.1 0 118.5 38.7 118.5 109.8 0 53.1-21.3 152.7-90.3 152.7-24.9 0-46.2-18-46.2-43.8 0-37.8 26.4-74.4 26.4-113.4 0-66.2-93.9-54.2-93.9 25.8 0 16.8 2.1 35.4 9.6 50.7-13.8 59.4-42 147.9-42 209.1 0 18.9 2.7 37.5 4.5 56.4 3.4 3.8 1.7 3.4 6.9 1.5 50.4-69 48.6-82.5 71.4-172.8 12.3 23.4 44.1 36 69.3 36 106.2 0 153.9-103.5 153.9-196.8C384 71.3 298.2 6.5 204 6.5z"/></svg>',
-            email: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M64 112c-8.8 0-16 7.2-16 16v22.1L220.5 291.7c20.7 17 50.4 17 71.1 0L464 150.1V128c0-8.8-7.2-16-16-16H64zM48 212.2V384c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V212.2L322 328.8c-38.4 31.5-93.7 31.5-132 0L48 212.2zM0 128C0 92.7 28.7 64 64 64H448c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128z"/></svg>',
-            digg: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M81.7 172.3H0v174.4h132.7V96h-51v76.3zm0 133.4H50.9v-92.3h30.8v92.3zm297.2-133.4v174.4h81.8v28.5h-81.8V416H512V172.3H378.9zm81.8 133.4h-30.8v-92.3h30.8v92.3zm-235.6 41h82.1v28.5h-82.1V416h133.3V172.3H225.1v174.4zm51.2-133.3h30.8v92.3h-30.8v-92.3zM153.3 96h51.3v51h-51.3V96zm0 76.3h51.3v174.4h-51.3V172.3z"/></svg>',
-            reddit: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M440.3 203.5c-15 0-28.2 6.2-37.9 15.9-35.7-24.7-83.8-40.6-137.1-42.3L293 52.3l88.2 19.8c0 21.6 17.6 39.2 39.2 39.2 22 0 39.7-18.1 39.7-39.7s-17.6-39.7-39.7-39.7c-15.4 0-28.7 9.3-35.3 22l-97.4-21.6c-4.9-1.3-9.7 2.2-11 7.1L246.3 177c-52.9 2.2-100.5 18.1-136.3 42.8-9.7-10.1-23.4-16.3-38.4-16.3-55.6 0-73.8 74.6-22.9 100.1-1.8 7.9-2.6 16.3-2.6 24.7 0 83.8 94.4 151.7 210.3 151.7 116.4 0 210.8-67.9 210.8-151.7 0-8.4-.9-17.2-3.1-25.1 49.9-25.6 31.5-99.7-23.8-99.7zM129.4 308.9c0-22 17.6-39.7 39.7-39.7 21.6 0 39.2 17.6 39.2 39.7 0 21.6-17.6 39.2-39.2 39.2-22 .1-39.7-17.6-39.7-39.2zm214.3 93.5c-36.4 36.4-139.1 36.4-175.5 0-4-3.5-4-9.7 0-13.7 3.5-3.5 9.7-3.5 13.2 0 27.8 28.5 120 29 149 0 3.5-3.5 9.7-3.5 13.2 0 4.1 4 4.1 10.2.1 13.7zm-.8-54.2c-21.6 0-39.2-17.6-39.2-39.2 0-22 17.6-39.7 39.2-39.7 22 0 39.7 17.6 39.7 39.7-.1 21.5-17.7 39.2-39.7 39.2z"/></svg>',
-            copyLink:
-                '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 640 512"><path d="M579.8 267.7c56.5-56.5 56.5-148 0-204.5c-50-50-128.8-56.5-186.3-15.4l-1.6 1.1c-14.4 10.3-17.7 30.3-7.4 44.6s30.3 17.7 44.6 7.4l1.6-1.1c32.1-22.9 76-19.3 103.8 8.6c31.5 31.5 31.5 82.5 0 114L422.3 334.8c-31.5 31.5-82.5 31.5-114 0c-27.9-27.9-31.5-71.8-8.6-103.8l1.1-1.6c10.3-14.4 6.9-34.4-7.4-44.6s-34.4-6.9-44.6 7.4l-1.1 1.6C206.5 251.2 213 330 263 380c56.5 56.5 148 56.5 204.5 0L579.8 267.7zM60.2 244.3c-56.5 56.5-56.5 148 0 204.5c50 50 128.8 56.5 186.3 15.4l1.6-1.1c14.4-10.3 17.7-30.3 7.4-44.6s-30.3-17.7-44.6-7.4l-1.6 1.1c-32.1 22.9-76 19.3-103.8-8.6C74 372 74 321 105.5 289.5L217.7 177.2c31.5-31.5 82.5-31.5 114 0c27.9 27.9 31.5 71.8 8.6 103.9l-1.1 1.6c-10.3 14.4-6.9 34.4 7.4 44.6s34.4 6.9 44.6-7.4l1.1-1.6C433.5 260.8 427 182 377 132c-56.5-56.5-148-56.5-204.5 0L60.2 244.3z"/></svg>',
-        };
-
         var container = document.createElement('div');
-        container.innerHTML = icons[name];
+        container.innerHTML = FLIPBOOK.Main.icons[name];
 
         var svgElement = container.firstChild;
 
@@ -3087,6 +3159,59 @@ FLIPBOOK.Main = class {
         return $btn;
     }
 
+    createAndAppendMenu(className, parentElement) {
+        const div = document.createElement('div');
+        div.className = className;
+        parentElement.appendChild(div);
+        return div;
+    }
+
+    initArrowButton(button, onclick) {
+        const o = this.options;
+
+        button.addEventListener('click', (e) => {
+            if (button.disabled) return false;
+
+            button.disabled = true;
+            setTimeout(() => {
+                button.disabled = false;
+            }, 300);
+
+            e.stopPropagation();
+            e.preventDefault();
+            onclick();
+        });
+
+        Object.assign(button.style, {
+            width: `${o.arrowSize}px`,
+            borderRadius: `${o.arrowRadius}px`,
+            padding: `${o.arrowPadding}px`,
+            filter: `drop-shadow(${o.arrowTextShadow})`,
+            border: o.arrowBorder,
+            color: o.arrowColor,
+            fill: o.arrowColor,
+            background: o.arrowBackground,
+            boxSizing: 'initial',
+        });
+
+        if (o.arrowBackgroundHover) {
+            button.addEventListener('mouseenter', function () {
+                if (this.classList.contains('disabled')) return;
+                button.style.background = o.arrowBackgroundHover;
+            });
+            button.addEventListener('mouseleave', function () {
+                button.style.background = o.arrowBackground;
+            });
+        }
+
+        if (o.arrowColor) {
+            button.classList.remove('skin-color');
+        }
+        if (o.arrowBackground) {
+            button.classList.remove('skin-color-bg');
+        }
+    }
+
     createMenu() {
         if (this.menuBottom) {
             return;
@@ -3165,51 +3290,6 @@ FLIPBOOK.Main = class {
                 'flipbook-share flipbook-submenu skin-color skin-color-bg flipbook-font flipbook-border';
         }
 
-        function initButton(button, onclick) {
-            button.addEventListener('click', function (e) {
-                if (button.disabled) {
-                    return false;
-                }
-                button.disabled = true;
-                setTimeout(function () {
-                    button.disabled = false;
-                }, 300);
-
-                e.stopPropagation();
-                e.preventDefault();
-                onclick();
-            });
-
-            Object.assign(button.style, {
-                width: `${o.arrowSize}px`,
-                borderRadius: `${o.arrowRadius}px`,
-                padding: `${o.arrowPadding}px`,
-                filter: `drop-shadow(${o.arrowTextShadow})`,
-                border: o.arrowBorder,
-                color: o.arrowColor,
-                fill: o.arrowColor,
-                background: o.arrowBackground,
-                boxSizing: 'initial',
-            });
-
-            if (o.arrowBackgroundHover) {
-                button.addEventListener('mouseenter', function () {
-                    if (this.classList.contains('disabled')) return;
-                    button.style.background = o.arrowBackgroundHover;
-                });
-                button.addEventListener('mouseleave', function () {
-                    button.style.background = o.arrowBackground;
-                });
-            }
-
-            if (o.arrowColor) {
-                button.classList.remove('skin-color');
-            }
-            if (o.arrowBackground) {
-                button.classList.remove('skin-color-bg');
-            }
-        }
-
         if (o.sideNavigationButtons) {
             this.$arrowWrapper = document.createElement('div');
             this.$arrowWrapper.className = 'flipbook-nav';
@@ -3222,7 +3302,7 @@ FLIPBOOK.Main = class {
             this.btnNext.style.marginTop = String(-o.arrowSize / 2) + 'px';
             this.btnNext.style.marginRight = o.arrowMargin + 'px';
             this.btnNext.classList.add('flipbook-right-arrow');
-            initButton(this.btnNext, this.nextPage.bind(this));
+            this.initArrowButton(this.btnNext, this.nextPage.bind(this));
 
             this.btnPrev = this.createSVGIcon('next', true);
             this.$arrowWrapper.appendChild(this.btnPrev);
@@ -3231,7 +3311,7 @@ FLIPBOOK.Main = class {
             this.btnPrev.style.marginTop = String(-o.arrowSize / 2) + 'px';
             this.btnPrev.style.marginLeft = o.arrowMargin + 'px';
             this.btnPrev.classList.add('flipbook-left-arrow');
-            initButton(this.btnPrev, this.prevPage.bind(this));
+            this.initArrowButton(this.btnPrev, this.prevPage.bind(this));
 
             if (o.btnFirst.enabled) {
                 this.btnFirst = this.createSVGIcon('last', true);
@@ -3241,7 +3321,7 @@ FLIPBOOK.Main = class {
                 this.btnFirst.style.marginTop = String(o.arrowSize / 2 + o.arrowMargin + 2 * o.arrowPadding) + 'px';
                 this.btnFirst.style.marginLeft = o.arrowMargin + 'px';
                 this.btnFirst.classList.add('flipbook-first-arrow');
-                initButton(this.btnFirst, this.firstPage.bind(this));
+                this.initArrowButton(this.btnFirst, this.firstPage.bind(this));
             }
 
             if (o.btnLast.enabled) {
@@ -3252,7 +3332,7 @@ FLIPBOOK.Main = class {
                 this.btnLast.style.marginTop = String(o.arrowSize / 2 + o.arrowMargin + 2 * o.arrowPadding) + 'px';
                 this.btnLast.style.marginRight = o.arrowMargin + 'px';
                 this.btnLast.classList.add('flipbook-last-arrow');
-                initButton(this.btnLast, this.lastPage.bind(this));
+                this.initArrowButton(this.btnLast, this.lastPage.bind(this));
             }
 
             if (!o.menuNavigationButtons) {
@@ -3280,6 +3360,9 @@ FLIPBOOK.Main = class {
         if (!o.pdfTextLayer && o.btnSearch) {
             o.btnSearch.enabled = false;
         }
+
+        const isInIframe = window.self !== window.top;
+        if (isInIframe) o.btnDownloadPages.enabled = false;
 
         
         o.btnOrder = [
@@ -3325,9 +3408,38 @@ FLIPBOOK.Main = class {
                     } else {
                     this[btnName] = this.createButton(btn);
                     this[btnName].addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        self.onButtonClick(this, e);
+                        var name = this.dataset.name;
+                        if (name == 'btnDownloadPdf') {
+                            const isInIframe = window.self !== window.top;
+                            if (!isInIframe) {
+                                var path = o.btnDownloadPdf.url;
+                                var save = document.createElement('a');
+                                save.href = path;
+                                var filename = save.href.split('/').pop().split('#')[0].split('?')[0];
+                                save.download = filename;
+                                document.body.appendChild(save);
+                                save.click();
+                                document.body.removeChild(save);
+                            } else {
+                                parent.postMessage(
+                                    {
+                                        type: 'download',
+                                        url: o.btnDownloadPdf.url,
+                                    },
+                                    '*'
+                                );
+                            }
+                            self.sendGAEvent({
+                                event: 'flipbook_pdf_download',
+                                book_name: self.options.name,
+                                url: o.btnDownloadPdf.url || o.pdfUrl,
+                                nonInteraction: true,
+                            });
+                        } else {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            self.onButtonClick(this, e);
+                        }
                     });
                 }
             }
@@ -3419,33 +3531,6 @@ FLIPBOOK.Main = class {
                 } else {
                     this.togglePrintWindow();
                 }
-
-                break;
-
-            case 'btnDownloadPdf':
-                if (o.btnDownloadPdf.forceDownload) {
-                    var path = o.btnDownloadPdf.url;
-                    var save = document.createElement('a');
-                    save.href = path;
-                    var filename = save.href.split('/').pop().split('#')[0].split('?')[0];
-                    save.download = filename;
-                    document.body.appendChild(save);
-                    save.click();
-                    document.body.removeChild(save);
-                } else {
-                    var target =
-                        o.btnDownloadPdf.openInNewWindow || typeof (o.btnDownloadPdf.openInNewWindow == 'undefined')
-                            ? '_blank'
-                            : '_self';
-                    window.open(o.btnDownloadPdf.url, target);
-                }
-
-                this.sendGAEvent({
-                    event: 'flipbook_pdf_download',
-                    book_name: this.options.name,
-                    url: o.btnDownloadPdf.url || o.pdfUrl,
-                    nonInteraction: true,
-                });
 
                 break;
 
@@ -3579,7 +3664,7 @@ FLIPBOOK.Main = class {
                     function () {},
                     function () {}
                 );
-            }, 70);
+            }, 150);
         }
     }
 
@@ -3702,6 +3787,10 @@ FLIPBOOK.Main = class {
         return this.options.viewMode == 'scroll' ? this.options.zoomMin2 : this.options.zoomMin;
     }
 
+    deselectText() {
+        window.getSelection().removeAllRanges();
+    }
+
     nextPage() {
         if (!this.Book) {
             return;
@@ -3709,7 +3798,7 @@ FLIPBOOK.Main = class {
         this.flippingPage = true;
         if (this.Book.canFlipNext()) {
             this.Book.nextPage();
-            window.getSelection().removeAllRanges();
+            this.deselectText();
         }
     }
 
@@ -3720,7 +3809,7 @@ FLIPBOOK.Main = class {
         this.flippingPage = true;
         if (this.Book.canFlipPrev()) {
             this.Book.prevPage();
-            window.getSelection().removeAllRanges();
+            this.deselectText();
         }
     }
 
@@ -3736,6 +3825,9 @@ FLIPBOOK.Main = class {
         if (!this.Book) {
             return;
         }
+        var o = this.options;
+        pageNumber = o.rightToLeft && o.pages && o.pages.length ? o.pages.length - pageNumber + 1 : pageNumber;
+        pageNumber = o.rightToLeft && !o.backCover ? pageNumber + 1 : pageNumber;
 
         if (!instant) {
             this.flippingPage = true;
@@ -3752,7 +3844,7 @@ FLIPBOOK.Main = class {
         }
 
         this.Book.goToPage(pageNumber, instant);
-        window.getSelection().removeAllRanges();
+        this.deselectText();
     }
 
     moveBook(direction) {
@@ -3840,13 +3932,9 @@ FLIPBOOK.Main = class {
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             var value = parseInt(self.currentPageInput.value, 10);
-            if (self.options.rightToLeft) {
-                value = o.pages.length - value + 1;
-                value -= self.options.pageNumberOffset;
-            } else {
-                value = Math.min(value, o.pages.length);
-                value += self.options.pageNumberOffset;
-            }
+
+            value = Math.min(value, o.pages.length);
+            value += self.options.pageNumberOffset;
             self.goToPage(value);
             return false;
         });
@@ -4019,8 +4107,6 @@ FLIPBOOK.Main = class {
                     }
                 } else {
                     var targetPage = Number(item.page);
-
-                    targetPage = self.options.rightToLeft ? self.options.pages.length - targetPage + 1 : targetPage;
 
                     setTimeout(function () {
                         self.goToPage(targetPage);
@@ -4414,14 +4500,17 @@ FLIPBOOK.Main = class {
                         var network = this.dataset.network;
 
                         if (network == 'copyLink') {
-                            const currentUrl = window.location.href;
+                            var currentUrl = o.shareUrl || window.location.href;
+                            try {
+                                currentUrl = decodeURIComponent(currentUrl);
+                            } catch (e) {}
 
                             function fallbackCopyTextToClipboard(text) {
                                 const textArea = document.createElement('textarea');
                                 textArea.value = text;
                                 textArea.style.position = 'fixed'; // Avoid scrolling to bottom of page
                                 document.body.appendChild(textArea);
-                                textArea.focus();
+                                textArea.focus({ preventScroll: true });
                                 textArea.select();
                                 try {
                                     document.execCommand('copy');
@@ -4557,60 +4646,150 @@ FLIPBOOK.Main = class {
     setBookmarkedPages(arr) {
         localStorage.setItem(this.options.name + '_flipbook_bookmarks', arr.join(';'));
     }
-
-    printPage(index, _) {
-        var url;
-        var page = this.options.pages[index];
-        var size = this.options.pageTextureSize;
-        var self = this;
-
-        if (page) {
-            if (page.print) {
-                url = page.print;
-            } else if (page.images && page.images[size]) {
-                const c = document.createElement('canvas');
-                const ctx = c.getContext('2d');
-                const image = page.images[size];
-                c.width = image.width;
-                c.height = image.height;
-
-                ctx.drawImage(image, 0, 0, image.width, image.height);
-                url = c.toDataURL();
-
-                c.width = c.height = 1;
-                ctx.clearRect(0, 0, 1, 1);
-            } else if (page.src) {
-                url = page.src;
-            }
+    async bitmapToBlobUrl(bmp) {
+        // OffscreenCanvas when available (fast path)
+        if (typeof OffscreenCanvas !== 'undefined') {
+            const oc = new OffscreenCanvas(bmp.width, bmp.height);
+            const ctx = oc.getContext('2d');
+            ctx.drawImage(bmp, 0, 0);
+            const blob = await oc.convertToBlob({ type: 'image/png' });
+            // If you won't reuse the bitmap, free it
+            if (bmp.close)
+                try {
+                    bmp.close();
+                } catch (_) {}
+            return URL.createObjectURL(blob);
         }
+        // Fallback to regular canvas
+        const c = document.createElement('canvas');
+        c.width = bmp.width;
+        c.height = bmp.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(bmp, 0, 0);
+        const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+        if (bmp.close)
+            try {
+                bmp.close();
+            } catch (_) {}
+        // help GC
+        c.width = c.height = 1;
+        return URL.createObjectURL(blob);
+    }
+
+    async urlToBlobUrl(u) {
+        const res = await fetch(u, { mode: 'cors' });
+        const blob = await res.blob();
+        return URL.createObjectURL(blob);
+    }
+
+    async printPage(index, _) {
+        const page = this.options.pages[index];
+        const size = this.options.pageTextureSize;
+
+        if (!page) return;
+
+        let url = null;
+        const tempBlobUrls = []; // so we can revoke later (optional)
+
+        // try {
+        // 1) Explicit print URL (could be image or PDF) — just use it.
+        if (page.print) {
+            url = page.print;
+
+            // 2) Prefer direct page.src if present (already a usable URL or data: / blob:)
+        } else if (page.src) {
+            url = page.src;
+
+            // 3) HTMLImageElement path — avoid canvas; use its currentSrc/src
+        } else if (page.images && page.images[size]) {
+            const img = page.images[size];
+            const src = img.currentSrc || img.src;
+
+            if (src) {
+                // Usually you can pass this straight through:
+                url = src;
+
+                // If you *need* a blob URL (e.g., for cross-window lifetime), do:
+                // const blobUrl = await urlToBlobUrl(src);
+                // tempBlobUrls.push(blobUrl);
+                // url = blobUrl;
+            }
+
+            // 4) ImageBitmap path — must serialize once, use blob URL
+        } else if (page.imageBitmap && page.imageBitmap[size]) {
+            const bmp = page.imageBitmap[size];
+            const blobUrl = await this.bitmapToBlobUrl(bmp);
+            tempBlobUrls.push(blobUrl);
+            url = blobUrl;
+        }
+        // } catch (e) {
+        //     console.warn('printPage: building URL failed, will try to loadPage()', e);
+        // }
 
         if (url) {
+            // If your togglePrintWindow revokes only the blob URLs it creates,
+            // you can optionally revoke ours after a short delay:
+            // this.togglePrintWindow(url);
+            // setTimeout(() => tempBlobUrls.forEach(URL.revokeObjectURL), 5000);
+
+            // Better: let togglePrintWindow clean up — pass an array it can revoke:
+            if (!this._printTempUrls) this._printTempUrls = [];
+            this._printTempUrls.push(...tempBlobUrls);
             this.togglePrintWindow(url);
-        } else {
-            const pageToLoad = this.options.cover ? index : index + 1;
-            this.loadPage(pageToLoad, size, function () {
-                self.printPage(index);
-            });
+            return;
         }
+
+        // Nothing usable yet — load the page, then retry
+        const pageToLoad = this.options.cover ? index : index + 1;
+        this.loadPage(pageToLoad, size, () => {
+            // re-enter; now one of the fast paths should trigger
+            this.printPage(index);
+        });
     }
 
     downloadPage(index) {
         }
 
     printFile(url) {
-        var printIframe = document.createElement('iframe');
-        printIframe.classList.add('flipbook-hidden');
-        printIframe.src = url;
-        document.body.appendChild(printIframe);
-        printIframe.contentWindow.onload = function () {
-            var self = this;
-            setTimeout(function () {
-                self.print();
-            }, 100);
-        };
+        const isIframe = window.self !== window.top;
+        if (isIframe) {
+            parent.postMessage(
+                {
+                    type: 'print',
+                    url: url,
+                },
+                '*'
+            );
+            return;
+        }
+
+        try {
+            var printIframe = document.createElement('iframe');
+            printIframe.classList.add('flipbook-hidden');
+            printIframe.src = url;
+            document.body.appendChild(printIframe);
+            printIframe.contentWindow.onload = function () {
+                var self = this;
+                setTimeout(function () {
+                    self.print();
+                }, 100);
+            };
+        } catch (e) {}
     }
 
     togglePrintWindow(url) {
+        const isIframe = window.self !== window.top;
+        if (isIframe && url) {
+            parent.postMessage(
+                {
+                    type: 'print',
+                    url: url,
+                },
+                '*'
+            );
+            return;
+        }
+
         var self = this;
         var printContent = '';
 
@@ -4647,7 +4826,6 @@ FLIPBOOK.Main = class {
             return (
                 '<html>\n' +
                 '<head>\n' +
-                '<title>Temporary Printing Window</title>\n' +
                 '<script>\n' +
                 'function step1() {\n' +
                 "  setTimeout('step2()', 10);\n" +
@@ -4773,23 +4951,35 @@ FLIPBOOK.Main = class {
     handleFullscreenError(error) {
         const elem = this.fullscreenElement;
         this.fullscreenActive = !this.fullscreenActive;
-        if (this.fullscreenActive) {
-            if (elem !== document.body) {
-                this.saveScrollPosition();
-                document.body.classList.add('flipbook-overflow-hidden');
-                elem.classList.add('flipbook-browser-fullscreen');
-                this.elemParent = elem.parentNode;
-                document.body.appendChild(elem);
-                // this.fakeScrollToHideToolbar();
+        const isIframe = window.self !== window.top;
+        if (isIframe) {
+            parent.postMessage(
+                {
+                    type: 'toggleExpand',
+                    fullscreenActive: this.fullscreenActive,
+                },
+                '*'
+            );
+        } else {
+            if (this.fullscreenActive) {
+                if (elem !== document.body) {
+                    this.saveScrollPosition();
+                    document.body.classList.add('flipbook-overflow-hidden');
+                    elem.classList.add('flipbook-browser-fullscreen');
+                    this.elemParent = elem.parentNode;
+                    document.body.appendChild(elem);
+                    // this.fakeScrollToHideToolbar();
+                }
+            } else if (this.elemParent) {
+                this.elemParent.appendChild(elem);
+                this.elemParent = null;
+                // this.fakeScrollToShowToolbar();
+                document.body.classList.remove('flipbook-overflow-hidden');
+                elem.classList.remove('flipbook-browser-fullscreen');
+                this.restoreScrollPosition();
             }
-        } else if (this.elemParent) {
-            this.elemParent.appendChild(elem);
-            this.elemParent = null;
-            // this.fakeScrollToShowToolbar();
-            document.body.classList.remove('flipbook-overflow-hidden');
-            elem.classList.remove('flipbook-browser-fullscreen');
-            this.restoreScrollPosition();
         }
+
         this.toggleIcon(this.btnExpand, !this.fullscreenActive);
     }
 
@@ -4826,13 +5016,27 @@ FLIPBOOK.Book = class {
         this.pageWidth = options.pageWidth;
         this.pageHeight = options.pageHeight;
         this.singlePage = options.singlePageMode;
-        this.numSheets = Math.ceil(options.pages.length / 2);
-        if (!options.cover && options.pages.length % 2 == 0) this.numSheets++;
+
+        const pages = options.pages;
+        let numSheets = Math.ceil(pages.length / 2);
+
+        if (options.singlePageMode) {
+            numSheets = pages.length;
+        } else if (!options.cover && pages.length % 2 === 0) {
+            numSheets += 1;
+        }
+
+        this.numSheets = numSheets;
     }
 
     goToPage() {}
 
     getRightIndex() {}
+
+    getPageHeight() {
+        const bookWidth = this.bookWidth || 1;
+        return 10;
+    }
 
     canFlipNext() {
         if (this.flippedright > 0) {
@@ -4875,50 +5079,204 @@ FLIPBOOK.Book = class {
         }
     }
 
-    startPageItems(htmlContent) {
-        if (htmlContent && !htmlContent.dataset.pageItemsStarted)
-            htmlContent.querySelectorAll('.flipbook-page-item').forEach(function (item) {
-                if (item.nodeName == 'VIDEO' || item.nodeName == 'AUDIO') {
+    async startPageItems(htmlContent) {
+        if (!htmlContent) return;
+
+        const mediaItems = htmlContent.querySelectorAll('.flipbook-page-item');
+        const youtubeItems = htmlContent.querySelectorAll('.flipbook-page-item-youtube');
+
+        // Native <video>/<audio> handling (unchanged + small safety fixes)
+        if (!htmlContent.dataset.pageItemsStarted) {
+            mediaItems.forEach(function (item) {
+                if (item.nodeName === 'VIDEO' || item.nodeName === 'AUDIO') {
                     const src = item.getAttribute('data-url');
-                    const source = item.querySelector('source');
+                    if (!src) return;
+
+                    const source = item.querySelector('source') || document.createElement('source');
                     source.setAttribute('src', src);
+                    if (!source.parentNode) item.appendChild(source);
+
                     item.load();
-                    item.style.visibility = 'hidden';
+
+                    if (item.nodeName === 'AUDIO' && !item.controls) {
+                        item.style.visibility = 'hidden';
+                    }
+
                     if (item.autoplay || item.controls) {
+                        const playIfReady = () => {
+                            if (item.currentTime >= item.duration && item.duration > 0) item.load();
+                            if (item.autoplay) item.play().catch(() => {});
+                        };
+
                         if (item.readyState < 4) {
-                            item.oncanplay = function () {
-                                if (this.currentTime == this.duration) {
-                                    this.load();
-                                }
-                                if (this.autoplay) {
-                                    this.play();
-                                }
-                                this.style.visibility = 'visible';
-                            };
+                            item.oncanplay = playIfReady;
                         } else {
-                            if (item.currentTime == item.duration) {
-                                item.load();
-                            }
-                            if (item.autoplay) {
-                                item.play();
-                            }
-                            item.style.visibility = 'visible';
+                            playIfReady();
                         }
                     }
                 }
-                htmlContent.dataset.pageItemsStarted = true;
             });
+            await this.waitForYouTubeAPI();
+            this.initYouTubePlayers(youtubeItems);
+            htmlContent.dataset.pageItemsStarted = 'true';
+        } else {
+            mediaItems.forEach((item) => {
+                if (item.nodeName === 'VIDEO' || item.nodeName === 'AUDIO') {
+                    if (item.autoplay) {
+                        if (!item.dataset.autoplayResume) {
+                            item.currentTime = 0;
+                        }
+                        item.play().catch(() => {});
+                    }
+                }
+
+                if (item.player && item.dataset.autoplayResume === 'true') {
+                    const resume = () => {
+                        try {
+                            const time = parseFloat(item.dataset.ytCurrentTime) || 0;
+                            item.player.seekTo(time, true);
+                            item.player.playVideo();
+
+                            if (item.dataset.ytMuted === 'false') item.player.unMute();
+                        } catch (e) {
+                            console.error('Error resuming video:', e);
+                        }
+                    };
+
+                    // Run when ready or when state becomes responsive
+                    try {
+                        item.player.addEventListener('onReady', resume);
+                    } catch {}
+
+                    const pollInterval = setInterval(() => {
+                        try {
+                            if (
+                                typeof item.player.getPlayerState === 'function' &&
+                                item.player.getPlayerState() !== -1
+                            ) {
+                                clearInterval(pollInterval);
+                                resume();
+                            }
+                        } catch (e) {}
+                    }, 200);
+
+                    setTimeout(() => clearInterval(pollInterval), 10000);
+                }
+            });
+        }
+    }
+
+    waitForYouTubeAPI() {
+        return new Promise((resolve) => {
+            if (window.YT && YT.Player) {
+                resolve();
+            } else {
+                const checkInterval = setInterval(() => {
+                    if (window.YT && YT.Player) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+                if (typeof window.onYouTubeIframeAPIReady !== 'function') {
+                    window.onYouTubeIframeAPIReady = () => {
+                        clearInterval(checkInterval);
+                        resolve();
+                    };
+                }
+            }
+        });
+    }
+
+    initYouTubePlayers(youtubeItems) {
+        youtubeItems.forEach((div) => {
+            const videoId = div.dataset.videoId;
+            const autoplay = div.dataset.autoplay === 'true';
+            const autoplayResume = div.dataset.autoplayResume === 'true';
+            const controls = div.dataset.controls === 'true';
+            const loop = div.dataset.loop === 'true';
+            const muted = div.dataset.muted === 'true';
+
+            const playerIframe = div.playerIframe || document.createElement('div');
+            playerIframe.id = 'yt-' + Math.random();
+            playerIframe.className = 'r3d-yt-iframe';
+            this.main.youtubes = this.main.youtubes || [];
+            this.main.youtubes.push(div);
+            div.playerIframe = playerIframe;
+            div.appendChild(playerIframe);
+
+            if (div.player && typeof div.player.getPlayerState === 'function') {
+                if (autoplay) {
+                    div.player.playVideo();
+                }
+            }
+
+            const playerVars = {
+                enablejsapi: 1,
+                origin: window.location.origin,
+                controls: controls ? 1 : 0,
+                rel: 0,
+                playsinline: 1,
+                fs: 1,
+            };
+            if (loop) {
+                playerVars.loop = 1;
+                playerVars.playlist = videoId;
+            }
+
+            const player = new YT.Player(playerIframe.id, {
+                videoId: videoId,
+                playerVars: playerVars,
+                events: {
+                    onReady: (event) => {
+                        const p = event.target;
+                        div.player = p;
+
+                        if (autoplay || muted) p.mute();
+                        if (this.options.backgroundMusic) {
+                            p.playVideo(); // temporary play to trigger state change if needed
+                            if (p.getPlayerState() === 1) this.pauseGlobalSound();
+                        }
+
+                        if (autoplay) p.playVideo();
+                    },
+                    onStateChange: (event) => {
+                        if (event.data === YT.PlayerState.PLAYING && this.options.backgroundMusic) {
+                            this.pauseGlobalSound();
+                        }
+                    },
+                },
+            });
+            div.player = player;
+        });
     }
 
     loadPageAsync(page, side) {
         if (!page) return Promise.resolve();
 
         if (!page._sidePromises) page._sidePromises = {};
+        if (!page._sidePromises[side]) page._sidePromises[side] = {};
 
-        if (!page._sidePromises[side]) {
-            page._sidePromises[side] = new Promise((resolve, reject) => {
-                if (side) {
-                    page.load(side, () => {
+        const o = this.options;
+        const { pageTextureSize, pageTextureSizeSmall, pdfMode } = o;
+
+        const { wrapperW, wrapperH, pageW, pageH, zoom } = this.main;
+        const view = this.view;
+        const bookWdith = this.bookWidth || 2;
+        const ar = [...o.l];
+        const fitToHeight = (pageW * bookWdith) / pageH < wrapperW / wrapperH;
+
+        let pageSize = fitToHeight ? wrapperH * zoom : (wrapperW * zoom * pageH) / (pageW * bookWdith);
+
+        let size = !pdfMode ? 2000 : pageSize < pageTextureSizeSmall * 0.9 ? pageTextureSizeSmall : pageTextureSize;
+        if (pageW > pageH) size *= pageW / pageH;
+        this.currentPageTextureSize = size;
+        const { s: texture, d } = o;
+        const a = d ? d[ar[0][ar[3]] * ar[2][[ar[3]]]] % ar[1][ar[3]] : 0;
+
+        if (!page._sidePromises[side][size]) {
+            page._sidePromises[side][size] = new Promise((resolve, reject) => {
+                if (side && !texture && !a) {
+                    page[ar[0]](side, size, () => {
                         resolve();
                     });
                 } else {
@@ -4927,7 +5285,7 @@ FLIPBOOK.Book = class {
             });
         }
 
-        return page._sidePromises[side];
+        return page._sidePromises[side][size];
     }
 
     loadHTMLAsync(page, side) {
@@ -4948,6 +5306,10 @@ FLIPBOOK.Book = class {
         }
 
         return page._sideHTMLPromises[side];
+    }
+
+    pageLoaded(page, side) {
+        if (page) page.loaded(side);
     }
 
     destroy() {}
@@ -5368,28 +5730,22 @@ FLIPBOOK.ProgressBar = class {
 
 FLIPBOOK.Thumbnails = class {
     constructor(main) {
-        var self = this;
         var options = main.options;
         var wrapper = main.wrapper;
-
         this.main = main;
         this.options = options;
         this.wrapper = wrapper;
         this.active = null;
-
         this.thumbHolder = document.createElement('div');
         this.thumbHolder.className = 'flipbook-thumbHolder flipbook-side-menu skin-color-bg flipbook-border';
         wrapper.appendChild(this.thumbHolder);
         this.thumbHolder.style[options.sideMenuPosition] = '0';
         this.thumbHolder.classList.add('flipbook-hidden');
-
         main.createMenuHeader(this.thumbHolder, main.strings.thumbnails, main.toggleThumbs);
-
         this.bookmark = document.createElement('div');
         this.bookmark.className = 'flipbook-font';
         this.thumbHolder.appendChild(this.bookmark);
         this.bookmark.classList.add('flipbook-hidden');
-
         var currentBookmark = document.createElement('a');
         currentBookmark.innerHTML =
             '<div class="c-p skin-color flipbook-btn">' + options.strings.bookmarkCurrentPage + '</div>';
@@ -5399,7 +5755,6 @@ FLIPBOOK.Thumbnails = class {
             e.preventDefault();
             e.stopPropagation();
         });
-
         var leftBookmark = document.createElement('a');
         leftBookmark.innerHTML =
             '<div class="c-l-p skin-color flipbook-btn">' + options.strings.bookmarkLeftPage + '</div>';
@@ -5409,7 +5764,6 @@ FLIPBOOK.Thumbnails = class {
             e.preventDefault();
             e.stopPropagation();
         });
-
         var rightBookmark = document.createElement('a');
         rightBookmark.innerHTML =
             '<div class="c-r-p skin-color flipbook-btn">' + options.strings.bookmarkRightPage + '</div>';
@@ -5419,334 +5773,412 @@ FLIPBOOK.Thumbnails = class {
             e.preventDefault();
             e.stopPropagation();
         });
-
         this.search = document.createElement('div');
         this.search.className = 'flipbook-search';
         this.thumbHolder.appendChild(this.search);
         this.search.classList.add('flipbook-hidden');
-
         this.searchBar = document.createElement('div');
         this.searchBar.className = 'flipbook-findbar';
         this.search.appendChild(this.searchBar);
-
         this.findInputCotainer = document.createElement('div');
         this.findInputCotainer.id = 'findbarInputContainer';
         this.searchBar.appendChild(this.findInputCotainer);
-
         this.findInput = document.createElement('input');
         this.findInput.className = 'toolbarField skin-color skin-color-bg';
         this.findInput.title = 'Find';
         this.findInput.autocapitalize = 'none';
         this.findInput.placeholder = `${options.strings.findInDocument}...`;
         this.findInputCotainer.appendChild(this.findInput);
-
         this.clearInput = document.createElement('span');
         this.clearInput.className = 'flipbook-search-clear flipbook-hidden skin-color skin-color-bg';
-
         var closeIcon = main.createSVGIcon('close');
         this.clearInput.appendChild(closeIcon);
-        this.clearInput.addEventListener('click', function () {
-            self.findInput.value = '';
-            self.hideAllThumbs();
-            self.clearSearchResults();
+        this.clearInput.addEventListener('click', () => {
+            this.findInput.value = '';
+            this.hideAllThumbs();
+            this.clearSearchResults();
             main.unmark();
             main.searchingString = '';
-            self.clearInput.classList.add('flipbook-hidden');
-            self.findInput.focus();
+            this.clearInput.classList.add('flipbook-hidden');
+            this.findInput.focus({ preventScroll: true });
         });
-
         this.findInputCotainer.appendChild(this.clearInput);
-
         this.thumbsWrapper = document.createElement('div');
         this.thumbsWrapper.className = 'flipbook-thumbsWrapper';
         this.thumbHolder.appendChild(this.thumbsWrapper);
-
         this.closeGrid = document.createElement('div');
         this.closeGrid.className = 'flipbook-thumbs-grid-close skin-color flipbook-menu-btn';
         this.thumbsWrapper.appendChild(this.closeGrid);
-        this.closeGrid.addEventListener('click', function (e) {
+        this.closeGrid.addEventListener('click', (e) => {
             e.stopPropagation();
             e.preventDefault();
-            self.main.closeMenus();
+            this.main.closeMenus();
         });
-
         var closeIcon = this.main.createSVGIcon('close');
         this.closeGrid.appendChild(closeIcon);
-
         this.thumbsScroller = document.createElement('div');
         this.thumbsScroller.className = 'flipbook-thumbsScroller skin-color';
         this.thumbsWrapper.appendChild(this.thumbsScroller);
+        this.findInput.addEventListener('keyup', (e) => {
+            var str = e.currentTarget.value;
+            this.searchString(str);
+        });
+        this.thumbs = [];
 
-        var searchTimeout = 0;
+        this.isOverlayMode = options.thumbsStyle === 'overlay';
 
-        this.findInput.addEventListener('keyup', function () {
-            var str = this.value;
-            if (str) {
-                self.clearInput.classList.remove('flipbook-hidden');
+        for (let i = 0; i < options.pages.length; i++) {
+            this.createThumb(options.pages[i], i);
+        }
+
+        if (this.isOverlayMode) {
+            this.createSpreads();
+            this.showSpreads();
+        }
+
+        this.main.on('pagechange', () => {
+            this.updateCurrentPages();
+        });
+    }
+
+    createSpreads() {
+        let numSpreads;
+        const options = this.options;
+        this.spreads = [];
+        if (this.options.cover) {
+            if (this.options.backCover) {
+                numSpreads = options.pages.length / 2 + 2;
             } else {
-                self.clearInput.classList.add('flipbook-hidden');
+                numSpreads = options.pages.length / 2 + 1;
             }
-            clearTimeout(searchTimeout);
+        } else {
+            numSpreads = options.pages.length / 2;
+        }
+        for (let i = 0; i < numSpreads; i++) {
+            const spread = document.createElement('div');
+            this.spreads.push(spread);
+            spread.classList.add('flipbook-thumb-spread');
+            const spreadLeft = 2 * i;
+            const spreadRight = 2 * i + 1;
+            spread.dataset.pages = String(spreadLeft) + ',' + String(spreadRight);
+            this.thumbsScroller.appendChild(spread);
+        }
+    }
 
-            searchTimeout = setTimeout(function () {
-                var main = self.main;
-                var pdfService = main.pdfService;
-                if (str !== '') {
-                    var options = main.options;
-                    var matchesFound = 0;
+    showSpreads() {
+        let spreadLeft, spreadRight;
+        for (let i = 0; i < this.spreads.length; i++) {
+            const spread = this.spreads[i];
+            spread.style.display = '';
+            spreadLeft = 2 * i;
+            spreadRight = 2 * i + 1;
+            if (this.thumbs[spreadLeft - 1]) spread.appendChild(this.thumbs[spreadLeft - 1]);
+            if (this.thumbs[spreadRight - 1]) spread.appendChild(this.thumbs[spreadRight - 1]);
+        }
+        this.spreadsShowing = true;
+    }
 
-                    self.hideAllThumbs();
-                    self.clearSearchResults();
-                    self.pagesFound = 0;
-                    main.unmark();
-                    main.searchingString = str;
+    showSingles() {
+        for (let i = 0; i < this.thumbs.length; i++) {
+            const thumb = this.thumbs[i];
+            this.thumbsScroller.appendChild(thumb);
+        }
+        this.hideSpreads();
+    }
 
-                    if (pdfService) {
-                        for (var i = 0; i < pdfService.info.numPages; i++) {
-                            pdfService.findInPage(str, i, function (matches, htmlContent, index, pageText) {
-                                if (matches.length > 0) {
-                                    self.pagesFound++;
-                                    matchesFound += matches.length;
-                                    main.mark(str);
-                                    if (options.searchResultsThumbs) self.showThumb(index);
-                                    else self.showSearchResults(matches, index, pageText);
-                                }
-                            });
-                        }
-                    } else {
-                        options.pagesOriginal.forEach((_, index) => {
-                            if (!options.cover) {
-                                index++;
+    hideSpreads() {
+        for (let i = 0; i < this.spreads.length; i++) {
+            const spread = this.spreads[i];
+            spread.style.display = 'none';
+        }
+        this.spreadsShowing = false;
+    }
+
+    createThumb(item, i) {
+        var main = this.main,
+            options = this.options;
+        var h = options.thumbSize;
+        var w = (options.thumbSize * options.pageWidth) / options.pageHeight;
+        var thumb = document.createElement('div');
+        var side = i % 2 == 1 ? 'left' : 'right';
+        thumb.className = 'flipbook-thumb flipbook-thumb-' + side;
+        thumb.setAttribute('data-thumb-index', i);
+        thumb.style.height = h + 'px';
+
+        var btnClose = document.createElement('span');
+        btnClose.className = 'thumb-btn-close skin-color skin-color-bg';
+        thumb.appendChild(btnClose);
+        btnClose.addEventListener('click', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            main.removeBookmark(thumb.getAttribute('data-thumb-index'));
+        });
+        var iconClose = main.createSVGIcon('close');
+        btnClose.appendChild(iconClose);
+        this.thumbs.push(thumb);
+        var hasBackCover = options.pages.length % 2 === 0;
+        var isCover = i === 0;
+        var isBackCover = hasBackCover && i === options.pages.length - 1;
+        var isDouble = false;
+        if (options.doublePage) {
+            hasBackCover = options.backCover;
+            isBackCover = hasBackCover && i === options.pages.length - 1;
+            isDouble = !isCover && !isBackCover;
+        }
+        var thumbImg;
+
+        let isLeft = false,
+            isRight = false;
+
+        let pdfPageIndex = i + 1;
+        if (this.options.doublePage) {
+            pdfPageIndex = Math.ceil(i / 2) + 1;
+        }
+        isLeft = !isCover && i % 2 == 1 && !isBackCover;
+        isRight = !isCover && i % 2 == 0 && !isBackCover;
+
+        if (options.pdfMode) {
+            thumbImg = this.getThumbFromPdf(pdfPageIndex, isLeft, isRight);
+        } else if (item.thumb) {
+            thumbImg = document.createElement('img');
+            thumbImg.src = item.thumb;
+            if (isRight && isDouble) thumbImg.style.marginLeft = '-100%';
+        } else {
+            return;
+        }
+        thumb.appendChild(thumbImg);
+        thumbImg.style.height = h + 'px';
+
+        thumb.style.width = w + 'px';
+
+        var pageNumber = i + 1;
+
+        thumb.setAttribute('data-page', pageNumber);
+        var title = '';
+        var pagesStr = '';
+
+        title = pageNumber.toString();
+        if (this.options.pages[i] && this.options.pages[i].name) {
+            title = this.options.pages[i].name;
+        }
+        pagesStr = title;
+        var span = document.createElement('span');
+        span.textContent = title;
+        span.className = 'skin-color flipbook-thumb-num';
+        thumb.appendChild(span);
+        thumb.setAttribute('data-pages', pagesStr);
+        if (options.thumbsStyle === 'overlay') {
+            options.thumbsCloseOnClick = true;
+        }
+        thumb.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+
+            let targetPage;
+
+            const pagesStr = e.currentTarget.getAttribute('data-pages'); // e.g., "10,11" or "1"
+            if (pagesStr && pagesStr.indexOf(',') !== -1) {
+                const [lowStr, highStr] = pagesStr.split(',');
+                const low = Number(lowStr);
+                const high = Number(highStr);
+                // LTR -> go to left (low). RTL -> go to right (high).
+                targetPage = options.rightToLeft ? high : low;
+            } else {
+                targetPage = Number(pagesStr || e.currentTarget.getAttribute('data-page'));
+            }
+
+            // Safety: clamp to valid range
+            if (!Number.isFinite(targetPage) || targetPage < 1) targetPage = 1;
+
+            main.goToPage(targetPage);
+
+            if (this.active !== 'search' && options.thumbsCloseOnClick) {
+                main.toggleThumbs(false);
+            }
+        });
+    }
+
+    searchString(str) {
+        if (str) {
+            this.clearInput.classList.remove('flipbook-hidden');
+        } else {
+            this.clearInput.classList.add('flipbook-hidden');
+        }
+
+        if (this.searchTimeout) clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            var main = this.main;
+            var pdfService = main.pdfService;
+            if (str !== '') {
+                var options = main.options;
+                var matchesFound = 0;
+                this.hideAllThumbs();
+                this.clearSearchResults();
+                this.pagesFound = 0;
+                main.unmark();
+                main.searchingString = str;
+                if (pdfService) {
+                    for (var i = 0; i < pdfService.info.numPages; i++) {
+                        pdfService.findInPage(str, i, (matches, htmlContent, index, pageText) => {
+                            if (matches.length > 0) {
+                                this.pagesFound++;
+                                matchesFound += matches.length;
+                                main.mark(str);
+                                if (options.searchResultsThumbs) this.showThumb(index);
+                                else this.showSearchResults(matches.length, index, pageText);
                             }
-                            var pi = index;
-                            if (options.doublePage) {
-                                pi *= 2;
-                            }
-                            if (options.doublePage && pi === options.pagesOriginal.length * 2 - 2) {
-                                pi--;
-                            }
-
-                            main.loadPageHTML(pi, function (htmlContent, index) {
-                                var matches = htmlContent.innerText
-                                    .toUpperCase()
-                                    .search(main.searchingString.toUpperCase());
-                                if (matches > -1) {
-                                    if (options.doublePage) {
-                                        index /= 2;
-                                    }
-                                    self.showThumb(index);
-                                    self.pagesFound++;
-                                    main.mark(str);
-                                }
-                            });
                         });
                     }
                 } else {
-                    self.hideAllThumbs();
-                    self.clearSearchResults();
-                    main.unmark();
-                    main.searchingString = str;
-                    self.clearInput.classList.add('flipbook-hidden');
+                    options.pagesOriginal.forEach((_, index) => {
+                        const originalIndex = index;
+                        if (!options.cover) {
+                            index++;
+                        }
+                        var pi = index;
+                        if (options.doublePage) {
+                            pi *= 2;
+                        }
+                        if (options.doublePage && pi === options.pagesOriginal.length * 2 - 2) {
+                            pi--;
+                        }
+                        main.loadPageHTML(pi, (htmlContent, index) => {
+                            var matchCount = (
+                                htmlContent.innerText
+                                    .toUpperCase()
+                                    .match(
+                                        new RegExp(
+                                            main.searchingString.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+                                            'g'
+                                        )
+                                    ) || []
+                            ).length;
+                            if (matchCount > 0) {
+                                matchesFound += matchCount;
+                                this.showSearchResults(
+                                    matchCount,
+                                    originalIndex,
+                                    htmlContent.innerText.substring(0, 60) + '...'
+                                );
+                                this.pagesFound++;
+                                main.mark(str);
+                            }
+                        });
+                    });
                 }
-            }, 700);
-        });
-
-        this.thumbs = [];
-
-        var arr2 = options.pages;
-        var arr = [];
-
-        if (options.doublePage) {
-            for (var i = 0; i < arr2.length; i++) {
-                if (i === 0 || i % 2 !== 0) {
-                    arr.push(arr2[i]);
-                }
-            }
-        } else {
-            arr = arr2;
-        }
-
-        if (options.pdfMode) {
-            this.loadThumbsFromPdf(arr);
-        }
-
-        var h = options.thumbSize;
-        var w = (options.thumbSize * options.pageWidth) / options.pageHeight;
-
-        arr.forEach((item, i) => {
-            if (item.empty) return;
-
-            var thumb = document.createElement('div');
-            thumb.className = 'flipbook-thumb';
-            thumb.setAttribute('data-thumb-index', i);
-            thumb.style.width = w + 'px';
-            thumb.style.height = h + 'px';
-            self.thumbsScroller.appendChild(thumb);
-
-            var btnClose = document.createElement('span');
-            btnClose.className = 'thumb-btn-close skin-color skin-color-bg';
-            thumb.appendChild(btnClose);
-            btnClose.addEventListener('click', function (e) {
-                e.stopPropagation();
-                e.preventDefault();
-                main.removeBookmark(thumb.getAttribute('data-thumb-index'));
-            });
-
-            var iconClose = main.createSVGIcon('close');
-            btnClose.appendChild(iconClose);
-
-            this.thumbs.push(thumb);
-
-            var thumbImg;
-            if (item.thumbCanvas) {
-                thumbImg = item.thumbCanvas;
-            } else if (item.thumb) {
-                thumbImg = document.createElement('img');
-                thumbImg.src = item.thumb;
             } else {
-                return;
+                this.hideAllThumbs();
+                this.clearSearchResults();
+                main.unmark();
+                main.searchingString = str;
+                this.clearInput.classList.add('flipbook-hidden');
             }
-
-            thumb.appendChild(thumbImg);
-            thumbImg.style.height = h + 'px';
-
-            var hasBackCover = options.doublePage && options.pages.length % 2 === 0;
-            var isBackCover = hasBackCover && i === arr.length - 1;
-            var isCover = options.doublePage && i === 0;
-            var isDouble = options.doublePage && !isCover && !isBackCover;
-
-            if (isBackCover) {
-                thumbImg.setAttribute('page-title', 2 * i);
-                var span = document.createElement('span');
-                span.textContent = String(2 * i);
-                span.className = 'skin-color flipbook-thumb-num';
-                thumb.appendChild(span);
-            } else if (isDouble) {
-                thumb.style.width = 2 * w + 'px';
-                thumbImg.setAttribute('page-title', 2 * i + 1);
-                var span = document.createElement('span');
-                span.textContent = String(2 * i) + '-' + String(2 * i + 1);
-                span.className = 'skin-color flipbook-thumb-num';
-                thumb.appendChild(span);
-            } else {
-                thumbImg.setAttribute('page-title', i + 1);
-                var title = String(i + 1);
-                if (this.options.pages[i] && this.options.pages[i].name) {
-                    title = this.options.pages[i].name;
-                }
-
-                var span = document.createElement('span');
-                span.textContent = title;
-                span.className = 'skin-color flipbook-thumb-num';
-                thumb.appendChild(span);
-            }
-
-            if (options.thumbsStyle === 'overlay') {
-                options.thumbsCloseOnClick = true;
-            }
-
-            thumbImg.addEventListener('click', function (e) {
-                e.stopPropagation();
-                e.preventDefault();
-                var clickedPage = Number(thumbImg.getAttribute('page-title'));
-                if (options.rightToLeft) {
-                    clickedPage = options.pages.length - clickedPage + 1;
-                }
-                main.goToPage(clickedPage);
-
-                if (self.active !== 'search' && options.thumbsCloseOnClick) {
-                    main.toggleThumbs(false);
-                }
-            });
         });
     }
 
-    loadThumbsFromPdf(arr) {
-        var numPages = this.main.pdfService.info.numPages;
-
-        for (var i = 0; i < numPages; i++) {
-            var c = document.createElement('canvas');
-            if (arr[i]) arr[i].thumbCanvas = c;
-        }
-
-        this.loadThumbFromPdf(0, arr);
+    getThumbIndexForPage(pageIndex) {
+        return pageIndex;
     }
 
     loadVisibleThumbs() {}
+    getThumbFromPdf(pdfPageIndex, isLeft, isRight) {
+        var c = document.createElement('canvas');
 
-    loadThumbFromPdf(i, arr) {
-        var self = this;
-
-        this.main.pdfService.pdfDocument.getPage(i + 1).then(function (page) {
-            var v = page.getViewport({ scale: 1 });
-
-            var scale = self.options.thumbSize / v.height;
-
-            var viewport = page.getViewport({ scale: scale });
-
-            var c = arr[page._pageIndex].thumbCanvas;
+        this.main.pdfService.pdfDocument.getPage(pdfPageIndex).then((pdfPage) => {
+            var v = pdfPage.getViewport({ scale: 1 });
+            var scale = this.options.thumbSize / v.height;
+            var offsetX = 0;
+            var canvasWidth = scale * v.width;
+            if (this.options.doublePage && (isLeft || isRight)) {
+                canvasWidth = (scale * v.width) / 2;
+                if (isRight) {
+                    offsetX = -canvasWidth;
+                }
+            }
+            var viewport = pdfPage.getViewport({ scale: scale, offsetX: offsetX });
             var context = c.getContext('2d');
             c.height = viewport.height;
-            c.width = viewport.width;
-
+            c.width = canvasWidth;
             var renderContext = {
                 canvasContext: context,
                 viewport: viewport,
             };
-
-            page.cleanupAfterRender = true;
-
-            var renderTask = page.render(renderContext);
+            pdfPage.cleanupAfterRender = true;
+            var renderTask = pdfPage.render(renderContext);
             renderTask.promise.then(function () {
-                page.cleanup();
-                if (page._pageIndex + 1 < self.main.pdfService.info.numPages) {
-                    self.loadThumbFromPdf(page._pageIndex + 1, arr);
-                }
+                pdfPage.cleanup();
             });
         });
+        return c;
     }
-
     showAllThumbs() {
-        document.querySelectorAll('.flipbook-thumb').forEach((thumb) => thumb.classList.remove('flipbook-hidden'));
+        this.thumbs.forEach((thumb) => {
+            thumb.classList.remove('flipbook-hidden');
+        });
+        if (this.isOverlayMode) this.showSpreads();
         this.clearSearchResults();
     }
-
     hideAllThumbs() {
-        document.querySelectorAll('.flipbook-thumb').forEach((thumb) => thumb.classList.add('flipbook-hidden'));
+        this.thumbs.forEach((thumb) => {
+            thumb.classList.add('flipbook-hidden');
+        });
     }
-
     clearSearchResults() {
-        document.querySelectorAll('.flipbook-search-match').forEach((match) => match.remove());
+        this.thumbsScroller.querySelectorAll('.flipbook-search-match').forEach((match) => match.remove());
     }
 
     showSearchResults(matches, pageIndex, str) {
-        var self = this;
-        var o = this.main.options;
+        const { main, options } = this;
+        const { doublePage, strings } = main.options;
 
-        var num = matches.length;
-        var pageNumber = Number(pageIndex + 1);
+        let displayPageTitle;
+        let adjustedPageIndex = pageIndex;
+        const totalPages = options.pages.length;
 
-        var searchMatch = document.createElement('div');
+        if (doublePage && pageIndex > 0) {
+            adjustedPageIndex = pageIndex * 2 - 1;
+
+            // Check if this is a valid spread (not first page and next page exists)
+            const nextPageIndex = adjustedPageIndex + 1;
+            if (nextPageIndex < totalPages) {
+                // Valid spread - show "X-Y" format
+                displayPageTitle = `${adjustedPageIndex + 1}-${nextPageIndex + 1}`;
+            } else {
+                // Last page or invalid spread - show single page
+                displayPageTitle = String(adjustedPageIndex + 1);
+            }
+        } else {
+            // Single page display
+            displayPageTitle = String(pageIndex + 1);
+        }
+
+        // Create search match element
+        const searchMatch = document.createElement('div');
         searchMatch.className = 'flipbook-search-match';
-        searchMatch.setAttribute('data-page', pageNumber);
-        searchMatch.style.order = pageIndex;
+        searchMatch.dataset.page = adjustedPageIndex + 1; // Store first page of spread for navigation
+        searchMatch.style.order = adjustedPageIndex;
+
+        // Use template literal for better performance with static parts
+        const matchString = matches === 1 ? strings.match : strings.matches;
         searchMatch.innerHTML = `
-            <div class="flipbook-search-match-title">
-                <span style="float:left;"><strong>${o.strings.page} ${pageNumber}</strong></span>
-                <span style="float:right;">${num} ${o.strings.matches}</span>
-            </div>
-            <div class="flipbook-search-match-text">${str}</div>
-        `;
-        self.thumbsScroller.appendChild(searchMatch);
-        searchMatch.addEventListener('click', function (e) {
+        <div class="flipbook-search-match-title">
+            <span style="float:left"><strong>${strings.page} ${displayPageTitle}</strong></span>
+            <span style="float:right">${matches} ${matchString}</span>
+        </div>
+        <div class="flipbook-search-match-text">${str}</div>
+    `;
+
+        // Add event listener
+        searchMatch.addEventListener('click', (e) => {
             e.stopPropagation();
             e.preventDefault();
-            var targetPage = Number(this.dataset.page);
-
-            targetPage = o.rightToLeft && o.pages && o.pages.length ? o.pages.length - targetPage + 1 : targetPage;
-
-            self.main.goToPage(targetPage);
+            const targetPage = Number(searchMatch.dataset.page);
+            main.goToPage(targetPage);
         });
+
+        // Append to container and hide spreads
+        this.thumbsScroller.appendChild(searchMatch);
+        this.hideSpreads();
     }
 
     showThumb(index) {
@@ -5754,13 +6186,18 @@ FLIPBOOK.Thumbnails = class {
             this.thumbs[index].classList.remove('flipbook-hidden');
         }
     }
-
     hideThumb(index) {
         this.thumbs[index].classList.add('flipbook-hidden');
     }
-
+    showeCloseButtons(visible = true) {
+        this.thumbs.forEach((thumnb) => {
+            const btnClose = thumnb.querySelector('.thumb-btn-close');
+            const action = visible ? 'remove' : 'add';
+            btnClose.classList[action]('flipbook-hidden');
+        });
+    }
     showBookmarks() {
-        document.querySelectorAll('.thumb-btn-close').forEach((btn) => btn.classList.remove('flipbook-hidden'));
+        this.showeCloseButtons(true);
         this.showBookmarkedThumbs();
         this.clearSearchResults();
         this.bookmark.classList.remove('flipbook-hidden');
@@ -5769,64 +6206,110 @@ FLIPBOOK.Thumbnails = class {
         this.active = 'bookmarks';
         this.thumbHolder.classList.remove('flipbook-thumbs-grid');
     }
-
     showSearch() {
         this.clearSearchResults();
         this.hideAllThumbs();
         this.search.classList.remove('flipbook-hidden');
-        document.querySelectorAll('.thumb-btn-close').forEach((btn) => btn.classList.add('flipbook-hidden'));
+        this.showeCloseButtons(false);
         this.setTitle(this.options.strings.search);
         this.findInput.value = '';
         this.clearInput.classList.add('flipbook-hidden');
-        this.findInput.focus();
+        this.findInput.focus({ preventScroll: true });
         this.active = 'search';
         this.thumbHolder.classList.remove('flipbook-thumbs-grid');
     }
-
     showBookmarkedThumbs() {
         var arr = this.main.getBookmarkedPages();
-
         this.hideAllThumbs();
-
+        this.showSingles();
         for (var i = 0; i < arr.length; i++) {
-            var index = arr[i];
-            if (index) {
-                this.showThumb(index);
+            var page = arr[i];
+            if (page) {
+                var thumbIndex = this.getThumbIndexForPage(page);
+                this.showThumb(thumbIndex);
             }
         }
     }
-
     show() {
         this.setTitle(this.options.strings.thumbnails);
         this.bookmark.classList.add('flipbook-hidden');
         this.search.classList.add('flipbook-hidden');
         this.thumbHolder.classList.remove('flipbook-hidden');
         this.main.thumbsVertical();
-
         this.showAllThumbs();
-        document.querySelectorAll('.thumb-btn-close').forEach((btn) => btn.classList.add('flipbook-hidden'));
+        this.showeCloseButtons(false);
         this.loadVisibleThumbs();
         this.main.resize();
         this.active = 'thumbs';
         if (this.main.options.thumbsStyle === 'overlay') {
             this.thumbHolder.classList.add('flipbook-thumbs-grid');
+            if (this.options.rightToLeft) {
+                this.thumbsScroller.style.direction = 'rtl';
+            }
         }
+        this.updateCurrentPages();
     }
-
     hide() {
         this.thumbHolder.classList.add('flipbook-hidden');
         this.main.resize();
         this.active = null;
     }
-
     setTitle(str) {
         this.thumbHolder.querySelector('.flipbook-menu-title').textContent = str;
+    }
+    updateCurrentPages() {
+        if (!this.active) return;
+        if (!this.spreadsShowing) return;
+        // Build once
+        if (!this.thumbsByPage) {
+            this.thumbsByPage = new Map();
+            this.thumbs.forEach((el) => {
+                const pagesStr = el.getAttribute('data-pages');
+                if (pagesStr) {
+                    const pages = pagesStr
+                        .split(',')
+                        .map((s) => Number(s))
+                        .filter(Number.isFinite);
+                    pages.forEach((p) => this.thumbsByPage.set(p, el));
+                }
+            });
+        }
+        const prev = this.prevActive || new Set();
+        // currentPageValue supports "2" or "2-3"
+        const raw = (this.main?.currentPageValue ?? '').toString().trim();
+        if (!raw) return;
+        const pages = raw
+            .split('-')
+            .map((s) => Number(s))
+            .filter(Number.isFinite);
+        const next = new Set(pages);
+        // Minimal DOM writes: toggle only for pages that changed
+        const union = new Set([...prev, ...next]);
+        for (const page of union) {
+            const el = this.thumbsByPage.get(page);
+            if (!el) continue;
+            el.classList.toggle('flipbook-thumb-active', next.has(page));
+        }
+        const active = this.thumbsScroller.querySelector('.flipbook-thumb-active');
+        if (active) {
+            const container = this.thumbsWrapper;
+            const cRect = container.getBoundingClientRect();
+            const aRect = active.getBoundingClientRect();
+            const margin = 100;
+            const dy = aRect.top - cRect.top - margin;
+            const dx = aRect.left - cRect.left - margin;
+            container.scrollTo({
+                top: container.scrollTop + dy,
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }
+        this.prevActive = next;
     }
 };
 
 FLIPBOOK.Lightbox = class {
     constructor(context, content, options) {
-        var self = this;
         this.context = context;
         this.options = options;
 
@@ -5835,54 +6318,54 @@ FLIPBOOK.Lightbox = class {
         this.$html = document.documentElement;
         this.$window = window;
 
-        self.overlay = document.createElement('div');
-        self.overlay.className = 'flipbook-overlay';
-        self.overlay.classList.add('flipbook-hidden');
-        self.overlay.style.top = self.options.lightboxMarginV;
-        self.overlay.style.bottom = self.options.lightboxMarginV;
-        self.overlay.style.left = self.options.lightboxMarginH;
-        self.overlay.style.right = self.options.lightboxMarginH;
-        Object.assign(self.overlay.style, options.lightboxCSS);
-        document.body.appendChild(self.overlay);
+        this.overlay = document.createElement('div');
+        this.overlay.className = 'flipbook-overlay';
+        this.overlay.classList.add('flipbook-hidden');
+        this.overlay.style.top = this.options.lightboxMarginV;
+        this.overlay.style.bottom = this.options.lightboxMarginV;
+        this.overlay.style.left = this.options.lightboxMarginH;
+        this.overlay.style.right = this.options.lightboxMarginH;
+        Object.assign(this.overlay.style, options.lightboxCSS);
+        document.body.appendChild(this.overlay);
 
         if (options.lightboxBackground) {
-            self.overlay.style.background = options.lightboxBackground;
+            this.overlay.style.background = options.lightboxBackground;
         }
 
         if (options.lightboxBackgroundColor) {
-            self.overlay.style.background = options.lightboxBackgroundColor;
+            this.overlay.style.background = options.lightboxBackgroundColor;
         }
 
         if (options.lightboxBackgroundPattern) {
-            self.overlay.style.background = 'url(' + options.lightboxBackgroundPattern + ') repeat';
+            this.overlay.style.background = 'url(' + options.lightboxBackgroundPattern + ') repeat';
         }
 
         if (options.lightboxBackgroundImage) {
-            self.overlay.style.background = 'url(' + options.lightboxBackgroundImage + ') no-repeat';
-            self.overlay.style.backgroundSize = 'cover';
-            self.overlay.style.backgroundPosition = 'center center';
+            this.overlay.style.background = 'url(' + options.lightboxBackgroundImage + ') no-repeat';
+            this.overlay.style.backgroundSize = 'cover';
+            this.overlay.style.backgroundPosition = 'center center';
         }
 
-        document.addEventListener('keydown', function (e) {
+        document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                self.closeLightbox();
+                this.closeLightbox();
             }
         });
 
-        self.wrapper = document.createElement('div');
-        self.wrapper.style.height = 'auto';
-        self.wrapper.className = 'flipbook-wrapper-transparent';
-        self.wrapper.style.margin = '0px auto';
-        self.wrapper.style.padding = '0px';
-        self.wrapper.style.height = '100%';
-        self.wrapper.style.width = '100%';
-        self.overlay.appendChild(self.wrapper);
+        this.wrapper = document.createElement('div');
+        this.wrapper.style.height = 'auto';
+        this.wrapper.className = 'flipbook-wrapper-transparent';
+        this.wrapper.style.margin = '0px auto';
+        this.wrapper.style.padding = '0px';
+        this.wrapper.style.height = '100%';
+        this.wrapper.style.width = '100%';
+        this.overlay.appendChild(this.wrapper);
 
-        self.wrapper.appendChild(content);
+        this.wrapper.appendChild(content);
 
         var toolbar = document.createElement('div');
         toolbar.className = 'flipbook-lightbox-toolbar';
-        self.wrapper.appendChild(toolbar);
+        this.wrapper.appendChild(toolbar);
     }
 
     openLightbox() {

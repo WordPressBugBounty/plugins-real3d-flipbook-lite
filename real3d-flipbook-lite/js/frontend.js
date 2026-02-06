@@ -99,29 +99,48 @@ window.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  function getOptionFromClass(element, optionName) {
+  function getOptionsFromClasses(element) {
+    const options = {};
+
     while (element) {
       if (element.classList) {
-        const matchingClass = Array.from(element.classList).find((cls) =>
-          cls.includes("r3d-" + optionName)
-        );
-        if (matchingClass) {
-          return matchingClass.replace("r3d-" + optionName + "-", "");
-        }
+        Array.from(element.classList).forEach((cls) => {
+          if (cls.startsWith("r3d-")) {
+            const [, keyPart, ...valueParts] = cls.split("-");
+            if (keyPart && valueParts.length) {
+              const key = keyPart;
+              let value = valueParts.join("-");
+
+              if (value === "true") value = true;
+              else if (value === "false") value = false;
+              else if (!isNaN(value) && value.trim() !== "")
+                value = Number(value);
+
+              options[key] = value;
+            }
+          }
+        });
       }
       element = element.parentElement;
     }
-    return false;
+
+    return options;
   }
 
   function createFlipbook(link, index, options) {
     options.pdfUrl = link.href;
-    const deeplinkingPrefix = getOptionFromClass(link, "deeplinkingPrefix");
-    if (deeplinkingPrefix) {
-      options.deeplinkingPrefix = deeplinkingPrefix;
+
+    const classOptions = getOptionsFromClasses(link);
+    Object.assign(options, classOptions);
+
+    // Handle deeplinking prefix logic
+    if (options.deeplinkingPrefix) {
+      options.deeplinking = options.deeplinking || {};
+      options.deeplinking.prefix = options.deeplinkingPrefix;
     } else if (options.deeplinking && options.deeplinking.enabled) {
       options.deeplinking.prefix = "book" + index + "_";
     }
+
     new FlipBook(link, options);
   }
 

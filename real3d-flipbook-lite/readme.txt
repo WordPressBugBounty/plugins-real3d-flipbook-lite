@@ -480,5 +480,27 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 = 4.11.4 =
 * Fix: Broken link on Settings page
 
+= 4.16.4 =
+* New: Password protected flipbook posts
+* Fix: Socurity update
+* Fix: Search results for spreads with cover
+* Fix: Search not working if pages are spreads with cover
+* Improvement: Thumbnail view page numbers are in outer conrners
+* Improvemet: Sharper pages when book is small
+* Fix: One page flipbook not loading
+* Fix: RTL mode page loading bug
+* Fix: Page scrolling after opening thumbnails
+* Improvement: Thumbnails show as spreads
+* New: Showtcode parameter rtl="true" for enabling right to left mode
+* Fix: HTML content layer and PDF text layer for "3d" and "2d" view modes 
+* Fix: Text deselect on pages
+* Fix: Bug when sound is diabled and button sound is disabled
+* New: Highlight active thumbnail
+* New: Accent color option for thumbnail hightlight
+* Improvement: Faster page loading
+* Improvement: Flip animation performance
+* Fix: Page resolution for PDF Flipbook
+
+
 == Upgrade to PRO for More Features ==
 Unlock advanced features like PDF hyperlinks, text search, custom toolbar configurations, and much more. Enhance your content presentation with [Real3D FlipBook PRO](https://real3dflipbook.com).

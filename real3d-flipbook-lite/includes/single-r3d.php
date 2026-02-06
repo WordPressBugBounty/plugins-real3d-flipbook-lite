@@ -1,5 +1,12 @@
 <?php
 
+if (post_password_required()) {
+	get_header();
+	echo get_the_password_form();
+	get_footer();
+	return;
+}
+
 function r3d_user_has_woo_subscription()
 {
 	if (!is_user_logged_in()) return false;

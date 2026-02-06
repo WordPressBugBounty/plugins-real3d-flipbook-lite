@@ -13,6 +13,9 @@ if (empty($current_id)) {
 } else {
 	$flipbook_id = intval($current_id);
 	$flipbook = get_option("real3dflipbook_" . $flipbook_id);
+	if (!is_array($flipbook)) {
+		$flipbook = array();
+	}
 	$flipbook['id'] =  $flipbook_id;
 }
 
@@ -24,20 +27,20 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 
 ?>
 
-<div class="<?php echo esc_attr($r3d_postbox_class); ?>">
-	<div class="postbox-header">
-		<h2 class="hndle ui-sortable-handle"><?php echo esc_html($r3d_postbox_title); ?></h2>
-		<button type="button" class="handlediv" aria-disabled="false"><span class="screen-reader-text"><?php esc_html_e('Toggle panel:', 'real3d-flipbook');
+	<div class="<?php echo esc_attr($r3d_postbox_class); ?>">
+		<div class="postbox-header">
+			<h2 class="hndle ui-sortable-handle"><?php echo esc_html($r3d_postbox_title); ?></h2>
+			<button type="button" class="handlediv" aria-disabled="false"><span class="screen-reader-text"><?php esc_html_e('Toggle panel:', 'real3d-flipbook');
 																											echo esc_html(' ' . $r3d_postbox_title); ?></span><span class="toggle-indicator"
-				aria-hidden="true"></span></button>
+					aria-hidden="true"></span></button>
+		</div>
+		<div class="inside">
+			<table class="form-table" id="<?php echo esc_attr($r3d_postbox_id); ?>">
+				<tbody></tbody>
+			</table>
+			<div class="clear"></div>
+		</div>
 	</div>
-	<div class="inside">
-		<table class="form-table" id="<?php echo esc_attr($r3d_postbox_id); ?>">
-			<tbody></tbody>
-		</table>
-		<div class="clear"></div>
-	</div>
-</div>
 
 <?php
 
@@ -51,8 +54,8 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 	if (!empty($current_id)) {
 	?>
 
-	<input class="flipbook-option-field" type="hidden" name="id" value="<?php echo esc_attr($flipbook_id); ?>">
-	<input class="flipbook-option-field" type="hidden" name="bookId" value="<?php echo esc_attr($flipbook_id); ?>">
+		<input class="flipbook-option-field" type="hidden" name="id" value="<?php echo esc_attr($flipbook_id); ?>">
+		<input class="flipbook-option-field" type="hidden" name="bookId" value="<?php echo esc_attr($flipbook_id); ?>">
 
 	<?php
 	}
@@ -122,6 +125,8 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 				<ul id="pages-container" tabindex="-1" class="attachments ui-sortable"></ul>
 				<span
 					class="button button-secondary paste-page"><?php esc_html_e('Paste page', 'real3d-flipbook'); ?></span>
+				<span
+					class="button button-secondary add-pages-button add-more-pages"><?php esc_html_e('Add pages', 'real3d-flipbook'); ?></span>
 				<span
 					class="button button-secondary delete-pages-button"><?php esc_html_e('Delete all pages', 'real3d-flipbook'); ?></span>
 			</div>
