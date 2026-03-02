@@ -1556,7 +1556,8 @@ a:hover .link-icon {
 			}
 		}
 
-		$fbPages = $flipbook['pages'];
+		$fbPages = $flipbook['pages'] ?? [];
+		$fbPages = is_array($fbPages) ? $fbPages : [];
 
 		$basePath = r3d_common_folder_from_pages($fbPages);
 
