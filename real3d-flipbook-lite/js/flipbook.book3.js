@@ -12,7 +12,6 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         this.flipEasing = 'easeOutQuad';
         this.translateZ = '';
 
-        // Initialize IScroll with options
         this.iscroll = new FLIPBOOK.IScroll(this.bookLayer, {
             zoom: true,
             scrollX: true,
@@ -24,11 +23,9 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             preventDefault: false,
         });
 
-        // Event listeners for enabling/disabling IScroll
         main.on('disableIScroll', this.disableIscroll.bind(this));
         main.on('enableIScroll', this.enableIscroll.bind(this));
 
-        // Handle zoom end event
         this.iscroll.on('zoomEnd', () => {
             if (isNaN(this.iscroll.scale)) {
                 return this.zoomTo(options.zoomMin);
@@ -48,21 +45,23 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             }
         });
 
-        // Set wrapper and center container dimensions
         this.wrapper.style.width = `${2 * this.pageWidth}px`;
         this.wrapper.style.height = `${this.pageHeight}px`;
 
-        this.centerContainer = document.createElement('div');
-        this.centerContainer.className = 'flipbook-center-container3';
-        this.centerContainer.style.width = `${2 * this.pageWidth}px`;
-        this.centerContainer.style.height = `${this.pageHeight}px`;
-        this.wrapper.appendChild(this.centerContainer);
+        const center = document.createElement('div');
 
-        // Set perspective based on options or view mode
+        center.className = 'flipbook-center-container3';
+        center.style.cssText = `
+			width:${this.pageWidth * 2}px;
+			height:${this.pageHeight}px;
+			`;
+
+        this.wrapper.appendChild(center);
+        this.centerContainer = center;
+
         const perspective = this.options.perspective || (this.options.viewMode === '3d' ? 3 * this.pageHeight : 200000);
         this.centerContainer.style.perspective = `${perspective}px`;
 
-        // Initialize pages
         this.pagesArr = [];
         this.animating = false;
 
@@ -73,6 +72,39 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             this.pagesArr.push(page);
             this.centerContainer.appendChild(page.wrapper);
         }
+
+        this.createShadowURL(1024).then((url) => {
+            this.wrapper.style.setProperty('--flipbook-page-shadow-image', `url(${url})`);
+        });
+    }
+
+    createShadowURL(width = 2048) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = 1;
+
+        const ctx = canvas.getContext('2d');
+
+        const g = ctx.createLinearGradient(0, 0, width, 0);
+
+        g.addColorStop(0.0, 'rgba(0, 0, 0, 1.0)');
+        g.addColorStop(0.01, 'rgba(0, 0, 0, 0.95)');
+        g.addColorStop(0.025, 'rgba(0, 0, 0, 0.85)');
+        g.addColorStop(0.06, 'rgba(0, 0, 0, 0.70)');
+        g.addColorStop(0.12, 'rgba(0, 0, 0, 0.55)');
+        g.addColorStop(0.22, 'rgba(0, 0, 0, 0.38)');
+        g.addColorStop(0.38, 'rgba(0, 0, 0, 0.22)');
+        g.addColorStop(0.6, 'rgba(0, 0, 0, 0.10)');
+        g.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, width, 1);
+
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+                resolve(URL.createObjectURL(blob));
+            }, 'image/png');
+        });
     }
 
     enableIscroll() {
@@ -344,14 +376,10 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         if (typeof loadNextPrev == 'undefined') {
             loadNextPrev = true;
         }
-        var self = this;
-
         var index = this.rightIndex;
         if (!this.singlePage) {
             index /= 2;
         }
-
-        // let numSheets = this.pagesArr.length;
 
         var p = this.options.pages;
         var evenPages = p.length % 2 == 0;
@@ -609,6 +637,7 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
 
         if (phase === 'start') {
             this.dragging = true;
+            this.main.dragPage();
             return;
         }
 
@@ -713,7 +742,7 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
                 next = this.visibleSheets[ri2 / 2];
                 if (next) {
                     next.show();
-                    this.loadPageAsync(next, 'fornt');
+                    this.loadPageAsync(next, 'front');
                 }
 
                 this.loadPageAsync(flippping, 'back');
@@ -775,7 +804,7 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
 
         var main = this.main;
         var w = main.wrapperW;
-        var h = main.wrapperH;
+        var h = main.wrapperH - 2 * main.bookVerticalPadding;
         var bw = main.bookW;
         var bh = main.bookH;
         var pw = main.pageW;
@@ -1015,6 +1044,8 @@ FLIPBOOK.Page3 = class {
         var isFront = side == 'front' || this.book.singlePage;
         const size = this.book.currentPageTextureSize;
 
+        if (!this.images || !this.images[side] || !this.images[side][size]) return;
+
         if (isFront) {
             if (size != this.sizeFront) {
                 if (this.bgFront) this.bgFront.replaceChildren(this.images[side][size]);
@@ -1054,7 +1085,7 @@ FLIPBOOK.Page3 = class {
             callback.call(this);
         } else {
             this.options.main.loadPageHTML(index, function (html) {
-                self.htmlContent = this.htmlContent || {};
+                self.htmlContent = self.htmlContent || {};
                 self.htmlContent[side] = html;
                 self.updateHtmlContent(side);
                 callback.call(self);
@@ -1148,29 +1179,26 @@ FLIPBOOK.Page3 = class {
     }
 
     _setAngle(angle) {
-        angle = -angle;
-
         if (angle != this.angle) {
-            this.setShadowOpacity((1 - Math.abs(angle + 90) / 90) * 0.2);
+            if (angle != 0 && angle != 180) {
+                this._setZIndex(1);
+            } else {
+                this._setZIndex(0);
+            }
+
+            angle = -angle;
             this.wrapper.style.setProperty('--page3-rotate-y', String(angle + 'deg'));
+            this.setShadowOpacity((1 - Math.abs(angle + 90) / 90) * 0.2);
             this._setVisibility(this.front, angle > -90);
             this._setVisibility(this.back, angle < -90);
             this.angle = angle;
-            var i;
-            var max = 0;
-            for (i = 0; i < this.book.pagesArr.length; i++) {
-                if (i != this.index && this.book.pagesArr[i].zIndex > max) {
-                    max = this.book.pagesArr[i].zIndex;
-                }
-            }
-            this._setZIndex(max + 1);
         }
     }
 
     _setZIndex(val) {
         if (this.zIndex != val) {
             this.wrapper.style['z-index'] = val;
+            this.zIndex = val;
         }
-        this.zIndex = val;
     }
 };

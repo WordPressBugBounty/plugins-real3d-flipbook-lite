@@ -53,7 +53,7 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
             slide.className = 'flipbook-carousel-slide';
 
             var slideInner = document.createElement('div');
-            slideInner.className = 'slide-inner';
+            slideInner.className = 'slide-inner flipbook-book-shadow';
 
             slide.appendChild(slideInner);
             this.scroller.appendChild(slide);

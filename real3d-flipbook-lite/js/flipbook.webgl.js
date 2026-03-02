@@ -123,7 +123,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
 
                 var mat = new THREE.ShadowMaterial();
                 mat.opacity = this.options.shadowOpacity;
-                this.shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(3000, 1500, 1, 1), mat);
+                this.shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000, 1, 1), mat);
                 this.shadowPlane.position.set(0, 0, -30);
                 this.centerContainer.add(this.shadowPlane);
                 this.shadowPlane.receiveShadow = true;
@@ -419,6 +419,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 if (left) {
                     left._setAngle(180 - distanceX);
                     left.dragging = true;
+                    this.main.dragPage();
                 }
                 if (right) {
                     right._setAngle(0);
@@ -434,6 +435,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 if (right) {
                     right._setAngle(-distanceX);
                     right.dragging = true;
+                    this.main.dragPage();
                 }
                 if (left) {
                     left._setAngle(180);
@@ -456,23 +458,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         var o = this.options;
         var pw = o.pageWidth;
         var ph = o.pageHeight;
-        var pw2 = o.pageWidth2;
-        var ph2 = o.pageHeight2;
         var bw = this.bookWidth;
         if (o.scaleCover) pw /= bw;
 
-        var r1 = w / h;
+        var r1 = w / (h - 2 * m.bookVerticalPadding);
         var r2 = pw / ph;
-
-        // if (h < 1000 && window.devicePixelRatio == 1) {
-        //     this.renderer.setPixelRatio(2);
-        // } else {
-        //     var pr = window.devicePixelRatio < o.minPixelRatio ? o.minPixelRatio : window.devicePixelRatio;
-        //     this.renderer.setPixelRatio(pr);
-        // }
-
-        // var pr = window.devicePixelRatio < o.minPixelRatio ? o.minPixelRatio : window.devicePixelRatio;
-        // this.renderer.setPixelRatio(pr);
 
         var s = Math.min(this.zoom, 1);
 
@@ -500,6 +490,8 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             }
         }
 
+        this.sc *= (h - 2 * m.bookVerticalPadding) / h;
+
         this.Camera.aspect = w / h;
         this.Camera.updateProjectionMatrix();
         this.updateCameraPosition();
@@ -513,7 +505,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             this.htmlLayer.scale.set(this.sc, this.sc, this.sc);
         }
 
-        this.options.main.turnPageComplete();
+        if (!this.isFlipping()) this.options.main.turnPageComplete();
 
         this.wrapperW = w;
         this.wrapperH = h;
@@ -956,8 +948,18 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
 
     turnPageComplete() {
         this.goingToPage = false;
+        this.updateCornerCurl();
+        if (!this.isFlipping()) this.options.main.turnPageComplete();
+    }
 
-        this.options.main.turnPageComplete();
+    updateCornerCurl() {
+        if (this.options.cornerCurl && this.pages[0]) {
+            if (this.flippedleft == 0) {
+                this.pages[0].startCornerCurl();
+            } else {
+                this.pages[0].stopCornerCurl();
+            }
+        }
     }
 
     isFlipping() {
@@ -985,14 +987,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         }
 
         if (this.isFlipping()) return;
-
-        if (this.options.cornerCurl && this.pages[0]) {
-            if (this.flippedleft == 0) {
-                this.pages[0].startCornerCurl();
-            } else {
-                this.pages[0].stopCornerCurl();
-            }
-        }
 
         var rightPage = this.pages[this.flippedleft];
         var leftPage = this.pages[this.flippedleft - 1];
@@ -2266,6 +2260,7 @@ FLIPBOOK.PageWebGL = class {
             },
             complete: () => {
                 this.bendF.offset = 0;
+                this.book.updateCornerCurl();
             },
         });
         this.animations.push(a2);

@@ -37,7 +37,7 @@ FLIPBOOK.Main = class {
             backgroundMp3: 'assets/mp3/background.mp3',
         },
         pdfUrl: null,
-        rangeChunkSize: 64,
+        rangeChunkSize: 256,
         disableRange: false,
         disableStream: true,
         disableAutoFetch: true,
@@ -193,7 +193,7 @@ FLIPBOOK.Main = class {
         },
         btnAutoplay: {
             enabled: true,
-            title: 'Autoplay',
+            title: 'Auto flip',
             svg: 'play',
             svgAlt: 'pause',
         },
@@ -250,7 +250,7 @@ FLIPBOOK.Main = class {
         },
         btnTools: {
             enabled: true,
-            title: 'Tools',
+            title: 'More',
         },
         btnExpand: {
             enabled: true,
@@ -322,6 +322,7 @@ FLIPBOOK.Main = class {
         singlePageMode: false,
         singlePageModeIfMobile: false,
         bookMargin: 20,
+        bookVerticalPadding: 200,
         zoomMin: 0.95,
         zoomMin2: 0.15,
         zoomMax2: null,
@@ -338,7 +339,7 @@ FLIPBOOK.Main = class {
         responsiveViewTreshold: 768,
         minimalView: true,
         responsiveViewRatio: 1,
-        minimalViewTreshold: 600,
+        minimalViewBreakpoint: 600,
         responsiveContainer: true,
         minPixelRatio: 1,
         pageFlipDuration: 1,
@@ -481,40 +482,129 @@ FLIPBOOK.Main = class {
             btnLast: { enabled: false },
             currentPage: { enabled: false },
             pagesInMemory: 6,
-            minimalViewTreshold: 360,
+            minimalViewBreakpoint: 360,
         },
     };
+
     static icons = {
-        plus: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>',
-        minus: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z"/></svg>',
-        close: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>',
-        next: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg>',
-        expand: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V352z"/></svg>',
-        compress:
-            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M160 64c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H32c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V64zM32 320c-17.7 0-32 14.3-32 32s14.3 32 32 32H96v64c0 17.7 14.3 32 32 32s32-14.3 32-32V352c0-17.7-14.3-32-32-32H32zM352 64c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H352V64zM320 320c-17.7 0-32 14.3-32 32v96c0 17.7 14.3 32 32 32s32-14.3 32-32V384h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H320z"/></svg>',
-        thumbs: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M448 96V224H288V96H448zm0 192V416H288V288H448zM224 224H64V96H224V224zM64 288H224V416H64V288zM64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64z"/></svg>',
-        print: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zM432 248a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg>',
-        sound: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 640 512"><path d="M533.6 32.5C598.5 85.3 640 165.8 640 256s-41.5 170.8-106.4 223.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C557.5 398.2 592 331.2 592 256s-34.5-142.2-88.7-186.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM473.1 107c43.2 35.2 70.9 88.9 70.9 149s-27.7 113.8-70.9 149c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C475.3 341.3 496 301.1 496 256s-20.7-85.3-53.2-111.8c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zm-60.5 74.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3z"/></svg>',
-        mute: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 576 512"><path d="M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z"/></svg>',
-        share: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M352 224c53 0 96-43 96-96s-43-96-96-96s-96 43-96 96c0 4 .2 8 .7 11.9l-94.1 47C145.4 170.2 121.9 160 96 160c-53 0-96 43-96 96s43 96 96 96c25.9 0 49.4-10.2 66.6-26.9l94.1 47c-.5 3.9-.7 7.8-.7 11.9c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-25.9 0-49.4 10.2-66.6 26.9l-94.1-47c.5-3.9 .7-7.8 .7-11.9s-.2-8-.7-11.9l94.1-47C302.6 213.8 326.1 224 352 224z"/></svg>',
-        facebook:
-            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 320 512"><path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/></svg>',
-        twitter:
-            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/></svg>',
-        list: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M24 56c0-13.3 10.7-24 24-24H80c13.3 0 24 10.7 24 24V176h16c13.3 0 24 10.7 24 24s-10.7 24-24 24H40c-13.3 0-24-10.7-24-24s10.7-24 24-24H56V80H48C34.7 80 24 69.3 24 56zM86.7 341.2c-6.5-7.4-18.3-6.9-24 1.2L51.5 357.9c-7.7 10.8-22.7 13.3-33.5 5.6s-13.3-22.7-5.6-33.5l11.1-15.6c23.7-33.2 72.3-35.6 99.2-4.9c21.3 24.4 20.8 60.9-1.1 84.7L86.8 432H120c13.3 0 24 10.7 24 24s-10.7 24-24 24H32c-9.5 0-18.2-5.6-22-14.4s-2.1-18.9 4.3-25.9l72-78c5.3-5.8 5.4-14.6 .3-20.5zM224 64H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32z"/></svg>',
-        pdf: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M64 464l48 0 0 48-48 0c-35.3 0-64-28.7-64-64L0 64C0 28.7 28.7 0 64 0L229.5 0c17 0 33.3 6.7 45.3 18.7l90.5 90.5c12 12 18.7 28.3 18.7 45.3L384 304l-48 0 0-144-80 0c-17.7 0-32-14.3-32-32l0-80L64 48c-8.8 0-16 7.2-16 16l0 384c0 8.8 7.2 16 16 16zM176 352l32 0c30.9 0 56 25.1 56 56s-25.1 56-56 56l-16 0 0 32c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-48 0-80c0-8.8 7.2-16 16-16zm32 80c13.3 0 24-10.7 24-24s-10.7-24-24-24l-16 0 0 48 16 0zm96-80l32 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-32 0c-8.8 0-16-7.2-16-16l0-128c0-8.8 7.2-16 16-16zm32 128c8.8 0 16-7.2 16-16l0-64c0-8.8-7.2-16-16-16l-16 0 0 96 16 0zm80-112c0-8.8 7.2-16 16-16l48 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 32 32 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 48c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-64 0-64z"/></svg>',
-        tools: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 128 512"><path d="M64 360a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm0-160a56 56 0 1 0 0 112 56 56 0 1 0 0-112zM120 96A56 56 0 1 0 8 96a56 56 0 1 0 112 0z"/></svg>',
-        linkedin:
-            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"/></svg>',
-        whatsapp:
-            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>',
-        pinterest:
-            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512"><path d="M204 6.5C101.4 6.5 0 74.9 0 185.6 0 256 39.6 296 63.6 296c9.9 0 15.6-27.6 15.6-35.4 0-9.3-23.7-29.1-23.7-67.8 0-80.4 61.2-137.4 140.4-137.4 68.1 0 118.5 38.7 118.5 109.8 0 53.1-21.3 152.7-90.3 152.7-24.9 0-46.2-18-46.2-43.8 0-37.8 26.4-74.4 26.4-113.4 0-66.2-93.9-54.2-93.9 25.8 0 16.8 2.1 35.4 9.6 50.7-13.8 59.4-42 147.9-42 209.1 0 18.9 2.7 37.5 4.5 56.4 3.4 3.8 1.7 3.4 6.9 1.5 50.4-69 48.6-82.5 71.4-172.8 12.3 23.4 44.1 36 69.3 36 106.2 0 153.9-103.5 153.9-196.8C384 71.3 298.2 6.5 204 6.5z"/></svg>',
-        email: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M64 112c-8.8 0-16 7.2-16 16v22.1L220.5 291.7c20.7 17 50.4 17 71.1 0L464 150.1V128c0-8.8-7.2-16-16-16H64zM48 212.2V384c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V212.2L322 328.8c-38.4 31.5-93.7 31.5-132 0L48 212.2zM0 128C0 92.7 28.7 64 64 64H448c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128z"/></svg>',
-        digg: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M81.7 172.3H0v174.4h132.7V96h-51v76.3zm0 133.4H50.9v-92.3h30.8v92.3zm297.2-133.4v174.4h81.8v28.5h-81.8V416H512V172.3H378.9zm81.8 133.4h-30.8v-92.3h30.8v92.3zm-235.6 41h82.1v28.5h-82.1V416h133.3V172.3H225.1v174.4zm51.2-133.3h30.8v92.3h-30.8v-92.3zM153.3 96h51.3v51h-51.3V96zm0 76.3h51.3v174.4h-51.3V172.3z"/></svg>',
-        reddit: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M440.3 203.5c-15 0-28.2 6.2-37.9 15.9-35.7-24.7-83.8-40.6-137.1-42.3L293 52.3l88.2 19.8c0 21.6 17.6 39.2 39.2 39.2 22 0 39.7-18.1 39.7-39.7s-17.6-39.7-39.7-39.7c-15.4 0-28.7 9.3-35.3 22l-97.4-21.6c-4.9-1.3-9.7 2.2-11 7.1L246.3 177c-52.9 2.2-100.5 18.1-136.3 42.8-9.7-10.1-23.4-16.3-38.4-16.3-55.6 0-73.8 74.6-22.9 100.1-1.8 7.9-2.6 16.3-2.6 24.7 0 83.8 94.4 151.7 210.3 151.7 116.4 0 210.8-67.9 210.8-151.7 0-8.4-.9-17.2-3.1-25.1 49.9-25.6 31.5-99.7-23.8-99.7zM129.4 308.9c0-22 17.6-39.7 39.7-39.7 21.6 0 39.2 17.6 39.2 39.7 0 21.6-17.6 39.2-39.2 39.2-22 .1-39.7-17.6-39.7-39.2zm214.3 93.5c-36.4 36.4-139.1 36.4-175.5 0-4-3.5-4-9.7 0-13.7 3.5-3.5 9.7-3.5 13.2 0 27.8 28.5 120 29 149 0 3.5-3.5 9.7-3.5 13.2 0 4.1 4 4.1 10.2.1 13.7zm-.8-54.2c-21.6 0-39.2-17.6-39.2-39.2 0-22 17.6-39.7 39.2-39.7 22 0 39.7 17.6 39.7 39.7-.1 21.5-17.7 39.2-39.7 39.2z"/></svg>',
-        copyLink:
-            '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 640 512"><path d="M579.8 267.7c56.5-56.5 56.5-148 0-204.5c-50-50-128.8-56.5-186.3-15.4l-1.6 1.1c-14.4 10.3-17.7 30.3-7.4 44.6s30.3 17.7 44.6 7.4l1.6-1.1c32.1-22.9 76-19.3 103.8 8.6c31.5 31.5 31.5 82.5 0 114L422.3 334.8c-31.5 31.5-82.5 31.5-114 0c-27.9-27.9-31.5-71.8-8.6-103.8l1.1-1.6c10.3-14.4 6.9-34.4-7.4-44.6s-34.4-6.9-44.6 7.4l-1.1 1.6C206.5 251.2 213 330 263 380c56.5 56.5 148 56.5 204.5 0L579.8 267.7zM60.2 244.3c-56.5 56.5-56.5 148 0 204.5c50 50 128.8 56.5 186.3 15.4l1.6-1.1c14.4-10.3 17.7-30.3 7.4-44.6s-30.3-17.7-44.6-7.4l-1.6 1.1c-32.1 22.9-76 19.3-103.8-8.6C74 372 74 321 105.5 289.5L217.7 177.2c31.5-31.5 82.5-31.5 114 0c27.9 27.9 31.5 71.8 8.6 103.9l-1.1 1.6c-10.3 14.4-6.9 34.4 7.4 44.6s34.4 6.9 44.6-7.4l1.1-1.6C433.5 260.8 427 182 377 132c-56.5-56.5-148-56.5-204.5 0L60.2 244.3z"/></svg>',
+        fontawesome: {
+            plus: [
+                448,
+                512,
+                'M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z',
+            ],
+            minus: [
+                448,
+                512,
+                'M432 256c0 17.7-14.3 32-32 32L48 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l352 0c17.7 0 32 14.3 32 32z',
+            ],
+            close: [
+                384,
+                512,
+                'M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z',
+            ],
+            next: [
+                320,
+                512,
+                'M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z',
+            ],
+            expand: [
+                448,
+                512,
+                'M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V352z',
+            ],
+            compress: [
+                448,
+                512,
+                'M160 64c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H32c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V64zM32 320c-17.7 0-32 14.3-32 32s14.3 32 32 32H96v64c0 17.7 14.3 32 32 32s32-14.3 32-32V352c0-17.7-14.3-32-32-32H32zM352 64c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H352V64zM320 320c-17.7 0-32 14.3-32 32v96c0 17.7 14.3 32 32 32s32-14.3 32-32V384h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H320z',
+            ],
+            thumbs: [
+                512,
+                512,
+                'M448 96V224H288V96H448zm0 192V416H288V288H448zM224 224H64V96H224V224zM64 288H224V416H64V288zM64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64z',
+            ],
+            print: [
+                512,
+                512,
+                'M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zM432 248a24 24 0 1 1 0 48 24 24 0 1 1 0-48z',
+            ],
+            sound: [
+                640,
+                512,
+                'M533.6 32.5C598.5 85.3 640 165.8 640 256s-41.5 170.8-106.4 223.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C557.5 398.2 592 331.2 592 256s-34.5-142.2-88.7-186.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM473.1 107c43.2 35.2 70.9 88.9 70.9 149s-27.7 113.8-70.9 149c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C475.3 341.3 496 301.1 496 256s-20.7-85.3-53.2-111.8c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zm-60.5 74.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3z',
+            ],
+            mute: [
+                576,
+                512,
+                'M301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3zM425 167l55 55 55-55c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-55 55 55 55c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-55-55-55 55c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l55-55-55-55c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0z',
+            ],
+            share: [
+                448,
+                512,
+                'M352 224c53 0 96-43 96-96s-43-96-96-96s-96 43-96 96c0 4 .2 8 .7 11.9l-94.1 47C145.4 170.2 121.9 160 96 160c-53 0-96 43-96 96s43 96 96 96c25.9 0 49.4-10.2 66.6-26.9l94.1 47c-.5 3.9-.7 7.8-.7 11.9c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-25.9 0-49.4 10.2-66.6 26.9l-94.1-47c.5-3.9 .7-7.8 .7-11.9s-.2-8-.7-11.9l94.1-47C302.6 213.8 326.1 224 352 224z',
+            ],
+            facebook: [
+                320,
+                512,
+                'M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z',
+            ],
+            twitter: [
+                512,
+                512,
+                'M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z',
+            ],
+            list: [
+                512,
+                512,
+                'M24 56c0-13.3 10.7-24 24-24H80c13.3 0 24 10.7 24 24V176h16c13.3 0 24 10.7 24 24s-10.7 24-24 24H40c-13.3 0-24-10.7-24-24s10.7-24 24-24H56V80H48C34.7 80 24 69.3 24 56zM86.7 341.2c-6.5-7.4-18.3-6.9-24 1.2L51.5 357.9c-7.7 10.8-22.7 13.3-33.5 5.6s-13.3-22.7-5.6-33.5l11.1-15.6c23.7-33.2 72.3-35.6 99.2-4.9c21.3 24.4 20.8 60.9-1.1 84.7L86.8 432H120c13.3 0 24 10.7 24 24s-10.7 24-24 24H32c-9.5 0-18.2-5.6-22-14.4s-2.1-18.9 4.3-25.9l72-78c5.3-5.8 5.4-14.6 .3-20.5zM224 64H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32zm0 160H480c17.7 0 32 14.3 32 32s-14.3 32-32 32H224c-17.7 0-32-14.3-32-32s14.3-32 32-32z',
+            ],
+            pdf: [
+                512,
+                512,
+                'M64 464l48 0 0 48-48 0c-35.3 0-64-28.7-64-64L0 64C0 28.7 28.7 0 64 0L229.5 0c17 0 33.3 6.7 45.3 18.7l90.5 90.5c12 12 18.7 28.3 18.7 45.3L384 304l-48 0 0-144-80 0c-17.7 0-32-14.3-32-32l0-80L64 48c-8.8 0-16 7.2-16 16l0 384c0 8.8 7.2 16 16 16zM176 352l32 0c30.9 0 56 25.1 56 56s-25.1 56-56 56l-16 0 0 32c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-48 0-80c0-8.8 7.2-16 16-16zm32 80c13.3 0 24-10.7 24-24s-10.7-24-24-24l-16 0 0 48 16 0zm96-80l32 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-32 0c-8.8 0-16-7.2-16-16l0-128c0-8.8 7.2-16 16-16zm32 128c8.8 0 16-7.2 16-16l0-64c0-8.8-7.2-16-16-16l-16 0 0 96 16 0zm80-112c0-8.8 7.2-16 16-16l48 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 32 32 0c8.8 0 16 7.2 16 16s-7.2 16-16 16l-32 0 0 48c0 8.8-7.2 16-16 16s-16-7.2-16-16l0-64 0-64z',
+            ],
+            tools: [
+                128,
+                512,
+                'M64 360a56 56 0 1 0 0 112 56 56 0 1 0 0-112zm0-160a56 56 0 1 0 0 112 56 56 0 1 0 0-112zM120 96A56 56 0 1 0 8 96a56 56 0 1 0 112 0z',
+            ],
+            },
+
+        linkedin: [
+            448,
+            512,
+            'M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z',
+        ],
+        whatsapp: [
+            448,
+            512,
+            'M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z',
+        ],
+        pinterest: [
+            384,
+            512,
+            'M204 6.5C101.4 6.5 0 74.9 0 185.6 0 256 39.6 296 63.6 296c9.9 0 15.6-27.6 15.6-35.4 0-9.3-23.7-29.1-23.7-67.8 0-80.4 61.2-137.4 140.4-137.4 68.1 0 118.5 38.7 118.5 109.8 0 53.1-21.3 152.7-90.3 152.7-24.9 0-46.2-18-46.2-43.8 0-37.8 26.4-74.4 26.4-113.4 0-66.2-93.9-54.2-93.9 25.8 0 16.8 2.1 35.4 9.6 50.7-13.8 59.4-42 147.9-42 209.1 0 18.9 2.7 37.5 4.5 56.4 3.4 3.8 1.7 3.4 6.9 1.5 50.4-69 48.6-82.5 71.4-172.8 12.3 23.4 44.1 36 69.3 36 106.2 0 153.9-103.5 153.9-196.8C384 71.3 298.2 6.5 204 6.5z',
+        ],
+        email: [
+            512,
+            512,
+            'M64 112c-8.8 0-16 7.2-16 16v22.1L220.5 291.7c20.7 17 50.4 17 71.1 0L464 150.1V128c0-8.8-7.2-16-16-16H64zM48 212.2V384c0 8.8 7.2 16 16 16H448c8.8 0 16-7.2 16-16V212.2L322 328.8c-38.4 31.5-93.7 31.5-132 0L48 212.2zM0 128C0 92.7 28.7 64 64 64H448c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128z',
+        ],
+        digg: [
+            512,
+            512,
+            'M81.7 172.3H0v174.4h132.7V96h-51v76.3zm0 133.4H50.9v-92.3h30.8v92.3zm297.2-133.4v174.4h81.8v28.5h-81.8V416H512V172.3H378.9zm81.8 133.4h-30.8v-92.3h30.8v92.3zm-235.6 41h82.1v28.5h-82.1V416h133.3V172.3H225.1v174.4zm51.2-133.3h30.8v92.3h-30.8v-92.3zM153.3 96h51.3v51h-51.3V96zm0 76.3h51.3v174.4h-51.3V172.3z',
+        ],
+        reddit: [
+            512,
+            512,
+            'M440.3 203.5c-15 0-28.2 6.2-37.9 15.9-35.7-24.7-83.8-40.6-137.1-42.3L293 52.3l88.2 19.8c0 21.6 17.6 39.2 39.2 39.2 22 0 39.7-18.1 39.7-39.7s-17.6-39.7-39.7-39.7c-15.4 0-28.7 9.3-35.3 22l-97.4-21.6c-4.9-1.3-9.7 2.2-11 7.1L246.3 177c-52.9 2.2-100.5 18.1-136.3 42.8-9.7-10.1-23.4-16.3-38.4-16.3-55.6 0-73.8 74.6-22.9 100.1-1.8 7.9-2.6 16.3-2.6 24.7 0 83.8 94.4 151.7 210.3 151.7 116.4 0 210.8-67.9 210.8-151.7 0-8.4-.9-17.2-3.1-25.1 49.9-25.6 31.5-99.7-23.8-99.7zM129.4 308.9c0-22 17.6-39.7 39.7-39.7 21.6 0 39.2 17.6 39.2 39.7 0 21.6-17.6 39.2-39.2 39.2-22 .1-39.7-17.6-39.7-39.2zm214.3 93.5c-36.4 36.4-139.1 36.4-175.5 0-4-3.5-4-9.7 0-13.7 3.5-3.5 9.7-3.5 13.2 0 27.8 28.5 120 29 149 0 3.5-3.5 9.7-3.5 13.2 0 4.1 4 4.1 10.2.1 13.7zm-.8-54.2c-21.6 0-39.2-17.6-39.2-39.2 0-22 17.6-39.7 39.2-39.7 22 0 39.7 17.6 39.7 39.7-.1 21.5-17.7 39.2-39.7 39.2z',
+        ],
+        copyLink: [
+            640,
+            512,
+            'M579.8 267.7c56.5-56.5 56.5-148 0-204.5c-50-50-128.8-56.5-186.3-15.4l-1.6 1.1c-14.4 10.3-17.7 30.3-7.4 44.6s30.3 17.7 44.6 7.4l1.6-1.1c32.1-22.9 76-19.3 103.8 8.6c31.5 31.5 31.5 82.5 0 114L422.3 334.8c-31.5 31.5-82.5 31.5-114 0c-27.9-27.9-31.5-71.8-8.6-103.8l1.1-1.6c10.3-14.4 6.9-34.4-7.4-44.6s-34.4-6.9-44.6 7.4l-1.1 1.6C206.5 251.2 213 330 263 380c56.5 56.5 148 56.5 204.5 0L579.8 267.7zM60.2 244.3c-56.5 56.5-56.5 148 0 204.5c50 50 128.8 56.5 186.3 15.4l1.6-1.1c14.4-10.3 17.7-30.3 7.4-44.6s-30.3-17.7-44.6-7.4l-1.6 1.1c-32.1 22.9-76 19.3-103.8-8.6C74 372 74 321 105.5 289.5L217.7 177.2c31.5-31.5 82.5-31.5 114 0c27.9 27.9 31.5 71.8 8.6 103.9l-1.1 1.6c-10.3 14.4-6.9 34.4 7.4 44.6s34.4 6.9 44.6-7.4l1.1-1.6C433.5 260.8 427 182 377 132c-56.5-56.5-148-56.5-204.5 0L60.2 244.3z',
+        ],
     };
     constructor(options, elem) {
         if (elem.length) {
@@ -546,6 +636,7 @@ FLIPBOOK.Main = class {
 
         const layouts = {
             2: {
+                menuTransparent: true,
                 currentPage: { vAlign: 'bottom', hAlign: 'center' },
                 btnAutoplay: { hAlign: 'right', vAlign: 'top' },
                 btnSound: { hAlign: 'right', vAlign: 'top' },
@@ -560,10 +651,10 @@ FLIPBOOK.Main = class {
                 btnDownloadPages: { hAlign: 'right', vAlign: 'top' },
                 btnDownloadPdf: { hAlign: 'right', vAlign: 'top' },
                 btnTools: { hAlign: 'right', vAlign: 'top' },
-                menuTransparent: true,
             },
             3: {
                 menuTransparent: true,
+                menuPadding: 5,
                 menu2Transparent: false,
                 menu2OverBook: false,
                 menu2Padding: 5,
@@ -584,7 +675,6 @@ FLIPBOOK.Main = class {
                 btnZoomOut: { hAlign: 'right' },
                 btnSound: { vAlign: 'top', hAlign: 'right' },
                 btnTools: { vAlign: 'top', hAlign: 'right' },
-                menuPadding: 5,
             },
             4: {
                 menu2Transparent: false,
@@ -620,8 +710,6 @@ FLIPBOOK.Main = class {
                 btnColor: '#EEE',
                 btnColorHover: '#FFF',
                 skinBackground: 'rgba(0,0,0,.7)',
-                menuOverBook: true,
-                menu2OverBook: true,
                 sideMenuOverMenu: true,
                 sideMenuOverMenu2: true,
                 menuBackground: 'linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, transparent 100%)',
@@ -741,7 +829,6 @@ FLIPBOOK.Main = class {
         this.webgl = o.viewMode == 'webgl';
 
         if (o.menuFloating) {
-            o.menuOverBook = true;
             o.sideMenuOverMenu = true;
         }
 
@@ -751,7 +838,6 @@ FLIPBOOK.Main = class {
         }
 
         if (o.menuTransparent) {
-            o.menuOverBook = true;
             o.sideMenuOverMenu = true;
             o.menuBackground = 'none';
         }
@@ -1016,7 +1102,10 @@ FLIPBOOK.Main = class {
 
             if (o.previewPages && o.numPages > o.previewPages) {
                 o.numPages = o.previewPages;
-                if (o.doublePage) o.backCover = false;
+                if (o.doublePage) {
+                    o.backCover = false;
+                    o.numPages = Math.ceil(o.numPages / 2);
+                }
             }
 
             var pages = [];
@@ -1106,6 +1195,8 @@ FLIPBOOK.Main = class {
 
         if (o.lightBox) {
             o.btnClose.enabled = true;
+
+            if (!this.canFullscreen()) this.options.btnExpand.enabled = false;
 
             this.lightbox = new FLIPBOOK.Lightbox(this, this.wrapper, o);
             this.lightboxStartedTimes = 0;
@@ -1501,6 +1592,22 @@ FLIPBOOK.Main = class {
             this.toggleIcon(this.btnExpand, true);
         }
 
+        if (this.Book) {
+            if (this.options.lightboxStartPage) this.Book.goToPage(this.options.lightboxStartPage, true);
+            this.Book.zoomTo(this.options.zoomMin);
+            this.Book.disable();
+        }
+
+        this.closeMenus();
+
+        this.setLoadingProgress(1);
+
+        this.pauseMediaPlayback();
+
+        if (this.backgroundMusic) {
+            this.backgroundMusic.pause();
+        }
+
         if (window.location.hash) {
             this.clearHash();
         }
@@ -1508,19 +1615,6 @@ FLIPBOOK.Main = class {
         if (this.historyStateChanges) {
             // history.go(-this.historyStateChanges);
             this.historyStateChange(0);
-        }
-
-        this.setLoadingProgress(1);
-
-        if (this.Book) {
-            this.Book.zoomTo(this.options.zoomMin);
-            this.Book.disable();
-        }
-
-        this.pauseMediaPlayback();
-
-        if (this.backgroundMusic) {
-            this.backgroundMusic.pause();
         }
     }
 
@@ -1554,6 +1648,10 @@ FLIPBOOK.Main = class {
         if (this.youtubes) {
             this.youtubes.forEach((ytWrapper) => {
                 const player = ytWrapper.player;
+
+                if (!player || typeof player.getCurrentTime !== 'function') {
+                    return;
+                }
                 ytWrapper.dataset.ytCurrentTime = player.getCurrentTime();
                 ytWrapper.dataset.ytMuted = player.isMuted();
                 player.pauseVideo();
@@ -1565,10 +1663,31 @@ FLIPBOOK.Main = class {
         this.pauseMediaPlayback();
         this.resumeGlobalSound();
         this.playFlipSound();
+
+        if (this.zoom <= 1) {
+            this.showWrapperOverflow();
+        }
+    }
+
+    showWrapperOverflow() {
+        if (!this.overflowVisible) {
+            this.wrapper.style.overflow = 'visible';
+            this.overflowVisible = true;
+            // console.log('showWrapperOverflow');
+        }
+    }
+
+    hideWrapperOverflow() {
+        if (this.overflowVisible) {
+            this.wrapper.style.overflow = 'hidden';
+            this.overflowVisible = false;
+            // console.log('hideWrapperOverflow');
+        }
     }
 
     turnPageComplete() {
         this.animating = false;
+
         this.updateCurrentPage();
 
         var rightIndex = this.Book.rightIndex || 0;
@@ -1581,6 +1700,14 @@ FLIPBOOK.Main = class {
 
         if (this.options.zoomReset) {
             this.Book.zoomTo(this.options.zoomMin);
+        }
+
+        this.hideWrapperOverflow();
+    }
+
+    dragPage() {
+        if (this.zoom <= 1) {
+            this.showWrapperOverflow();
         }
     }
 
@@ -2065,7 +2192,6 @@ FLIPBOOK.Main = class {
 
     loadPageFromPdf(pageIndex, size, callback) {
         size = size || this.options.pageTextureSize;
-        // console.log(this.Book.getPageHeight());
         this.pdfService.renderBookPage(pageIndex, size, callback);
     }
 
@@ -2285,7 +2411,6 @@ FLIPBOOK.Main = class {
             var newArr = [p];
 
             var numPages = this.options.pages.length;
-            if (this.options.previewPages) numPages = numPages / 2;
 
             for (var i = 1; i <= numPages - 2; i++) {
                 p = this.options.pages[i];
@@ -2538,7 +2663,7 @@ FLIPBOOK.Main = class {
     }
 
     toggleMinimalView() {
-        if (this.wrapperW < this.options.minimalViewTreshold && !this.lightbox) {
+        if (this.wrapperW < this.options.minimalViewBreakpoint && !this.lightbox && !this.fullscreenActive) {
             if (!this.minimalViewActive) {
                 this.hideMenu();
                 this.showCenterExpandButton();
@@ -2568,9 +2693,14 @@ FLIPBOOK.Main = class {
 
             var newHeight = width / (this.options.containerRatio || ratio);
 
-            newHeight += this.wrapper.clientHeight - this.bookLayer.clientHeight;
+            // newHeight += this.wrapper.clientHeight - this.bookLayer.clientHeight /* - 2 * this.bookVerticalPadding */;
+            // newHeight += this.bottomMenuH;
+            // newHeight += this.topMenuH;
+            if (this.elemH != newHeight) {
+                this.elemH = newHeight;
 
-            this.elem.style.height = newHeight + 'px';
+                this.elem.style.height = newHeight + 'px';
+            }
         }
         this.resize();
     }
@@ -2698,7 +2828,7 @@ FLIPBOOK.Main = class {
 
                     if (!this.Book.enabled) return;
 
-                    if (!this.options.lightBox && !this.fullscreenActive) {
+                    if (!this.options.lightBox && !this.fullscreenActive && !e.ctrlKey) {
                         if (
                             this.options.wheelDisabledNotFullscreen ||
                             this.bodyHasVerticalScrollbar() ||
@@ -2965,6 +3095,10 @@ FLIPBOOK.Main = class {
                 try {
                     self.currentPageInput.dispatchEvent(new Event('blur', { bubbles: true, cancelable: true }));
                 } catch (e) {}
+                const pageHtmlClicked = e.target.closest('.flipbook-page-html');
+                if (pageHtmlClicked) {
+                    pageHtmlClicked.classList.add('mousedown');
+                }
             }
 
             if (fingerCount > 1 && phase == 'pinch') {
@@ -2978,20 +3112,24 @@ FLIPBOOK.Main = class {
 
             if (phase == 'end') {
                 if (!self.options.doubleClickZoomDisabled) {
-                    if (!self.clickTimer) {
+                    if (!self.clickTimer && e.touches) {
                         self.clickTimer = setTimeout(function () {
                             delete self.clickTimer;
                         }, 300);
                     } else {
                         clearTimeout(self.clickTimer);
                         delete self.clickTimer;
-                        const pageHtmlClicked = e.target.closest('.flipbook-page-html') !== null;
-                        if (pageHtmlClicked) {
+                        const pageHtmlClicked = e.target.closest('.flipbook-page-html');
+                        if (pageHtmlClicked) pageHtmlClicked.classList.remove('mousedown');
+                        if (pageHtmlClicked && !distanceX && !distanceY) {
                             var t = self.options.zoomTime;
+
                             if (self.zoom >= self.options.zoomMax) {
                                 self.zoomTo(self.options.zoomMin, t, e);
+                                pageHtmlClicked.classList.remove('zoomed');
                             } else {
                                 self.zoomTo(self.options.zoomMax, t, e);
+                                pageHtmlClicked.classList.add('zoomed');
                             }
                         }
                     }
@@ -3014,20 +3152,30 @@ FLIPBOOK.Main = class {
         this.swipeEnabled = true;
     }
 
-    createSVGIcon(name, reverse) {
-        var container = document.createElement('div');
-        container.innerHTML = FLIPBOOK.Main.icons[name];
+    createSVGIcon(name, reverse = false) {
+        const iconSet = 'fontawesome';
+        const icon = FLIPBOOK?.Main?.icons?.[iconSet]?.[name] ?? FLIPBOOK?.Main?.icons?.[name];
+        if (!icon) return null;
 
-        var svgElement = container.firstChild;
+        const [w, h, d] = icon;
 
-        svgElement.setAttribute('aria-hidden', 'true');
-        svgElement.classList.add('flipbook-icon');
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+        svg.setAttribute('height', '1em');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
 
-        if (reverse) {
-            svgElement.classList.add('flipbook-icon-reverse');
-        }
+        svg.setAttribute('stroke-width', '1');
 
-        return svgElement;
+        svg.classList.add('flipbook-icon');
+        if (reverse) svg.classList.add('flipbook-icon-reverse');
+
+        const path = document.createElementNS(svgNS, 'path');
+        path.setAttribute('d', d);
+        svg.appendChild(path);
+
+        return svg;
     }
 
     createButton(btn) {
@@ -3704,6 +3852,7 @@ FLIPBOOK.Main = class {
     }
 
     zoomTo(val, time, e) {
+        if (val == this.zoom) return;
         this.zoom = val;
 
         var x;
@@ -3727,6 +3876,8 @@ FLIPBOOK.Main = class {
             let wrapperRect = this.wrapper.getBoundingClientRect();
             x = x - wrapperRect.left - window.scrollX;
             y = y - wrapperRect.top - window.scrollY;
+
+            y += this.bookVerticalPadding;
         }
 
         const zoomMin = this.getZoomMin();
@@ -3742,6 +3893,8 @@ FLIPBOOK.Main = class {
             this.zoom = this.options.zoomMax2;
         }
 
+        if (this.autoplay) this.zoom = this.zoom = zoomMin;
+
         this.Book.zoomTo(this.zoom, time, x, y);
 
         this.onZoom(this.zoom);
@@ -3755,13 +3908,7 @@ FLIPBOOK.Main = class {
         const zoomMin = this.getZoomMin();
         newZoom = newZoom < zoomMin ? zoomMin : newZoom;
 
-        if (this.zoom == newZoom) {
-            return;
-        }
-
-        this.zoom = newZoom;
-
-        this.zoomTo(this.zoom, this.options.zoomTime, e);
+        this.zoomTo(newZoom, this.options.zoomTime, e);
     }
 
     zoomIn(e) {
@@ -3774,13 +3921,7 @@ FLIPBOOK.Main = class {
             newZoom = this.options.zoomMax;
         }
 
-        if (this.zoom == newZoom) {
-            return;
-        }
-
-        this.zoom = newZoom;
-
-        this.zoomTo(this.zoom, this.options.zoomTime, e);
+        this.zoomTo(newZoom, this.options.zoomTime, e);
     }
 
     getZoomMin() {
@@ -3814,11 +3955,13 @@ FLIPBOOK.Main = class {
     }
 
     firstPage() {
-        this.goToPage(1);
+        const last = this.options.pages.length;
+        this.goToPage(this.options.rightToLeft ? last : 1);
     }
 
     lastPage() {
-        this.goToPage(this.options.pages.length);
+        const last = this.options.pages.length;
+        this.goToPage(this.options.rightToLeft ? 1 : last);
     }
 
     goToPage(pageNumber, instant) {
@@ -3853,12 +3996,59 @@ FLIPBOOK.Main = class {
         }
     }
 
+    updateBookLayerSize() {
+        const o = this.options;
+        const topMenuH = this.menuShowing && !o.menu2OverBook && this.menuTop ? this.menuTop.offsetHeight : 0;
+        const bottomMenuH = this.menuShowing && !o.menuOverBook && this.menuBottom ? this.menuBottom.offsetHeight : 0;
+        const is3dBook = o.viewMode == '3d' || o.viewMode == '2d';
+        const isZoomed = this.zoom > 1;
+        const is3dBookZoomed = is3dBook && isZoomed;
+        // const is3dBookZoomed = false;
+        // const hasPadding = o.viewMode != 'swipe' && o.viewMode != 'scroll';
+        const hasPadding = o.viewMode == 'webgl';
+        const bookVerticalPadding = hasPadding
+            ? this.options.lightBox || this.fullscreenActive
+                ? Math.max(topMenuH, bottomMenuH)
+                : o.bookVerticalPadding
+            : 0;
+
+        this.bookVerticalPadding = bookVerticalPadding;
+
+        const bookBottom =
+            !o.menuOverBook && this.menuBottom ? -bookVerticalPadding + bottomMenuH : -bookVerticalPadding;
+        const bookTop = !o.menu2OverBook && this.menuTop ? -bookVerticalPadding + topMenuH : -bookVerticalPadding;
+
+        const bottomValue = bookBottom + 'px';
+        const topValue = bookTop + 'px';
+
+        const style = this.bookLayer.style;
+
+        if (style.bottom !== bottomValue) {
+            style.bottom = bottomValue;
+        }
+
+        if (style.top !== topValue) {
+            style.top = topValue;
+        }
+
+        // if (is3dBook) {
+        //     this.Book.onResize(true);
+        // }
+    }
+
     onZoom(newZoom) {
         this.zoom = newZoom;
         const zoomMin = this.getZoomMin();
         this.enableButton(this.btnZoomIn, newZoom < this.options.zoomMax);
         this.enableButton(this.btnZoomOut, newZoom > zoomMin);
         this.enableSwipe(newZoom <= 1);
+
+        if (this.zoom > 1) {
+            this.hideWrapperOverflow();
+            // if book 3d, remove vertical padding to enable pan
+        } else {
+            // if book 3d, add vertical padding
+        }
 
         this.sendGAEvent({
             event: 'flipbook_zoom',
@@ -4027,8 +4217,6 @@ FLIPBOOK.Main = class {
             }
         }
 
-        var iconExpand = this.createSVGIcon('next');
-
         this.tocScroller = this.buildTOC(tocArray);
         this.tocScroller.className = 'flipbook-toc-scroller';
         this.toc.appendChild(this.tocScroller);
@@ -4062,9 +4250,11 @@ FLIPBOOK.Main = class {
                     const subUl = li.querySelector('ul');
                     if (subUl.style.display === 'none') {
                         subUl.style.display = 'block';
+                        subUl.dataset.expanded = 'true';
                         expandIcon.classList.add('expanded');
                     } else {
                         subUl.style.display = 'none';
+                        subUl.dataset.expanded = 'false';
                         expandIcon.classList.remove('expanded');
                     }
                 });
@@ -4162,26 +4352,23 @@ FLIPBOOK.Main = class {
     }
 
     resize(force) {
-        var o = this.options;
-
-        this.updateWrapperDimensions();
-
         if (!this.Book || !this.Book.enabled) {
             return;
         }
 
-        // if (o.viewMode == 'webgl') {
-        //     o.menuOverBook = true;
-        //     o.menu2OverBook = true;
-        // }
-
-        if (this.menuShowing) {
-            this.bookLayer.style.bottom =
-                !o.menuOverBook && this.menuBottom ? this.menuBottom.offsetHeight + 'px' : '0px';
-            this.bookLayer.style.top = !o.menu2OverBook && this.menuTop ? this.menuTop.offsetHeight + 'px' : '0px';
+        const sidebarVisible = this.tocShowing || this.thumbsShowing || this.searchShowing || this.bookmarkShowing;
+        let rect = this.bookLayer.getBoundingClientRect();
+        if (this.wrapperW === rect.width && this.wrapperH === rect.height && this.sidebarVisible === sidebarVisible) {
+            return;
         }
 
-        if (this.tocShowing || this.thumbsShowing || this.searchShowing || this.bookmarkShowing) {
+        this.wrapperW = rect.width;
+        this.wrapperH = rect.height;
+        this.sidebarVisible = sidebarVisible;
+
+        this.updateBookLayerSize();
+
+        if (sidebarVisible) {
             var sidebarWdith = this.tocShowing
                 ? this.tocHolder.getBoundingClientRect().width
                 : this.thumbsShowing && this.options.thumbsStyle === 'overlay'
@@ -4190,10 +4377,10 @@ FLIPBOOK.Main = class {
 
             this.bookLayer.style[this.options.sideMenuPosition] = `${sidebarWdith}px`;
             let sideMenuCss = { bottom: '0px', top: '0px' };
-            if (!o.sideMenuOverMenu) {
+            if (!this.options.sideMenuOverMenu) {
                 sideMenuCss.bottom = this.menuBottom.offsetHeight + 'px';
             }
-            if (!o.sideMenuOverMenu2) {
+            if (!this.options.sideMenuOverMenu2) {
                 sideMenuCss.top = this.menuTop.offsetHeight + 'px';
             }
 
@@ -4213,15 +4400,7 @@ FLIPBOOK.Main = class {
         this.adjustZoomLimits();
 
         this.Book.onResize(force);
-        // if (o.zoomReset) {
-        this.Book.zoomTo(o.zoomMin);
-        // }
-    }
-
-    updateWrapperDimensions() {
-        let rect = this.bookLayer.getBoundingClientRect();
-        this.wrapperW = rect.width;
-        this.wrapperH = rect.height;
+        this.Book.zoomTo(this.options.zoomMin);
     }
 
     adjustZoomLimits() {
@@ -4237,7 +4416,6 @@ FLIPBOOK.Main = class {
 
         if (o.menuOverBook && o.menu2OverBook)
             o.zoomMin = (this.wrapperH - 2 * manuHeight - bookMargin) / this.wrapperH;
-        // else o.zoomMin = (this.wrapperH - bookMargin) / this.wrapperH;
 
         if (o.viewMode == 'scroll') {
             o.zoomMax = (2 * ((o.zoomSize * o.pageWidth) / o.pageHeight)) / this.wrapperW;
@@ -4298,6 +4476,15 @@ FLIPBOOK.Main = class {
         } else {
             this.tocHolder.classList.add('flipbook-hidden');
             this.tocShowing = false;
+
+            this.tocHolder.querySelectorAll('.expanded').forEach((el) => {
+                el.classList.remove('expanded');
+            });
+
+            this.tocHolder.querySelectorAll('[data-expanded="true"]').forEach((el) => {
+                el.dataset.expanded = 'false';
+                el.style.display = 'none';
+            });
         }
 
         this.resize();
@@ -4888,6 +5075,15 @@ FLIPBOOK.Main = class {
         setTimeout(() => {
             window.scrollTo(x, y);
         }, 10);
+    }
+
+    canFullscreen() {
+        return !!(
+            document.fullscreenEnabled ||
+            document.webkitFullscreenEnabled ||
+            document.mozFullScreenEnabled ||
+            document.msFullscreenEnabled
+        );
     }
 
     requestFullscreen(element) {
@@ -5730,23 +5926,29 @@ FLIPBOOK.ProgressBar = class {
 
 FLIPBOOK.Thumbnails = class {
     constructor(main) {
-        var options = main.options;
-        var wrapper = main.wrapper;
+        const options = main.options;
+        const wrapper = main.wrapper;
+
         this.main = main;
         this.options = options;
         this.wrapper = wrapper;
+
         this.active = null;
+
         this.thumbHolder = document.createElement('div');
         this.thumbHolder.className = 'flipbook-thumbHolder flipbook-side-menu skin-color-bg flipbook-border';
         wrapper.appendChild(this.thumbHolder);
         this.thumbHolder.style[options.sideMenuPosition] = '0';
         this.thumbHolder.classList.add('flipbook-hidden');
+
         main.createMenuHeader(this.thumbHolder, main.strings.thumbnails, main.toggleThumbs);
+
         this.bookmark = document.createElement('div');
         this.bookmark.className = 'flipbook-font';
         this.thumbHolder.appendChild(this.bookmark);
         this.bookmark.classList.add('flipbook-hidden');
-        var currentBookmark = document.createElement('a');
+
+        const currentBookmark = document.createElement('a');
         currentBookmark.innerHTML =
             '<div class="c-p skin-color flipbook-btn">' + options.strings.bookmarkCurrentPage + '</div>';
         this.bookmark.appendChild(currentBookmark);
@@ -5755,7 +5957,8 @@ FLIPBOOK.Thumbnails = class {
             e.preventDefault();
             e.stopPropagation();
         });
-        var leftBookmark = document.createElement('a');
+
+        const leftBookmark = document.createElement('a');
         leftBookmark.innerHTML =
             '<div class="c-l-p skin-color flipbook-btn">' + options.strings.bookmarkLeftPage + '</div>';
         this.bookmark.appendChild(leftBookmark);
@@ -5764,7 +5967,8 @@ FLIPBOOK.Thumbnails = class {
             e.preventDefault();
             e.stopPropagation();
         });
-        var rightBookmark = document.createElement('a');
+
+        const rightBookmark = document.createElement('a');
         rightBookmark.innerHTML =
             '<div class="c-r-p skin-color flipbook-btn">' + options.strings.bookmarkRightPage + '</div>';
         this.bookmark.appendChild(rightBookmark);
@@ -5773,26 +5977,30 @@ FLIPBOOK.Thumbnails = class {
             e.preventDefault();
             e.stopPropagation();
         });
+
         this.search = document.createElement('div');
         this.search.className = 'flipbook-search';
         this.thumbHolder.appendChild(this.search);
         this.search.classList.add('flipbook-hidden');
+
         this.searchBar = document.createElement('div');
         this.searchBar.className = 'flipbook-findbar';
         this.search.appendChild(this.searchBar);
+
         this.findInputCotainer = document.createElement('div');
         this.findInputCotainer.id = 'findbarInputContainer';
         this.searchBar.appendChild(this.findInputCotainer);
+
         this.findInput = document.createElement('input');
         this.findInput.className = 'toolbarField skin-color skin-color-bg';
         this.findInput.title = 'Find';
         this.findInput.autocapitalize = 'none';
         this.findInput.placeholder = `${options.strings.findInDocument}...`;
         this.findInputCotainer.appendChild(this.findInput);
+
         this.clearInput = document.createElement('span');
         this.clearInput.className = 'flipbook-search-clear flipbook-hidden skin-color skin-color-bg';
-        var closeIcon = main.createSVGIcon('close');
-        this.clearInput.appendChild(closeIcon);
+        this.clearInput.appendChild(main.createSVGIcon('close'));
         this.clearInput.addEventListener('click', () => {
             this.findInput.value = '';
             this.hideAllThumbs();
@@ -5803,9 +6011,11 @@ FLIPBOOK.Thumbnails = class {
             this.findInput.focus({ preventScroll: true });
         });
         this.findInputCotainer.appendChild(this.clearInput);
+
         this.thumbsWrapper = document.createElement('div');
         this.thumbsWrapper.className = 'flipbook-thumbsWrapper';
         this.thumbHolder.appendChild(this.thumbsWrapper);
+
         this.closeGrid = document.createElement('div');
         this.closeGrid.className = 'flipbook-thumbs-grid-close skin-color flipbook-menu-btn';
         this.thumbsWrapper.appendChild(this.closeGrid);
@@ -5814,22 +6024,61 @@ FLIPBOOK.Thumbnails = class {
             e.preventDefault();
             this.main.closeMenus();
         });
-        var closeIcon = this.main.createSVGIcon('close');
-        this.closeGrid.appendChild(closeIcon);
+        this.closeGrid.appendChild(this.main.createSVGIcon('close'));
+
         this.thumbsScroller = document.createElement('div');
         this.thumbsScroller.className = 'flipbook-thumbsScroller skin-color';
         this.thumbsWrapper.appendChild(this.thumbsScroller);
+
         this.findInput.addEventListener('keyup', (e) => {
-            var str = e.currentTarget.value;
+            const str = e.currentTarget.value;
             this.searchString(str);
         });
-        this.thumbs = [];
 
+        this.thumbs = [];
         this.isOverlayMode = options.thumbsStyle === 'overlay';
 
+        const height = options.thumbSize;
+        const width = (height * options.pageWidth) / options.pageHeight;
+
+        this.main.wrapper.style.setProperty('--flipbook-thumbs-spread-width', 2 * width + 'px');
+
+        const thumbObserver = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (!entry.isIntersecting) return;
+
+                    const el = entry.target;
+
+                    if (typeof el.instance.load === 'function') {
+                        el.instance.load();
+                    }
+
+                    thumbObserver.unobserve(el);
+                });
+            },
+            {
+                root: this.thumbHolder,
+                rootMargin: '200px 0px',
+                threshold: 0.01,
+            }
+        );
+
         for (let i = 0; i < options.pages.length; i++) {
-            this.createThumb(options.pages[i], i);
+            const th = new FLIPBOOK.Thumbnail(i, width, height, main, options, this);
+            th.el.instance = th;
+            thumbObserver.observe(th.el);
         }
+
+        this.coverSpacer = document.createElement('div');
+        this.coverSpacer.style.width = width + 'px';
+        this.coverSpacer.style.height = height + 'px';
+        this.coverSpacer.style.display = 'inline-block';
+
+        this.backCoverSpacer = document.createElement('div');
+        this.backCoverSpacer.style.width = width + 'px';
+        this.backCoverSpacer.style.height = height + 'px';
+        this.backCoverSpacer.style.display = 'inline-block';
 
         if (this.isOverlayMode) {
             this.createSpreads();
@@ -5843,222 +6092,142 @@ FLIPBOOK.Thumbnails = class {
 
     createSpreads() {
         let numSpreads;
-        const options = this.options;
+        const { pages, cover, backCover } = this.options;
+
         this.spreads = [];
-        if (this.options.cover) {
-            if (this.options.backCover) {
-                numSpreads = options.pages.length / 2 + 2;
-            } else {
-                numSpreads = options.pages.length / 2 + 1;
-            }
-        } else {
-            numSpreads = options.pages.length / 2;
-        }
+
+        const totalPages = pages.length;
+
+        const innerPages = totalPages - (cover ? 1 : 0) - (backCover ? 1 : 0);
+
+        numSpreads = (cover ? 1 : 0) + (backCover ? 1 : 0) + Math.ceil(Math.max(0, innerPages) / 2);
+
+        const frag = document.createDocumentFragment();
+
         for (let i = 0; i < numSpreads; i++) {
             const spread = document.createElement('div');
             this.spreads.push(spread);
+
             spread.classList.add('flipbook-thumb-spread');
+            if (cover && i === 0) spread.classList.add('flipbook-thumb-spread-cover');
+            if (backCover && i === numSpreads - 1) spread.classList.add('flipbook-thumb-spread-back-cover');
+
             const spreadLeft = 2 * i;
             const spreadRight = 2 * i + 1;
             spread.dataset.pages = String(spreadLeft) + ',' + String(spreadRight);
-            this.thumbsScroller.appendChild(spread);
+
+            frag.appendChild(spread);
         }
+        this.thumbsScroller.appendChild(frag);
     }
 
     showSpreads() {
-        let spreadLeft, spreadRight;
         for (let i = 0; i < this.spreads.length; i++) {
             const spread = this.spreads[i];
             spread.style.display = '';
-            spreadLeft = 2 * i;
-            spreadRight = 2 * i + 1;
+
+            const spreadLeft = 2 * i;
+            const spreadRight = 2 * i + 1;
+
             if (this.thumbs[spreadLeft - 1]) spread.appendChild(this.thumbs[spreadLeft - 1]);
+            else spread.appendChild(this.coverSpacer);
+
             if (this.thumbs[spreadRight - 1]) spread.appendChild(this.thumbs[spreadRight - 1]);
+            else spread.appendChild(this.backCoverSpacer);
         }
         this.spreadsShowing = true;
     }
 
     showSingles() {
         for (let i = 0; i < this.thumbs.length; i++) {
-            const thumb = this.thumbs[i];
-            this.thumbsScroller.appendChild(thumb);
+            this.thumbsScroller.appendChild(this.thumbs[i]);
         }
         this.hideSpreads();
     }
 
     hideSpreads() {
+        if (!this.spreads) return;
         for (let i = 0; i < this.spreads.length; i++) {
-            const spread = this.spreads[i];
-            spread.style.display = 'none';
+            this.spreads[i].style.display = 'none';
         }
         this.spreadsShowing = false;
     }
 
-    createThumb(item, i) {
-        var main = this.main,
-            options = this.options;
-        var h = options.thumbSize;
-        var w = (options.thumbSize * options.pageWidth) / options.pageHeight;
-        var thumb = document.createElement('div');
-        var side = i % 2 == 1 ? 'left' : 'right';
-        thumb.className = 'flipbook-thumb flipbook-thumb-' + side;
-        thumb.setAttribute('data-thumb-index', i);
-        thumb.style.height = h + 'px';
-
-        var btnClose = document.createElement('span');
-        btnClose.className = 'thumb-btn-close skin-color skin-color-bg';
-        thumb.appendChild(btnClose);
-        btnClose.addEventListener('click', function (e) {
-            e.stopPropagation();
-            e.preventDefault();
-            main.removeBookmark(thumb.getAttribute('data-thumb-index'));
-        });
-        var iconClose = main.createSVGIcon('close');
-        btnClose.appendChild(iconClose);
-        this.thumbs.push(thumb);
-        var hasBackCover = options.pages.length % 2 === 0;
-        var isCover = i === 0;
-        var isBackCover = hasBackCover && i === options.pages.length - 1;
-        var isDouble = false;
-        if (options.doublePage) {
-            hasBackCover = options.backCover;
-            isBackCover = hasBackCover && i === options.pages.length - 1;
-            isDouble = !isCover && !isBackCover;
-        }
-        var thumbImg;
-
-        let isLeft = false,
-            isRight = false;
-
-        let pdfPageIndex = i + 1;
-        if (this.options.doublePage) {
-            pdfPageIndex = Math.ceil(i / 2) + 1;
-        }
-        isLeft = !isCover && i % 2 == 1 && !isBackCover;
-        isRight = !isCover && i % 2 == 0 && !isBackCover;
-
-        if (options.pdfMode) {
-            thumbImg = this.getThumbFromPdf(pdfPageIndex, isLeft, isRight);
-        } else if (item.thumb) {
-            thumbImg = document.createElement('img');
-            thumbImg.src = item.thumb;
-            if (isRight && isDouble) thumbImg.style.marginLeft = '-100%';
-        } else {
-            return;
-        }
-        thumb.appendChild(thumbImg);
-        thumbImg.style.height = h + 'px';
-
-        thumb.style.width = w + 'px';
-
-        var pageNumber = i + 1;
-
-        thumb.setAttribute('data-page', pageNumber);
-        var title = '';
-        var pagesStr = '';
-
-        title = pageNumber.toString();
-        if (this.options.pages[i] && this.options.pages[i].name) {
-            title = this.options.pages[i].name;
-        }
-        pagesStr = title;
-        var span = document.createElement('span');
-        span.textContent = title;
-        span.className = 'skin-color flipbook-thumb-num';
-        thumb.appendChild(span);
-        thumb.setAttribute('data-pages', pagesStr);
-        if (options.thumbsStyle === 'overlay') {
-            options.thumbsCloseOnClick = true;
-        }
-        thumb.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-
-            let targetPage;
-
-            const pagesStr = e.currentTarget.getAttribute('data-pages'); // e.g., "10,11" or "1"
-            if (pagesStr && pagesStr.indexOf(',') !== -1) {
-                const [lowStr, highStr] = pagesStr.split(',');
-                const low = Number(lowStr);
-                const high = Number(highStr);
-                // LTR -> go to left (low). RTL -> go to right (high).
-                targetPage = options.rightToLeft ? high : low;
-            } else {
-                targetPage = Number(pagesStr || e.currentTarget.getAttribute('data-page'));
-            }
-
-            // Safety: clamp to valid range
-            if (!Number.isFinite(targetPage) || targetPage < 1) targetPage = 1;
-
-            main.goToPage(targetPage);
-
-            if (this.active !== 'search' && options.thumbsCloseOnClick) {
-                main.toggleThumbs(false);
-            }
+    findInPageAsync(pdfService, str, pageIndex) {
+        return new Promise((resolve) => {
+            pdfService.findInPage(str, pageIndex, (matches, htmlContent, index, pageText) => {
+                resolve({ matches, htmlContent, index, pageText });
+            });
         });
     }
 
     searchString(str) {
-        if (str) {
-            this.clearInput.classList.remove('flipbook-hidden');
-        } else {
-            this.clearInput.classList.add('flipbook-hidden');
-        }
+        if (str) this.clearInput.classList.remove('flipbook-hidden');
+        else this.clearInput.classList.add('flipbook-hidden');
 
         if (this.searchTimeout) clearTimeout(this.searchTimeout);
-        this.searchTimeout = setTimeout(() => {
-            var main = this.main;
-            var pdfService = main.pdfService;
+
+        this.searchTimeout = setTimeout(async () => {
+            const main = this.main;
+            const pdfService = main.pdfService;
+
             if (str !== '') {
-                var options = main.options;
-                var matchesFound = 0;
+                const options = main.options;
+                let matchesFound = 0;
+
                 this.hideAllThumbs();
                 this.clearSearchResults();
                 this.pagesFound = 0;
+
                 main.unmark();
                 main.searchingString = str;
+
                 if (pdfService) {
-                    for (var i = 0; i < pdfService.info.numPages; i++) {
-                        pdfService.findInPage(str, i, (matches, htmlContent, index, pageText) => {
-                            if (matches.length > 0) {
-                                this.pagesFound++;
-                                matchesFound += matches.length;
-                                main.mark(str);
-                                if (options.searchResultsThumbs) this.showThumb(index);
-                                else this.showSearchResults(matches.length, index, pageText);
-                            }
-                        });
+                    let matchesFound = 0;
+
+                    for (let i = 0; i < pdfService.info.numPages; i++) {
+                        if (str !== main.searchingString) {
+                            break;
+                        }
+                        const { matches, index, pageText } = await this.findInPageAsync(pdfService, str, i);
+
+                        if (matches && matches.length > 0) {
+                            const firstResult = this.pagesFound === 0;
+                            this.pagesFound++;
+                            matchesFound += matches.length;
+
+                            main.mark(str);
+
+                            if (options.searchResultsThumbs) this.showThumb(index);
+                            else this.showSearchResults(matches.length, index, pageText, firstResult);
+                        }
                     }
                 } else {
                     options.pagesOriginal.forEach((_, index) => {
                         const originalIndex = index;
-                        if (!options.cover) {
-                            index++;
-                        }
-                        var pi = index;
-                        if (options.doublePage) {
-                            pi *= 2;
-                        }
-                        if (options.doublePage && pi === options.pagesOriginal.length * 2 - 2) {
-                            pi--;
-                        }
-                        main.loadPageHTML(pi, (htmlContent, index) => {
-                            var matchCount = (
-                                htmlContent.innerText
-                                    .toUpperCase()
-                                    .match(
-                                        new RegExp(
-                                            main.searchingString.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-                                            'g'
-                                        )
-                                    ) || []
-                            ).length;
+
+                        if (!options.cover) index++;
+
+                        let pi = index;
+                        if (options.doublePage) pi *= 2;
+                        if (options.doublePage && pi === options.pagesOriginal.length * 2 - 2) pi--;
+
+                        main.loadPageHTML(pi, (htmlContent) => {
+                            const re = new RegExp(
+                                main.searchingString.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+                                'g'
+                            );
+
+                            const matchCount = (htmlContent.innerText.toUpperCase().match(re) || []).length;
+
                             if (matchCount > 0) {
                                 matchesFound += matchCount;
+                                const firstResult = this.pagesFound == 0;
                                 this.showSearchResults(
                                     matchCount,
                                     originalIndex,
-                                    htmlContent.innerText.substring(0, 60) + '...'
+                                    htmlContent.innerText.substring(0, 60) + '...',
+                                    firstResult
                                 );
                                 this.pagesFound++;
                                 main.mark(str);
@@ -6069,8 +6238,8 @@ FLIPBOOK.Thumbnails = class {
             } else {
                 this.hideAllThumbs();
                 this.clearSearchResults();
-                main.unmark();
-                main.searchingString = str;
+                this.main.unmark();
+                this.main.searchingString = str;
                 this.clearInput.classList.add('flipbook-hidden');
             }
         });
@@ -6081,54 +6250,61 @@ FLIPBOOK.Thumbnails = class {
     }
 
     loadVisibleThumbs() {}
+
     getThumbFromPdf(pdfPageIndex, isLeft, isRight) {
-        var c = document.createElement('canvas');
+        const c = document.createElement('canvas');
 
         this.main.pdfService.pdfDocument.getPage(pdfPageIndex).then((pdfPage) => {
-            var v = pdfPage.getViewport({ scale: 1 });
-            var scale = this.options.thumbSize / v.height;
-            var offsetX = 0;
-            var canvasWidth = scale * v.width;
+            const v = pdfPage.getViewport({ scale: 1 });
+            const scale = this.options.thumbSize / v.height;
+
+            let offsetX = 0;
+            let canvasWidth = scale * v.width;
+
             if (this.options.doublePage && (isLeft || isRight)) {
                 canvasWidth = (scale * v.width) / 2;
-                if (isRight) {
-                    offsetX = -canvasWidth;
-                }
+                if (isRight) offsetX = -canvasWidth;
             }
-            var viewport = pdfPage.getViewport({ scale: scale, offsetX: offsetX });
-            var context = c.getContext('2d');
+
+            const viewport = pdfPage.getViewport({ scale: scale, offsetX: offsetX });
+            const context = c.getContext('2d');
+
             c.height = viewport.height;
             c.width = canvasWidth;
-            var renderContext = {
-                canvasContext: context,
-                viewport: viewport,
-            };
+
+            const renderContext = { canvasContext: context, viewport: viewport };
+
             pdfPage.cleanupAfterRender = true;
-            var renderTask = pdfPage.render(renderContext);
+            const renderTask = pdfPage.render(renderContext);
             renderTask.promise.then(function () {
                 pdfPage.cleanup();
             });
         });
+
         return c;
     }
+
     showAllThumbs() {
-        this.thumbs.forEach((thumb) => {
-            thumb.classList.remove('flipbook-hidden');
-        });
+        for (let i = 0; i < this.thumbs.length; i++) {
+            this.thumbs[i].classList.remove('flipbook-hidden');
+        }
         if (this.isOverlayMode) this.showSpreads();
         this.clearSearchResults();
     }
+
     hideAllThumbs() {
-        this.thumbs.forEach((thumb) => {
-            thumb.classList.add('flipbook-hidden');
-        });
-    }
-    clearSearchResults() {
-        this.thumbsScroller.querySelectorAll('.flipbook-search-match').forEach((match) => match.remove());
+        for (let i = 0; i < this.thumbs.length; i++) {
+            this.thumbs[i].classList.add('flipbook-hidden');
+        }
     }
 
-    showSearchResults(matches, pageIndex, str) {
-        const { main, options } = this;
+    clearSearchResults() {
+        const matches = this.thumbsScroller.querySelectorAll('.flipbook-search-match');
+        for (let i = 0; i < matches.length; i++) matches[i].remove();
+    }
+
+    showSearchResults(matches, pageIndex, str, firstResult) {
+        const { main, options, findInput } = this;
         const { doublePage, strings } = main.options;
 
         let displayPageTitle;
@@ -6138,28 +6314,23 @@ FLIPBOOK.Thumbnails = class {
         if (doublePage && pageIndex > 0) {
             adjustedPageIndex = pageIndex * 2 - 1;
 
-            // Check if this is a valid spread (not first page and next page exists)
             const nextPageIndex = adjustedPageIndex + 1;
             if (nextPageIndex < totalPages) {
-                // Valid spread - show "X-Y" format
                 displayPageTitle = `${adjustedPageIndex + 1}-${nextPageIndex + 1}`;
             } else {
-                // Last page or invalid spread - show single page
                 displayPageTitle = String(adjustedPageIndex + 1);
             }
         } else {
-            // Single page display
             displayPageTitle = String(pageIndex + 1);
         }
 
-        // Create search match element
         const searchMatch = document.createElement('div');
         searchMatch.className = 'flipbook-search-match';
-        searchMatch.dataset.page = adjustedPageIndex + 1; // Store first page of spread for navigation
+        searchMatch.dataset.page = adjustedPageIndex + 1;
         searchMatch.style.order = adjustedPageIndex;
 
-        // Use template literal for better performance with static parts
         const matchString = matches === 1 ? strings.match : strings.matches;
+
         searchMatch.innerHTML = `
         <div class="flipbook-search-match-title">
             <span style="float:left"><strong>${strings.page} ${displayPageTitle}</strong></span>
@@ -6168,7 +6339,6 @@ FLIPBOOK.Thumbnails = class {
         <div class="flipbook-search-match-text">${str}</div>
     `;
 
-        // Add event listener
         searchMatch.addEventListener('click', (e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -6176,26 +6346,39 @@ FLIPBOOK.Thumbnails = class {
             main.goToPage(targetPage);
         });
 
-        // Append to container and hide spreads
+        if (firstResult) {
+            main.goToPage(adjustedPageIndex + 1, true);
+
+            setTimeout(() => {
+                findInput.focus();
+                findInput.setSelectionRange(findInput.value.length, findInput.value.length);
+            }, 50);
+
+            findInput.focus();
+        }
+
         this.thumbsScroller.appendChild(searchMatch);
         this.hideSpreads();
     }
 
     showThumb(index) {
-        if (this.thumbs[index]) {
-            this.thumbs[index].classList.remove('flipbook-hidden');
+        const el = this.thumbs[index];
+        if (el) el.classList.remove('flipbook-hidden');
+    }
+
+    hideThumb(index) {
+        const el = this.thumbs[index];
+        if (el) el.classList.add('flipbook-hidden');
+    }
+
+    showeCloseButtons(visible = true) {
+        const action = visible ? 'remove' : 'add';
+        for (let i = 0; i < this.thumbs.length; i++) {
+            const btnClose = this.thumbs[i].querySelector('.thumb-btn-close');
+            if (btnClose) btnClose.classList[action]('flipbook-hidden');
         }
     }
-    hideThumb(index) {
-        this.thumbs[index].classList.add('flipbook-hidden');
-    }
-    showeCloseButtons(visible = true) {
-        this.thumbs.forEach((thumnb) => {
-            const btnClose = thumnb.querySelector('.thumb-btn-close');
-            const action = visible ? 'remove' : 'add';
-            btnClose.classList[action]('flipbook-hidden');
-        });
-    }
+
     showBookmarks() {
         this.showeCloseButtons(true);
         this.showBookmarkedThumbs();
@@ -6206,6 +6389,7 @@ FLIPBOOK.Thumbnails = class {
         this.active = 'bookmarks';
         this.thumbHolder.classList.remove('flipbook-thumbs-grid');
     }
+
     showSearch() {
         this.clearSearchResults();
         this.hideAllThumbs();
@@ -6218,93 +6402,231 @@ FLIPBOOK.Thumbnails = class {
         this.active = 'search';
         this.thumbHolder.classList.remove('flipbook-thumbs-grid');
     }
+
     showBookmarkedThumbs() {
-        var arr = this.main.getBookmarkedPages();
+        const arr = this.main.getBookmarkedPages();
         this.hideAllThumbs();
         this.showSingles();
-        for (var i = 0; i < arr.length; i++) {
-            var page = arr[i];
+
+        for (let i = 0; i < arr.length; i++) {
+            const page = arr[i];
             if (page) {
-                var thumbIndex = this.getThumbIndexForPage(page);
+                const thumbIndex = this.getThumbIndexForPage(page);
                 this.showThumb(thumbIndex);
             }
         }
     }
+
     show() {
         this.setTitle(this.options.strings.thumbnails);
         this.bookmark.classList.add('flipbook-hidden');
         this.search.classList.add('flipbook-hidden');
         this.thumbHolder.classList.remove('flipbook-hidden');
+
         this.main.thumbsVertical();
         this.showAllThumbs();
         this.showeCloseButtons(false);
         this.loadVisibleThumbs();
         this.main.resize();
         this.active = 'thumbs';
+
         if (this.main.options.thumbsStyle === 'overlay') {
             this.thumbHolder.classList.add('flipbook-thumbs-grid');
             if (this.options.rightToLeft) {
                 this.thumbsScroller.style.direction = 'rtl';
             }
         }
+
         this.updateCurrentPages();
     }
+
     hide() {
         this.thumbHolder.classList.add('flipbook-hidden');
         this.main.resize();
         this.active = null;
     }
+
     setTitle(str) {
-        this.thumbHolder.querySelector('.flipbook-menu-title').textContent = str;
+        const titleEl = this.thumbHolder.querySelector('.flipbook-menu-title');
+        if (titleEl) titleEl.textContent = str;
     }
+
     updateCurrentPages() {
         if (!this.active) return;
-        if (!this.spreadsShowing) return;
-        // Build once
+
         if (!this.thumbsByPage) {
             this.thumbsByPage = new Map();
-            this.thumbs.forEach((el) => {
+            for (let i = 0; i < this.thumbs.length; i++) {
+                const el = this.thumbs[i];
                 const pagesStr = el.getAttribute('data-pages');
-                if (pagesStr) {
-                    const pages = pagesStr
-                        .split(',')
-                        .map((s) => Number(s))
-                        .filter(Number.isFinite);
-                    pages.forEach((p) => this.thumbsByPage.set(p, el));
+                if (!pagesStr) continue;
+
+                const parts = pagesStr.split(',');
+                for (let j = 0; j < parts.length; j++) {
+                    const p = Number(parts[j]);
+                    if (Number.isFinite(p)) this.thumbsByPage.set(p, el);
                 }
-            });
+            }
         }
+
         const prev = this.prevActive || new Set();
-        // currentPageValue supports "2" or "2-3"
+
         const raw = (this.main?.currentPageValue ?? '').toString().trim();
         if (!raw) return;
-        const pages = raw
-            .split('-')
-            .map((s) => Number(s))
-            .filter(Number.isFinite);
-        const next = new Set(pages);
-        // Minimal DOM writes: toggle only for pages that changed
+
+        const next = new Set(
+            raw
+                .split('-')
+                .map((s) => Number(s))
+                .filter(Number.isFinite)
+        );
+
         const union = new Set([...prev, ...next]);
         for (const page of union) {
             const el = this.thumbsByPage.get(page);
             if (!el) continue;
             el.classList.toggle('flipbook-thumb-active', next.has(page));
         }
-        const active = this.thumbsScroller.querySelector('.flipbook-thumb-active');
-        if (active) {
+
+        const activeEl = this.thumbsScroller.querySelector('.flipbook-thumb-active');
+        if (activeEl) {
             const container = this.thumbsWrapper;
             const cRect = container.getBoundingClientRect();
-            const aRect = active.getBoundingClientRect();
+            const aRect = activeEl.getBoundingClientRect();
             const margin = 100;
+
             const dy = aRect.top - cRect.top - margin;
             const dx = aRect.left - cRect.left - margin;
+
             container.scrollTo({
                 top: container.scrollTop + dy,
+                left: container.scrollLeft + dx,
                 behavior: 'smooth',
-                block: 'start',
             });
         }
+
         this.prevActive = next;
+    }
+};
+
+FLIPBOOK.Thumbnail = class {
+    constructor(i, width, height, main, options, thumbs) {
+        this.thumbs = thumbs;
+        const thumb = document.createElement('div');
+        this.el = thumb;
+        const side = i % 2 === 1 ? 'left' : 'right';
+        thumb.className = 'flipbook-thumb flipbook-thumb-' + side;
+        const page = options.pages[i];
+
+        thumb.setAttribute('data-thumb-index', i);
+        thumb.style.height = height + 'px';
+        thumb.style.width = width + 'px';
+
+        const btnClose = document.createElement('span');
+        btnClose.className = 'thumb-btn-close skin-color skin-color-bg';
+        thumb.appendChild(btnClose);
+        btnClose.addEventListener('click', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            main.removeBookmark(thumb.getAttribute('data-thumb-index'));
+        });
+        btnClose.appendChild(main.createSVGIcon('close'));
+
+        thumbs.thumbs.push(thumb);
+
+        let hasBackCover = options.pages.length % 2 === 0;
+        const isCover = i === 0;
+        let isBackCover = hasBackCover && i === options.pages.length - 1;
+        let isDouble = false;
+
+        if (options.doublePage) {
+            hasBackCover = options.backCover;
+            isBackCover = hasBackCover && i === options.pages.length - 1;
+            isDouble = !isCover && !isBackCover;
+        }
+
+        let isLeft = false;
+        let isRight = false;
+
+        let pdfPageIndex = i + 1;
+        if (options.doublePage) {
+            pdfPageIndex = Math.ceil(i / 2) + 1;
+        }
+
+        isLeft = !isCover && i % 2 === 1 && !isBackCover;
+        isRight = !isCover && i % 2 === 0 && !isBackCover;
+
+        this.isLeft = isLeft;
+        this.isRight = isRight;
+        this.pdfPageIndex = pdfPageIndex;
+        this.isDouble = isDouble;
+        this.pdfMode = options.pdfMode;
+        this.thumbSrc = page.thumb;
+        this.height = height;
+
+        const pageNumber = i + 1;
+        thumb.setAttribute('data-page', pageNumber);
+
+        let title = pageNumber.toString();
+        if (options.pages[i] && options.pages[i].name) {
+            title = options.pages[i].name;
+        }
+
+        const pagesStr = title;
+
+        const span = document.createElement('span');
+        span.textContent = title;
+        span.className = 'skin-color flipbook-thumb-num';
+        thumb.appendChild(span);
+
+        thumb.setAttribute('data-pages', pagesStr);
+
+        if (options.thumbsStyle === 'overlay') {
+            options.thumbsCloseOnClick = true;
+        }
+
+        thumb.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+
+            let targetPage;
+
+            const ds = e.currentTarget.getAttribute('data-pages');
+            if (ds && ds.indexOf(',') !== -1) {
+                const parts = ds.split(',');
+                const low = Number(parts[0]);
+                const high = Number(parts[1]);
+                targetPage = options.rightToLeft ? high : low;
+            } else {
+                targetPage = Number(ds || e.currentTarget.getAttribute('data-page'));
+            }
+
+            if (!Number.isFinite(targetPage) || targetPage < 1) targetPage = 1;
+
+            main.goToPage(targetPage);
+
+            if (thumbs.active !== 'search' && options.thumbsCloseOnClick) {
+                main.toggleThumbs(false);
+            }
+        });
+    }
+
+    load() {
+        if (this.loaded) return;
+        this.loaded = true;
+        let thumbImg = document.createElement('img');
+
+        if (this.pdfMode) {
+            thumbImg = this.thumbs.getThumbFromPdf(this.pdfPageIndex, this.isLeft, this.isRight);
+        } else if (this.thumbSrc) {
+            thumbImg.src = this.thumbSrc;
+            if (this.isRight && this.isDouble) thumbImg.style.marginLeft = '-100%';
+        } else {
+            return;
+        }
+
+        this.el.appendChild(thumbImg);
+        thumbImg.style.height = this.height + 'px';
     }
 };
 
@@ -6700,6 +7022,10 @@ FLIPBOOK.Tooltip2 = class {
     constructor(wrapper) {
         this.wrapper = wrapper;
         this.tooltipEl = null;
+
+        this.activeTarget = null;
+        this.tooltipObserver = null;
+
         this.init();
     }
 
@@ -6735,11 +7061,8 @@ FLIPBOOK.Tooltip2 = class {
     handleTouchStart(e) {
         const target = e.target.closest('.flipbook-has-tooltip');
         if (target && !target.classList.contains('disabled')) {
-            // e.preventDefault();
             this.showTooltip(target);
-            setTimeout(() => {
-                this.hideTooltip();
-            }, 2000);
+            setTimeout(() => this.hideTooltip(), 2000);
         }
     }
 
@@ -6748,7 +7071,14 @@ FLIPBOOK.Tooltip2 = class {
     }
 
     showTooltip(target) {
-        this.tooltipEl.innerText = target.dataset.tooltip;
+        this.activeTarget = target;
+
+        target.setAttribute('aria-describedby', 'flipbook-tooltip');
+
+        this.observeTooltipChanges(target);
+
+        this.updateTooltipText();
+
         this.tooltipEl.style.opacity = 0;
         this.tooltipEl.style.display = 'block';
 
@@ -6760,27 +7090,21 @@ FLIPBOOK.Tooltip2 = class {
         let left = targetRect.left - wrapperRect.left + (targetRect.width - tooltipRect.width) / 2;
         let isBelow = false;
 
-        // Calculate arrow position (center of target relative to tooltip)
         let arrowLeft = targetRect.left - wrapperRect.left + targetRect.width / 2 - left;
         arrowLeft = Math.max(6, Math.min(tooltipRect.width - 6, arrowLeft));
 
-        // WRAPPER boundary checks instead of viewport
-        // If tooltip goes above wrapper
         if (top < 0) {
             top = targetRect.bottom - wrapperRect.top + 10;
             isBelow = true;
         }
-        // If tooltip goes below wrapper
         if (top + tooltipRect.height > wrapperRect.height) {
             top = wrapperRect.height - tooltipRect.height - 5;
         }
-        // If tooltip goes left of wrapper
         if (left < 0) {
             left = 5;
             arrowLeft = targetRect.left - wrapperRect.left + targetRect.width / 2 - left;
             arrowLeft = Math.max(6, Math.min(tooltipRect.width - 6, arrowLeft));
         }
-        // If tooltip goes right of wrapper
         if (left + tooltipRect.width > wrapperRect.width) {
             left = wrapperRect.width - tooltipRect.width - 5;
             arrowLeft = targetRect.left - wrapperRect.left + targetRect.width / 2 - left;
@@ -6793,13 +7117,52 @@ FLIPBOOK.Tooltip2 = class {
         this.tooltipEl.style.top = `${top}px`;
         this.tooltipEl.style.left = `${left}px`;
         this.tooltipEl.style.setProperty('--arrow-left', `${arrowLeft}px`);
-        this.tooltipEl.style.opacity = 1;
         this.tooltipEl.classList.toggle('below', isBelow);
+
+        this.tooltipEl.style.opacity = 1;
+    }
+
+    updateTooltipText() {
+        if (!this.activeTarget) return;
+        this.tooltipEl.innerText = this.activeTarget.dataset.tooltip || '';
+    }
+
+    observeTooltipChanges(target) {
+        if (this.tooltipObserver) {
+            this.tooltipObserver.disconnect();
+            this.tooltipObserver = null;
+        }
+
+        this.tooltipObserver = new MutationObserver((mutations) => {
+            if (!this.activeTarget || this.activeTarget !== target) return;
+
+            for (const m of mutations) {
+                if (m.type === 'attributes' && m.attributeName === 'data-tooltip') {
+                    this.updateTooltipText();
+                    break;
+                }
+            }
+        });
+
+        this.tooltipObserver.observe(target, {
+            attributes: true,
+            attributeFilter: ['data-tooltip'],
+        });
     }
 
     hideTooltip() {
         this.tooltipEl.style.opacity = 0;
         this.tooltipEl.style.display = 'none';
-        this.tooltipEl.removeAttribute('aria-describedby');
+
+        if (this.activeTarget) {
+            this.activeTarget.removeAttribute('aria-describedby');
+        }
+
+        this.activeTarget = null;
+
+        if (this.tooltipObserver) {
+            this.tooltipObserver.disconnect();
+            this.tooltipObserver = null;
+        }
     }
 };

@@ -4,7 +4,7 @@ Donate link: https://codecanyon.net/item/real3d-flipbook-wordpress-plugin/694258
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 4.11.2
+Stable tag: 4.19
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -500,6 +500,29 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 * Improvement: Faster page loading
 * Improvement: Flip animation performance
 * Fix: Page resolution for PDF Flipbook
+
+= 4.19 =
+* Fix: Security issue - Broken Access Control
+* Improvement: Book pages are not cut off while flipping in mode "webgl"
+* Improvement: More realistic shadows in modes "3d" and "2d" 
+* Fix: Crashing on mobile in modes "3d" and "2d" 
+* Improvement: Thumbnails loading performance 
+* Improvement: Text search performance 
+* New: Zoom in / out on page click
+* New: Option "Minimal view" - show only fullscreen button when book is small
+* New: Option "Minimal view threshold" - breakpoint for minimal view
+* New: Option "Range chunk size" - partial PDF loading request size in KB
+* New: Zoom with mouse wheel + CTRL
+* New: Zoom in & zoom out on page click instead of double click
+* Fix: Disable zoom in & zoom out while auto flip is active
+* Fix: Flipbok pages not loading in mode "3d" in Firefox
+* Improvement: Table of Contents and search results styling
+* Fix: Error when youtube video is on flipbook page
+* Fix: First page & last page arrows in RTL
+* Fix: Lightbox start page option
+* Fix: Table of Contents sub items stay open after Table of Contents closes
+* Fix: Corner curl stops working after going back to first page 
+* Improvement: Disable zooming when autoplay is active
 
 
 == Upgrade to PRO for More Features ==

@@ -146,10 +146,10 @@ class Real3DFlipbook
 	{
 		global $l10n;
 
-		$capability = get_option("real3dflipbook_capability");
+		$capability = get_option('real3dflipbook_capability', 'publish_posts');
+
 		$arg = $this->products['r3d'];
 		$flipbook = $arg['key'];
-		if (!$capability) $capability = "publish_posts";
 
 		if (current_user_can("edit_posts")) {
 			add_action('media_buttons', array($this, 'insert_flipbook_button'));
@@ -589,7 +589,13 @@ class Real3DFlipbook
 
 				$flipbook['name'] = $title;
 				$flipbook['post_id'] = $post_ID;
-				$flipbook['viewMode'] = !$flipbook['webgl'] ? $flipbook['viewMode'] : $flipbook['webgl'];
+
+				$webgl = isset($flipbook['webgl']) ? $flipbook['webgl'] : false;
+				$viewMode = isset($flipbook['viewMode']) ? $flipbook['viewMode'] : null;
+
+				$flipbook['viewMode'] = !$webgl ? $viewMode : $webgl;
+
+
 				if (!$flipbook['viewMode']) {
 					unset($flipbook['viewMode']);
 				}
@@ -766,8 +772,7 @@ class Real3DFlipbook
 	public function admin_menu()
 	{
 
-		$capability = get_option("real3dflipbook_capability");
-		if (!$capability) $capability = "publish_posts";
+		$capability = get_option('real3dflipbook_capability', 'publish_posts');
 
 		add_menu_page(
 			'Real3D Flipbook',
@@ -1551,6 +1556,32 @@ a:hover .link-icon {
 			}
 		}
 
+		$fbPages = $flipbook['pages'];
+
+		$basePath = r3d_common_folder_from_pages($fbPages);
+
+		if ($basePath) {
+
+			foreach ($fbPages as $i => $page) {
+
+				if (!is_array($page)) continue;
+
+				foreach (['src', 'thumb', 'json'] as $key) {
+
+					if (empty($page[$key]) || !is_string($page[$key])) continue;
+
+					$url = str_replace('\\', '/', $page[$key]);
+
+					if (strpos($url, $basePath) === 0) {
+						$fbPages[$i][$key] = substr($url, strlen($basePath));
+					}
+				}
+			}
+
+			$flipbook['basePath'] = $basePath;
+			$flipbook['pages'] = $fbPages;
+		}
+
 		$output = '<div class="real3dflipbook" id="' . esc_attr($bookId) . '" style="position:absolute;"></div>';
 		$script_handle = 'real3d-flipbook-options-' . esc_js($bookId);
 		if (!wp_script_is($script_handle, 'registered')) {
@@ -1617,6 +1648,52 @@ if (!function_exists("r3d_array_merge_deep")) {
 	}
 }
 
+if (!function_exists("r3d_common_folder_from_pages")) {
+	function r3d_common_folder_from_pages(array $pages, array $keys = ['src', 'thumb', 'json']): ?string
+	{
+		$dirs = [];
+
+		foreach ($pages as $p) {
+			if (!is_array($p)) continue;
+
+			foreach ($keys as $k) {
+				if (empty($p[$k]) || !is_string($p[$k])) continue;
+
+				$u = str_replace('\\', '/', $p[$k]);
+				$u = preg_split('/[?#]/', $u, 2)[0]; // strip query/fragment
+
+				$pos = strrpos($u, '/');
+				if ($pos === false) continue;
+
+				$dirs[] = substr($u, 0, $pos + 1); // keep trailing slash
+			}
+		}
+
+		if (count($dirs) < 2) return null;
+
+		// Common prefix of segments
+		$common = explode('/', rtrim($dirs[0], '/'));
+
+		for ($i = 1; $i < count($dirs); $i++) {
+			$seg = explode('/', rtrim($dirs[$i], '/'));
+			$max = min(count($common), count($seg));
+
+			$j = 0;
+			while ($j < $max && $common[$j] === $seg[$j]) $j++;
+
+			$common = array_slice($common, 0, $j);
+			if (!$common) return null;
+		}
+
+		$base = implode('/', $common) . '/';
+
+		// sanity: avoid returning something too generic
+		if (strlen($base) < 12) return null;
+
+		return $base;
+	}
+}
+
 function r3dfb_getDefaults()
 {
 	return array(
@@ -1635,6 +1712,7 @@ function r3dfb_getDefaults()
 		'pageTextureSizeSmall' => '1500',
 		'pageTextureSizeMobile' => '1500',
 		'pageTextureSizeMobileSmall' => '1000',
+		'rangeChunkSize' => '256',
 		'minPixelRatio' => '1',
 		'pdfTextLayer' => 'true',
 		'zoomMin' => '0.9',
@@ -1655,6 +1733,8 @@ function r3dfb_getDefaults()
 		'responsiveView' => 'true',
 		'responsiveViewTreshold' => '768',
 		'responsiveViewRatio' => '1',
+		'minimalView' => 'true',
+		'minimalViewBreakpoint' => '600',
 		'cover' => 'true',
 		'backCover' => 'true',
 		'scaleCover' => 'false',
@@ -1702,7 +1782,8 @@ function r3dfb_getDefaults()
 			'currentPage' => array(
 				'enabled' => 'false'
 			),
-			'pdfUrl' => ''
+			'pdfUrl' => '',
+			'minimalViewBreakpoint' => '360'
 
 		),
 		'lightboxCssClass' => '',
@@ -1765,7 +1846,7 @@ function r3dfb_getDefaults()
 		),
 		'btnAutoplay' => array(
 			'enabled' => 'true',
-			'title' => __('Autoplay', 'real3d-flipbook')
+			'title' => __('Auto flip', 'real3d-flipbook')
 		),
 		'btnNext' => array(
 			'enabled' => 'true',
@@ -1849,7 +1930,7 @@ function r3dfb_getDefaults()
 		),
 		'btnTools' => array(
 			'enabled' => 'true',
-			'title' => __('Tools', 'real3d-flipbook')
+			'title' => __('More', 'real3d-flipbook')
 		),
 		'btnClose' => array(
 			'enabled' => 'true',

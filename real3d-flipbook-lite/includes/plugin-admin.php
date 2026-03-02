@@ -35,6 +35,12 @@ function r3d_save_general_callback()
 
 	check_ajax_referer('r3d_nonce', 'security');
 
+	$capability = get_option('real3dflipbook_capability', 'publish_posts');
+
+	if (!current_user_can($capability)) {
+		wp_die(__('You do not have permission to perform this action.'), 403);
+	}
+
 	unset($_POST['security'], $_POST['action']);
 
 	$data = $_POST;
@@ -45,17 +51,22 @@ function r3d_save_general_callback()
 
 	update_option('real3dflipbook_global', $data);
 
-	if (isset($data["manageFlipbooks"])) {
-		switch ($data["manageFlipbooks"]) {
-			case "Administrator":
-				update_option("real3dflipbook_capability", "activate_plugins");
-				break;
-			case "Editor":
-				update_option("real3dflipbook_capability", "publish_pages");
-				break;
-			default:
-				update_option("real3dflipbook_capability", "publish_posts");
-		}
+
+
+
+	if (isset($data['manageFlipbooks'])) {
+
+		$role = sanitize_text_field($data['manageFlipbooks']);
+
+		$capability_map = array(
+			'Administrator' => 'activate_plugins',
+			'Editor'        => 'publish_pages',
+			'Author'        => 'publish_posts',
+		);
+
+		$capability = $capability_map[$role] ?? 'publish_posts';
+
+		update_option('real3dflipbook_capability', $capability);
 	}
 
 	wp_die();

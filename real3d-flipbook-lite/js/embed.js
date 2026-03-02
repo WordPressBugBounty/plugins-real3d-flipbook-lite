@@ -150,6 +150,31 @@
 
         var book;
 
+        function expandBasePath(o) {
+          if (!o || !o.basePath || !Array.isArray(o.pages)) return;
+
+          const base = o.basePath;
+
+          if (typeof base !== "string" || base.length < 8) return;
+
+          for (const page of o.pages) {
+            if (!page || typeof page !== "object") continue;
+
+            for (const key of ["src", "thumb", "json"]) {
+              if (!page[key] || typeof page[key] !== "string") continue;
+
+              const value = page[key];
+
+              if (/^(https?:)?\/\//i.test(value)) continue;
+
+              if (value.startsWith(base)) continue;
+
+              page[key] = base + value;
+            }
+          }
+        }
+        expandBasePath(o);
+
         switch (o.mode) {
           case "normal":
             bookContainer.className += "-" + bookContainer.id;

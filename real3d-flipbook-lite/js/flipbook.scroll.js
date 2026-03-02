@@ -4,9 +4,6 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
     constructor(el, wrapper, main, options) {
         super(main, options);
 
-        if (this.singlePage) {
-            this.view = 1;
-        }
         this.view = 1;
 
         this.rightIndex = 0;
@@ -31,8 +28,6 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
             page.initObserver();
             this.pagesArr.push(page);
         }
-
-        //make new div that has width equal to page width, height equal to page height * number of pages
 
         this.prevPageEnabled = false;
 
@@ -310,6 +305,10 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
     canFlipNext() {
         return this.rightIndex + 1 < this.options.numPages;
     }
+
+    canFlipPrev() {
+        return this.rightIndex > 0;
+    }
 };
 
 FLIPBOOK.PageScroll = class {
@@ -322,7 +321,7 @@ FLIPBOOK.PageScroll = class {
         this.html = html;
         this.index = index;
         this.wrapper = document.createElement('div');
-        this.wrapper.className = 'flipbook-scroll-page';
+        this.wrapper.className = 'flipbook-scroll-page flipbook-book-shadow';
         this.wrapper.style.marginBottom = this.options.pageGap + 'px';
         this.main = main;
         this.book = book;
@@ -337,7 +336,7 @@ FLIPBOOK.PageScroll = class {
 
         this.html = document.createElement('div');
         this.html.className = 'flipbook-page3-html';
-        this.wrapper.appendChild(this.html);
+        this.inner.appendChild(this.html);
         this.html.style.width = (1000 * this.options.pageWidth) / this.options.pageHeight + 'px';
         this.html.style.transform = 'scale(' + this.options.pageHeight / 1000 + ') translateZ(0)';
 

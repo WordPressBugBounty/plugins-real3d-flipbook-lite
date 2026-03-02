@@ -213,14 +213,14 @@ var pluginDir = (function (scripts) {
       "responsiveView",
       "checkbox",
       "Responsive view",
-      "Switching from two page layout to one page layout if flipbook width is below certain treshold"
+      "Shows one page layout if flipbook width is below the breakpoint."
     );
 
     addOptionGeneral(
       "responsiveViewTreshold",
       "text",
-      "Responsive view treshold",
-      "Treshold (container width in px) under which responsive view is activated"
+      "Responsive view breakpoint",
+      "Container width in px under which responsive view is activated."
     );
 
     addOptionGeneral(
@@ -228,6 +228,20 @@ var pluginDir = (function (scripts) {
       "text",
       "Responsive view ratio",
       "Aspect ratio (container width / height) under which responsive view is activated"
+    );
+
+    addOptionGeneral(
+      "minimalView",
+      "checkbox",
+      "Minimal UI view",
+      "Shows only fullscreen button and navigation arrows if flipbook width is below the breakpoint."
+    );
+
+    addOptionGeneral(
+      "minimalViewBreakpoint",
+      "text",
+      "Minimal view breakpoint",
+      "Container width in px under which minimal view is activated."
     );
 
     addOptionGeneral(
@@ -246,6 +260,24 @@ var pluginDir = (function (scripts) {
       "height of rendered PDF pages in px",
       null,
       true
+    );
+
+    addOptionGeneral(
+      "rangeChunkSize",
+      "dropdown",
+      "PDF range chunk size",
+      "Range request siz in KB. Larger is better for large PDFs, smaller is better for small PDFs.",
+      [
+        { display: "64 KB", value: "64" },
+        { display: "128 KB", value: "128" },
+        { display: "256 KB", value: "256" },
+        { display: "512 KB", value: "512" },
+        { display: "256 KB", value: "256" },
+        { display: "512 KB", value: "512" },
+        { display: "1 MB", value: "1024" },
+        { display: "2 MB", value: "2048" },
+      ],
+      64
     );
 
     addOptionGeneral(
@@ -391,11 +423,11 @@ var pluginDir = (function (scripts) {
       true
     );
 
-    addOptionGeneral("autoplayOnStart", "checkbox", "Autoplay on start");
+    addOptionGeneral("autoplayOnStart", "checkbox", "Auto flip on start");
 
-    addOptionGeneral("autoplayLoop", "checkbox", "Autoplay loop");
+    addOptionGeneral("autoplayLoop", "checkbox", "Auto flip loop");
 
-    addOptionGeneral("autoplayInterval", "text", "Autoplay interval (ms)");
+    addOptionGeneral("autoplayInterval", "text", "Auto flip interval (ms)");
 
     addOptionGeneral(
       "rightToLeft",
@@ -1058,7 +1090,7 @@ var pluginDir = (function (scripts) {
       Swal.fire({
         title: "Upgrade to PRO",
         html:
-          "PDF links, PDF text search, Interactive pages, Higher zoom level, Global settings, Bookmark, Autoplay, Customize toolbar, Customize UI and more<br/>" +
+          "PDF links, PDF text search, Interactive pages, Higher zoom level, Global settings, Bookmark, Auto flip, Customize toolbar, Customize UI and more<br/>" +
           '<a href="https://real3dflipbook.com?source=wp_lite_buy_pro_popup" target="_blank">View Real3D Flipbook PRO Demo</a>',
         icon: "warning",
         showCancelButton: true,
