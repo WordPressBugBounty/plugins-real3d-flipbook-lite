@@ -35,9 +35,7 @@ function r3d_save_general_callback()
 
 	check_ajax_referer('r3d_nonce', 'security');
 
-	$capability = get_option('real3dflipbook_capability', 'publish_posts');
-
-	if (!current_user_can($capability)) {
+	if (!current_user_can('manage_options')) {
 		wp_die(__('You do not have permission to perform this action.'), 403);
 	}
 

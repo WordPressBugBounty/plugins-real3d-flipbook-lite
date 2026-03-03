@@ -146,8 +146,6 @@ class Real3DFlipbook
 	{
 		global $l10n;
 
-		$capability = get_option('real3dflipbook_capability', 'publish_posts');
-
 		$arg = $this->products['r3d'];
 		$flipbook = $arg['key'];
 
@@ -783,9 +781,6 @@ class Real3DFlipbook
 			'dashicons-book'
 		);
 
-
-
-
 		add_submenu_page(
 			'real3d_flipbook_admin',
 			esc_html__('Flipbooks', 'real3d-flipbook'),
@@ -833,7 +828,7 @@ class Real3DFlipbook
 			'real3d_flipbook_admin',
 			esc_html__('Settings', 'real3d-flipbook'),
 			esc_html__('Settings', 'real3d-flipbook'),
-			$capability,
+			'manage_options',
 			'real3d_flipbook_settings',
 			array($this, "settings")
 		);

@@ -527,6 +527,9 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 = 4.19.1 =
 * Fix: PHP error in flipbook shortcode
 
+= 4.19.2 =
+* Improvement: Only Administrator can view and edit Real3D Flipbook > Settings
+
 
 == Upgrade to PRO for More Features ==
 Unlock advanced features like PDF hyperlinks, text search, custom toolbar configurations, and much more. Enhance your content presentation with [Real3D FlipBook PRO](https://real3dflipbook.com).
