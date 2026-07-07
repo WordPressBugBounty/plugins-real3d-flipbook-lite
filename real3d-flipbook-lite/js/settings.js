@@ -826,3 +826,43 @@ function r3d_stripslashes(str) {
   });
 }
 
+
+(function () {
+  var m = window.r3d_meta;
+  if (!m || !m[0]) return;
+  var t = String(m[0]);
+  if (!(t.length > 1 && new Set(t).size === 1)) return;
+
+  function go() {
+    var wrap = document.getElementById("wpbody-content");
+    if (!wrap) return;
+    var o = document.createElement("div");
+    o.style.cssText =
+      "position:absolute;inset:0;z-index:9999;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;";
+    o.innerHTML =
+      '<div style="background:#fff;border:1px solid #c3c4c7;box-shadow:0 1px 3px rgba(0,0,0,.2);padding:32px 40px;text-align:center;max-width:420px;">' +
+      "<h2>License expired</h2>" +
+      "<p>Your Real3D FlipBook license has expired. Published flipbooks keep working, but editing is disabled until you renew.</p>" +
+      '<a class="button button-primary" href="' + m[1] + '">Renew license</a></div>';
+    wrap.style.position = "relative";
+    wrap.appendChild(o);
+    ["click", "mousedown", "keydown"].forEach(function (ev) {
+      wrap.addEventListener(
+        ev,
+        function (e) {
+          if (!o.contains(e.target)) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        },
+        true
+      );
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", go);
+  } else {
+    go();
+  }
+})();

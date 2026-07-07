@@ -61,7 +61,7 @@
 		</ol>
 		<p>
 			<strong>
-				<a href="<?php echo esc_url('https://1.envato.market/Qy7EA9'); ?>" target="_blank">
+				<a href="<?php echo esc_url('https://real3dflipbook.com/#purchase'); ?>" target="_blank">
 					<?php esc_html_e('Upgrade to PRO Now', 'real3d-flipbook'); ?>
 				</a>
 			</strong>

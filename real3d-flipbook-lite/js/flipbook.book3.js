@@ -4,23 +4,53 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
     constructor(el, main, options) {
         super(main, options);
 
+        // Decouple book layout coordinates from texture size, matching WebGL mode.
+        // Without this, pageWidth/pageHeight inherit pageTextureLarge (e.g. 2500),
+        // which makes iOS allocate compositor backing stores per page at the full
+        // texture size and blows the GPU memory budget. PanZoom scales the book
+        // visually; the texture <img> still renders at full pageTextureLarge inside.
+        const aspect = options.pageWidth / options.pageHeight;
+        options.pageHeight = 1000;
+        options.pageWidth = Math.round(1000 * aspect);
+        this.pageWidth = options.pageWidth;
+        this.pageHeight = options.pageHeight;
+
         // Set up the wrapper and parent container
         this.wrapper = el;
         this.wrapper.classList.add('flipbook-book3');
         this.bookLayer = this.wrapper.parentNode;
+        this.bookLayer.classList.add('flipbook-mode-3d');
+
+        // Insert a viewport between bookLayer and the book. Mirrors
+        // BookScroll's bookLayer/viewport split — overlays appended
+        // to bookLayer afterwards (e.g. arrow buttons, flipbook-nav)
+        // stay fixed because they're siblings of the viewport, not
+        // descendants of the panned book.
+        this.viewport = document.createElement('div');
+        this.viewport.className = 'flipbook-pan-viewport';
+        this.bookLayer.insertBefore(this.viewport, this.wrapper);
+        this.viewport.appendChild(this.wrapper);
 
         this.flipEasing = 'easeOutQuad';
         this.translateZ = '';
 
-        this.iscroll = new FLIPBOOK.IScroll(this.bookLayer, {
-            zoom: true,
-            scrollX: true,
-            scrollY: true,
-            scrollbars: true,
-            keepInCenterV: true,
-            keepInCenterH: true,
-            freeScroll: true,
-            preventDefault: false,
+        // Set book's natural layout size before PanZoom captures it.
+        this.wrapper.style.width = `${2 * this.pageWidth}px`;
+        this.wrapper.style.height = `${this.pageHeight}px`;
+
+        this._realScalePages = [];
+
+        const center = document.createElement('div');
+        center.className = 'flipbook-center-container3';
+        center.style.cssText = `width:${this.pageWidth * 2}px;height:${this.pageHeight}px;`;
+        this.wrapper.appendChild(center);
+        this.centerContainer = center;
+
+        this.iscroll = new FLIPBOOK.PanZoom(this.viewport, {
+            zoomMin: options.zoomMin || 0.95,
+            zoomMax: options.zoomMax || 4,
+            naturalWidth: 2 * this.pageWidth,
+            naturalHeight: this.pageHeight,
         });
 
         main.on('disableIScroll', this.disableIscroll.bind(this));
@@ -34,30 +64,8 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             options.main.onZoom(this.iscroll.scale / this.ratio);
             this.updateVisiblePages();
 
-            const zoomed = options.main.zoom > 1;
-
-            if (this.zoomed !== zoomed) {
-                const scrollOptions = this.iscroll.options;
-                scrollOptions.eventPassthrough = zoomed ? '' : 'vertical';
-                scrollOptions.freeScroll = zoomed;
-                this.iscroll.refresh();
-                this.zoomed = zoomed;
-            }
+            this.zoomed = options.main.zoom > 1;
         });
-
-        this.wrapper.style.width = `${2 * this.pageWidth}px`;
-        this.wrapper.style.height = `${this.pageHeight}px`;
-
-        const center = document.createElement('div');
-
-        center.className = 'flipbook-center-container3';
-        center.style.cssText = `
-			width:${this.pageWidth * 2}px;
-			height:${this.pageHeight}px;
-			`;
-
-        this.wrapper.appendChild(center);
-        this.centerContainer = center;
 
         const perspective = this.options.perspective || (this.options.viewMode === '3d' ? 3 * this.pageHeight : 200000);
         this.centerContainer.style.perspective = `${perspective}px`;
@@ -212,7 +220,9 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         time = time || 0;
         this.zoom = zoom;
 
-        time = 0;
+        // Any zoom change reverts the real-size commit. The 150ms timer
+        // in zoomEnd will re-commit if the new zoom > 1 settles.
+        this._resetRealSize();
 
         var iscroll = this.iscroll;
         if (iscroll) {
@@ -224,6 +234,12 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         if (this.wrapperW != w) {
             this.wrapper.style.width = w + 'px';
             this.wrapperW = w;
+            // Keep PanZoom's natural size in sync so its scroll-mode
+            // bounds & focal math use the new wrapper width on view
+            // changes (single ↔ spread).
+            if (this.iscroll && this.iscroll.setNaturalSize) {
+                this.iscroll.setNaturalSize(w, this.pageHeight);
+            }
         }
     }
 
@@ -423,7 +439,6 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         }
         this.updateBookPosition();
 
-        this.options.main.setLoadingProgress(0.1);
         if (left && !this.singlePage) {
             await this.loadPageAsync(left, 'back');
             this.pageLoaded(left, 'back');
@@ -432,7 +447,6 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             await this.loadPageAsync(right, 'front');
             this.pageLoaded(right, 'front');
         }
-        this.options.main.setLoadingProgress(1);
 
         if (left && !this.singlePage) await this.loadHTMLAsync(left, 'back');
         if (right) await this.loadHTMLAsync(right, 'front');
@@ -454,6 +468,16 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             await this.loadPageAsync(left, 'front');
             this.pageLoaded(left, 'front');
         }
+
+        // Schedule real-size commit 150ms after visible-pages update settles.
+        // Covers both zoom (zoomEnd → updateVisiblePages) and page flips
+        // (goToPage complete → updateVisiblePages). Tier images are loaded
+        // by the awaits above so sizeFront/sizeBack reflect current state.
+        clearTimeout(this._commitTimer);
+        this._commitTimer = setTimeout(() => {
+            this._commitTimer = null;
+            this._commitRealSize();
+        }, 150);
     }
 
     enable() {
@@ -522,6 +546,9 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         if (!this.enabled || this.flipping || isNaN(index)) {
             return;
         }
+
+        // Flip starts → revert real-size pages to default for performance.
+        this._resetRealSize();
 
         if (this.singlePage || index % 2 != 0) {
             index--;
@@ -638,8 +665,71 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         if (phase === 'start') {
             this.dragging = true;
             this.main.dragPage();
+            // Snapshot focus + start position so portrait one-page-view drag
+            // (below) can keep referencing them after centerContainer moves.
+            this._dragStartFocus = (this.view == 1 && !this.singlePage)
+                ? (this.isFocusedLeft() ? 'left' : (this.isFocusedRight() ? 'right' : null))
+                : null;
+            this._dragStartPos = this.centerContainerPosition;
             return;
         }
+
+        // Portrait one-page view (view == 1, double-page layout): a drag in
+        // the focus-shift direction (focused-left → swipe-left, focused-right
+        // → swipe-right) translates centerContainer with the finger so the
+        // slide follows touch instead of jumping on touchend. Cross-spread
+        // drags (focused-left + swipe-right etc.) still use the rotation
+        // flip below.
+        const slideMode = this._dragStartFocus
+            && ((this._dragStartFocus === 'left' && angle > 0)
+                || (this._dragStartFocus === 'right' && angle < 0));
+
+        if (slideMode && phase === 'move' && fingerCount <= 1) {
+            if (Math.abs(distanceY) > Math.abs(distanceX) && Math.abs(distanceY) > 10) return;
+            if (event && event.cancelable) event.preventDefault();
+            if (distance <= threshold) return;
+            // distanceX is screen px; centerContainer translate is layout px
+            // (PanZoom scales the wrapper for fit). Convert so the book
+            // moves 1:1 with the finger.
+            const scale = (this.iscroll && this.iscroll.scale) || 1;
+            const distanceLayout = distanceX / scale;
+            const startPos = this._dragStartPos;
+            const endPos = this._dragStartFocus === 'left' ? -this.pageWidth : 0;
+            let pos = startPos + distanceLayout;
+            // Clamp to [endPos, startPos] (or [startPos, endPos] when sliding
+            // right) so the user can't overshoot past either focus position.
+            if (this._dragStartFocus === 'left') pos = Math.max(endPos, Math.min(startPos, pos));
+            else pos = Math.min(endPos, Math.max(startPos, pos));
+            this.centerContainer.style.transform = 'translateX(' + pos + 'px) ' + this.translateZ;
+            this.centerContainerPosition = pos;
+            return;
+        }
+
+        if (slideMode && (phase === 'end' || phase === 'cancel')) {
+            // Commit if past 20% of page width OR a fast flick (vx > 0.8 px/ms,
+            // matching BookSwipe's fling threshold). Otherwise snap back.
+            // nextPage/prevPage in view==1+focused* will call focusRight/focusLeft
+            // which animates from the current (dragged) centerContainerPosition
+            // to the target — smooth continuation, no jump.
+            // distance is screen px; pageWidth is layout px — convert to compare.
+            const scale = (this.iscroll && this.iscroll.scale) || 1;
+            const distanceLayout = distance / scale;
+            const vx = duration ? distanceX / duration : 0;
+            const fling = Math.abs(vx) > 0.8;
+            const commit = fingerCount <= 1 && (distanceLayout > this.pageWidth * 0.2 || fling);
+            if (commit) {
+                angle > 0 ? this.nextPage() : this.prevPage();
+            } else {
+                this._dragStartFocus === 'left' ? this.focusLeft(200) : this.focusRight(200);
+            }
+            this._dragStartFocus = null;
+            this.dragging = false;
+            return;
+        }
+
+        // Reached end without slideMode engaging — clear snapshot so it
+        // doesn't leak into the next gesture.
+        if (phase === 'end' || phase === 'cancel') this._dragStartFocus = null;
 
         if ((phase === 'end' || phase === 'cancel') && fingerCount <= 1 && distance > threshold) {
             angle > 0 ? this.nextPage() : this.prevPage();
@@ -647,7 +737,18 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             return;
         }
 
-        if (phase === 'move' && fingerCount <= 1 && this.dragging && distance > threshold) {
+        if (phase === 'move' && fingerCount <= 1) {
+            // Treat clearly-vertical drags as page scroll — bail so the
+            // browser handles it natively. Anything else (horizontal or
+            // ambiguous) we consume; preventDefault stops native pan-y
+            // from running concurrently with the flip preview.
+            if (Math.abs(distanceY) > Math.abs(distanceX) && Math.abs(distanceY) > 10) {
+                return;
+            }
+            if (event && event.cancelable) event.preventDefault();
+
+            if (!this.dragging || distance <= threshold) return;
+
             let increment = angle > 0 ? (this.singlePage ? 1 : 2) : this.singlePage ? -1 : -2;
             if ((angle > 0 && !this.nextEnabled) || (angle < 0 && !this.prevEnabled)) {
                 return;
@@ -732,10 +833,10 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
 
                 if (angle < 90) {
                     flippping = right;
-                    if (newRight) newRight.hide();
+                    if (newRight && newRight !== flippping) newRight.hide();
                 } else {
                     flippping = newRight;
-                    right.hide();
+                    if (right !== flippping) right.hide();
                 }
                 flippping.show();
                 flippping._setAngle(angle);
@@ -755,10 +856,10 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
 
                 if (angle > -90) {
                     flippping = left;
-                    if (newLeft) newLeft.hide();
+                    if (newLeft && newLeft !== flippping) newLeft.hide();
                 } else {
                     flippping = newLeft;
-                    left.hide();
+                    if (left !== flippping) left.hide();
                 }
                 flippping.show();
                 flippping._setAngle(180 + angle);
@@ -805,10 +906,13 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         var main = this.main;
         var w = main.wrapperW;
         var h = main.wrapperH - 2 * main.bookVerticalPadding;
-        var bw = main.bookW;
-        var bh = main.bookH;
-        var pw = main.pageW;
-        var ph = main.pageH;
+        // Use Book3's normalized 1000-tall layout coords (not main.bookH/pageH which
+        // were cached at texture size). PanZoom's scale then maps directly to the
+        // user-facing zoom value without any compensation factor.
+        var bw = 2 * this.pageWidth;
+        var bh = this.pageHeight;
+        var pw = this.pageWidth;
+        var ph = this.pageHeight;
         var r1 = w / h;
         var r2 = pw / ph;
         var options = this.options;
@@ -882,6 +986,28 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         this.options.main.turnPageComplete();
     }
 
+    // For each currently visible page, resize CSS to (pageWidth × zoom) ×
+    // (pageHeight × zoom) and counter-scale the wrapper transform by 1/zoom.
+    // Visual stays the same; the IMG inside (height:100%) grows to native
+    // bitmap resolution → Safari rasterizes the layer sharp instead of
+    // GPU-stretching the cached fit-size raster. Reverted on any zoom
+    // change or page flip via _resetRealSize() for performance.
+    _commitRealSize() {
+        if (!this.zoom || this.zoom <= 1) return;
+        this._resetRealSize();
+        this.pagesArr.forEach((p) => {
+            if (p.hidden) return;
+            p.setRealSize(this.zoom);
+            this._realScalePages.push(p);
+        });
+    }
+
+    _resetRealSize() {
+        if (!this._realScalePages || !this._realScalePages.length) return;
+        this._realScalePages.forEach((p) => p.resetSize());
+        this._realScalePages = [];
+    }
+
     isFocusedRight() {
         var center = this.view == 1 ? -this.pageWidth / 2 : 0;
         if (this.singlePage) {
@@ -919,9 +1045,6 @@ FLIPBOOK.Page3 = class {
 
         var options = book.options;
 
-        let preloaderSrc = options.pagePreloader || options.assets.spinner;
-        let preloaderClass = options.pagePreloader ? 'flipbook-page-preloader-image' : 'flipbook-page-preloader';
-
         this.front = document.createElement('div');
         this.wrapper.appendChild(this.front);
         this.front.className = 'flipbook-page3-inner flipbook-page3-inner-front';
@@ -946,9 +1069,7 @@ FLIPBOOK.Page3 = class {
 
         this.frontHtmlContentVisible = false;
 
-        this.preloaderFront = new Image();
-        this.preloaderFront.src = preloaderSrc;
-        this.preloaderFront.className = preloaderClass;
+        this.preloaderFront = this._createSpinner();
         this.front.appendChild(this.preloaderFront);
 
         if (!book.singlePage) {
@@ -972,9 +1093,7 @@ FLIPBOOK.Page3 = class {
 
             this.backHtmlContentVisible = false;
 
-            this.preloaderBack = new Image();
-            this.preloaderBack.src = preloaderSrc;
-            this.preloaderBack.className = preloaderClass;
+            this.preloaderBack = this._createSpinner();
             this.back.appendChild(this.preloaderBack);
         }
 
@@ -989,10 +1108,112 @@ FLIPBOOK.Page3 = class {
         this.wrapper.style.left = String(this.book.options.pageWidth - 1) + 'px';
     }
 
-    load(side, size, callback) {
-        // var pageSize = this.book.pageHeight * this.book.iscroll.scale * window.devicePixelRatio;
+    // Scale up the page CSS box to (pageWidth × s) × (pageHeight × s) and
+    // counter-shrink via wrapper transform: scale(1/s). The IMG inside
+    // (height:100%) grows to s× CSS pixels — Safari rasterizes the layer
+    // at that size, then the visible scale(1/s) makes it look correct
+    // (sharp downsampling). HTML overlay is also scaled up so its content
+    // fills the larger CSS box.
+    setRealSize(s) {
+        if (this._realScale === s) return;
+        this._realScale = s;
         var o = this.options;
-        // var size = pageSize < o.pageTextureSizeSmall ? o.pageTextureSizeSmall : o.pageTextureSize;
+        var pw = o.pageWidth * s;
+        var ph = o.pageHeight * s;
+
+        this.wrapper.style.width = pw + 'px';
+        this.wrapper.style.height = ph + 'px';
+        // Override CSS .flipbook-page3 { transform-origin: 0 50% } —
+        // with a larger CSS box, scale(1/s) anchored at 0 50% pushes
+        // the visual top down by (s-1) × pageHeight/2 ≈ off-screen.
+        // 0 0 anchors at the wrapper's top-left so visual position is
+        // preserved. rotateY pivot is unaffected (only x of origin matters).
+        this.wrapper.style.transformOrigin = '0 0';
+        this._applyWrapperTransform();
+
+        var t = 'scale(' + s + ')';
+        if (this.htmlFront) {
+            this.htmlFront.style.transform = (o.doublePage && this.index > 0)
+                ? t + ' translateX(-100%)'
+                : t;
+        }
+        if (this.htmlBack) {
+            this.htmlBack.style.transform = t;
+        }
+    }
+
+    resetSize() {
+        if (!this._realScale || this._realScale === 1) return;
+        this._realScale = 1;
+        var o = this.options;
+
+        this.wrapper.style.width = o.pageWidth + 'px';
+        this.wrapper.style.height = o.pageHeight + 'px';
+        this.wrapper.style.transformOrigin = '';
+        this._applyWrapperTransform();
+
+        var t = 'scale(1)';
+        if (this.htmlFront) {
+            this.htmlFront.style.transform = (o.doublePage && this.index > 0)
+                ? t + ' translateX(-100%)'
+                : t;
+        }
+        if (this.htmlBack) {
+            this.htmlBack.style.transform = t;
+        }
+    }
+
+    // Compose wrapper transform from current angle (rotateY) + real-size
+    // counter-scale. Called by _setAngle (flip changes) and setRealSize/
+    // resetSize (real-size enter/exit).
+    _applyWrapperTransform() {
+        var s = this._realScale || 1;
+        var parts = [];
+        if (this.angle && this.angle !== 0) parts.push('rotateY(' + this.angle + 'deg)');
+        if (s !== 1) parts.push('scale(' + (1 / s) + ')');
+        // Force a 3D context (own compositor layer) when in real-size mode.
+        // Without it, the right page (angle=0, scale-only) shares the parent
+        // .flipbook-book3 layer and PanZoom's scale transform GPU-stretches
+        // its raster = blurry. Left page (rotateY) gets its own layer for
+        // free from the 3D rotation, so it's sharp without this. translateZ(0)
+        // makes both consistent.
+        if (s !== 1) parts.push('translateZ(0)');
+        this.wrapper.style.transform = parts.join(' ');
+    }
+
+    _createSpinner() {
+        // pagePreloader: legacy per-page custom image option.
+        if (this.options.pagePreloader) {
+            var img = new Image();
+            img.src = this.options.pagePreloader;
+            img.className = 'flipbook-page-preloader-image';
+            return img;
+        }
+        // Reuse the main flipbook preloader's DOM so a custom
+        // options.preloader (or default speeding-wheel) shows the same
+        // way per-page as it does at startup.
+        var mainPreloader = this.main && this.main.preloader;
+        var sourceEl = mainPreloader && mainPreloader.jquery ? mainPreloader[0] : mainPreloader;
+        if (sourceEl && sourceEl.cloneNode) {
+            var clone = sourceEl.cloneNode(true);
+            // Strip startup-only state classes / inline styles.
+            clone.classList.remove('flipbook-hidden');
+            clone.style.display = '';
+            clone.style.position = '';
+            return clone;
+        }
+        // Fallback (constructor ran before main.preloader existed) —
+        // build the same DOM the main preloader uses by default.
+        var wrap = document.createElement('div');
+        wrap.className = 'flipbook-preloader cssload-container';
+        var wheel = document.createElement('div');
+        wheel.className = 'cssload-speeding-wheel';
+        wrap.appendChild(wheel);
+        return wrap;
+    }
+
+    load(side, size, callback) {
+        var o = this.options;
         var isFront = side == 'front' || this.book.singlePage;
 
         var pageIndex = this.book.singlePage ? this.index : isFront ? this.index * 2 : this.index * 2 + 1;
@@ -1012,7 +1233,6 @@ FLIPBOOK.Page3 = class {
                     (isFront && page && page.side == 'right') ||
                     (o.rightToLeft && isFront && page && page.side == 'left')
                 ) {
-                    //make image clone for double page with cover
                     if (!img.clone) {
                         img.clone = new Image();
                         img.clone.src = img.src;
@@ -1024,14 +1244,6 @@ FLIPBOOK.Page3 = class {
                 self.images = self.images || {};
                 self.images[side] = self.images[side] || {};
                 self.images[side][size] = img;
-
-                // if (isFront) {
-                //     self.imagesFront = self.imagesFront || {};
-                //     self.imagesFront[size] = img;
-                // } else {
-                //     self.imagesBack = self.imagesBack || {};
-                //     self.imagesBack[size] = img;
-                // }
             }
 
             if (callback) {
@@ -1041,25 +1253,49 @@ FLIPBOOK.Page3 = class {
     }
 
     loaded(side) {
-        var isFront = side == 'front' || this.book.singlePage;
+        const isFront = side == 'front' || this.book.singlePage;
         const size = this.book.currentPageTextureSize;
-
         if (!this.images || !this.images[side] || !this.images[side][size]) return;
+        const newImg = this.images[side][size];
+        const bg = isFront ? this.bgFront : this.bgBack;
+        if (!bg) return;
 
-        if (isFront) {
-            if (size != this.sizeFront) {
-                if (this.bgFront) this.bgFront.replaceChildren(this.images[side][size]);
-                // this.bgFront.style.backgroundImage = `url(${this.images[side][size].src})`;
+        const swap = () => {
+            if (this.book.currentPageTextureSize > size) return;
+            if (!this.images || !this.images[side] || this.images[side][size] !== newImg) return;
+            if (!newImg.complete || newImg.naturalWidth === 0) {
+                const retry = () => {
+                    newImg.removeEventListener('load', retry);
+                    newImg.removeEventListener('error', retry);
+                    this.loaded(side);
+                };
+                newImg.addEventListener('load', retry, { once: true });
+                newImg.addEventListener('error', retry, { once: true });
+                return;
+            }
+            // Append the new IMG BEFORE removing old ones. Both briefly
+            // share the bg; the new one (last child) paints on top so the
+            // visible content stays continuous — no blink to empty bg.
+            // decode() is awaited below before this runs, so newImg is
+            // paint-ready when appended.
+            if (newImg.parentNode === bg) bg.removeChild(newImg);
+            bg.appendChild(newImg);
+            Array.from(bg.children).forEach((c) => {
+                if (c !== newImg && c.tagName === 'IMG') bg.removeChild(c);
+            });
+            if (isFront) {
                 if (this.preloaderFront) this.preloaderFront.style.display = 'none';
                 this.sizeFront = size;
-            }
-        } else {
-            if (size != this.sizeBack) {
-                if (this.bgBack) this.bgBack.replaceChildren(this.images[side][size]);
-                // this.bgBack.style.backgroundImage = `url(${this.images[side][size].src})`;
+            } else {
                 if (this.preloaderBack) this.preloaderBack.style.display = 'none';
                 this.sizeBack = size;
             }
+        };
+
+        if (newImg.decode) {
+            newImg.decode().then(swap, swap);
+        } else {
+            swap();
         }
     }
 
@@ -1145,6 +1381,7 @@ FLIPBOOK.Page3 = class {
     show() {
         if (this.hidden) {
             this.wrapper.style.display = 'block';
+            this.wrapper.classList.add('p3-shown');
             this.setShadowOpacity(0);
             this.showHtml();
         }
@@ -1161,6 +1398,7 @@ FLIPBOOK.Page3 = class {
     hide() {
         if (!this.hidden) {
             this.wrapper.style.display = 'none';
+            this.wrapper.classList.remove('p3-shown');
             this.setShadowOpacity(0);
 
             this.pauseHtml('front');
@@ -1182,16 +1420,18 @@ FLIPBOOK.Page3 = class {
         if (angle != this.angle) {
             if (angle != 0 && angle != 180) {
                 this._setZIndex(1);
+                this.wrapper.classList.add('p3-flipping');
             } else {
                 this._setZIndex(0);
+                this.wrapper.classList.remove('p3-flipping');
             }
 
             angle = -angle;
-            this.wrapper.style.setProperty('--page3-rotate-y', String(angle + 'deg'));
+            this.angle = angle;
+            this._applyWrapperTransform();
             this.setShadowOpacity((1 - Math.abs(angle + 90) / 90) * 0.2);
             this._setVisibility(this.front, angle > -90);
             this._setVisibility(this.back, angle < -90);
-            this.angle = angle;
         }
     }
 

@@ -560,7 +560,8 @@
   max-width: 100%;
   max-height: 90%;
   max-height: calc(100% - 42px);
-  background-image: linear-gradient(
+  background-image:
+    linear-gradient(
       45deg,
       #c3c4c7 25%,
       transparent 25%,
@@ -576,7 +577,9 @@
       #c3c4c7 75%,
       #c3c4c7
     );
-  background-position: 0 0, 10px 10px;
+  background-position:
+    0 0,
+    10px 10px;
   background-size: 20px 20px;
 }
 
@@ -595,10 +598,6 @@
 }
 
 .pdf-flipbook .delete-pages-button {
-  display: none;
-}
-
-.pdf-flipbook .add-pages-button {
   display: none;
 }
 

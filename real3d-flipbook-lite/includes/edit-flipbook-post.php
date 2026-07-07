@@ -73,6 +73,9 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 			<?php
 			?>
 			<a href="#" class="nav-tab" data-tab="tab-menu"><?php esc_html_e('Menu Buttons', 'real3d-flipbook'); ?></a>
+			<?php if (defined('R3D_PREVIEW_VERSION')) { ?>
+			<a href="#" class="nav-tab" data-tab="tab-preview"><?php esc_html_e('Preview', 'real3d-flipbook'); ?></a>
+			<?php } ?>
 		</h2>
 		<div id="tab-pages" style="display:none;">
 
@@ -146,6 +149,16 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 			</table>
 			<div id="toc-items" tabindex="-1" class="attachments ui-sortable"></div>
 		</div>
+		<?php if (defined('R3D_PREVIEW_VERSION')) { ?>
+		<div id="tab-preview" style="display:none;">
+			<p class="description">
+				<?php esc_html_e('Limit access to this flipbook. A single number cuts it to the first N pages; a range or list (e.g. 1-20 or 1,2,3) shows those pages and locks the rest. Leave blank to use the global Preview Mode settings.', 'real3d-flipbook'); ?>
+			</p>
+			<table class="form-table" id="flipbook-preview-options">
+				<tbody></tbody>
+			</table>
+		</div>
+		<?php } ?>
 		<div id="tab-general" style="display:none;">
 			<table class="form-table" id="flipbook-general-options">
 				<tbody></tbody>

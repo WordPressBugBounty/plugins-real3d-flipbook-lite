@@ -4,7 +4,7 @@
 	Plugin Name: Real3D Flipbook PDF Viewer
 	Plugin URI: https://wordpress.org/plugins/real3d-flipbook-lite/
 	Description: Realistic 3D FlipBook, PDF Viewer, PDF Embedder - create realistic 3D flipbook from PDF or images. 
-	Version: 4.19.2
+	Version: 5.0
 	Author: creativeinteractivemedia
 	Author URI: http://codecanyon.net/user/creativeinteractivemedia
 	License: GPLv2 or later
@@ -12,6 +12,31 @@
 	Text Domain: real3d-flipbook
 	Domain Path: /languages
 	*/
+
+// If the Pro plugin is active it provides the base; Lite stays idle to avoid
+// class/constant/post-type conflicts. (Pro requires Lite via its Requires Plugins header.)
+if (!function_exists('r3d_lite_pro_active')) {
+	function r3d_lite_pro_active() {
+		$pro = 'real3d-flipbook/real3d-flipbook.php';
+		if (in_array($pro, (array) get_option('active_plugins', array()), true)) {
+			return true;
+		}
+		if (is_multisite()) {
+			$network = (array) get_site_option('active_sitewide_plugins', array());
+			if (isset($network[$pro])) {
+				return true;
+			}
+		}
+		return false;
+	}
+}
+// Shared core helpers (r3dfb_getDefaults, r3d_array_merge_deep, …) live only in Lite.
+// Load them even when Lite idles for an active Pro, so Pro depends on Lite for them.
+require_once __DIR__ . '/includes/r3d-core.php';
+
+if (r3d_lite_pro_active()) {
+	return; // Pro active → Lite idle (r3d-core above stays loaded for Pro).
+}
 
 if (!function_exists('r3d_fs')) {
 	// Create a helper function for easy SDK access.
@@ -48,7 +73,7 @@ if (!function_exists('r3d_fs')) {
 	do_action('r3d_fs_loaded');
 }
 
-define('REAL3D_FLIPBOOK_VERSION', '4.19.2');
+define('REAL3D_FLIPBOOK_VERSION', '5.0');
 define('REAL3D_FLIPBOOK_FILE', __FILE__);
 
 include_once(plugin_dir_path(__FILE__) . '/includes/Real3DFlipbook.php');

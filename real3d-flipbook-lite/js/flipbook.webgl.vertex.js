@@ -1,12 +1,124 @@
 'use strict';
 
+const FLIPBOOK_BEND_GLSL = /* glsl */ `
+uniform float uBendForce;
+uniform float uBendOffset;
+uniform float uCurlForce;
+uniform float uCurlOffset;
+uniform float uPageWidth;
+
+vec3 fbBendPos(vec3 pos) {
+    if (abs(uBendForce) < 0.0001) return pos;
+    float w   = uPageWidth;
+    float hw  = w * 0.5;
+    float rat = (pos.x + hw) / w;
+    if (rat <= uBendOffset) return pos;
+    float fp  = 3.14159265 * uBendForce;
+    float k   = w / fp;
+    float o   = -hw + w * uBendOffset;
+    float a   = 1.5707963 - fp * uBendOffset + fp * rat;
+    float kz  = k + pos.z;
+    return vec3(o - cos(a) * kz, pos.y, sin(a) * kz - k);
+}
+
+vec3 fbBendNrm(vec3 n, vec3 pos) {
+    if (abs(uBendForce) < 0.0001) return n;
+    float w   = uPageWidth;
+    float hw  = w * 0.5;
+    float rat = (pos.x + hw) / w;
+    if (rat <= uBendOffset) return n;
+    float ang = 3.14159265 * uBendForce * (rat - uBendOffset);
+    float ca  = cos(ang);
+    float sa  = sin(ang);
+    return vec3(n.x * ca + n.z * sa, n.y, -n.x * sa + n.z * ca);
+}
+
+/* Corner-curl bend (rotated 1 rad in XY before bending) */
+vec3 fbCurlPos(vec3 pos) {
+    if (abs(uCurlForce) < 0.0001) return pos;
+    float w  = uPageWidth;
+    float hw = w * 0.5;
+    float ca = 0.5403023;
+    float sa = 0.8414710;
+    float lx = pos.x * ca - pos.y * sa;
+    float ly = pos.x * sa + pos.y * ca;
+    float lz = pos.z;
+    float rat = (lx + hw) / w;
+    if (rat <= uCurlOffset) return pos;
+    float fp = 3.14159265 * uCurlForce;
+    float k  = w / fp;
+    float o  = -hw + w * uCurlOffset;
+    float a  = 1.5707963 - fp * uCurlOffset + fp * rat;
+    float kz = k + lz;
+    lz = sin(a) * kz - k;
+    lx = o  - cos(a) * kz;
+    return vec3(lx * ca + ly * sa, -lx * sa + ly * ca, lz);
+}
+
+vec3 fbCurlNrm(vec3 n, vec3 pos) {
+    if (abs(uCurlForce) < 0.0001) return n;
+    float w  = uPageWidth;
+    float hw = w * 0.5;
+    float ca = 0.5403023;
+    float sa = 0.8414710;
+    float lx = pos.x * ca - pos.y * sa;
+    float rat = (lx + hw) / w;
+    if (rat <= uCurlOffset) return n;
+    float ang = 3.14159265 * uCurlForce * (rat - uCurlOffset);
+    float cb = cos(ang); float sb = sin(ang);
+    /* rotate normal into curl space, bend-rotate, rotate back */
+    float nx2 = n.x * ca - n.y * sa;
+    float ny2 = n.x * sa + n.y * ca;
+    float nz2 = n.z;
+    float bx  = nx2 * cb + nz2 * sb;
+    float bz  = -nx2 * sb + nz2 * cb;
+    return vec3(bx * ca + ny2 * sa, -bx * sa + ny2 * ca, bz);
+}
+`;
+
+function _patchBendMaterial(mat, uniforms) {
+    mat.onBeforeCompile = function (shader) {
+        shader.uniforms.uBendForce = uniforms.uBendForce;
+        shader.uniforms.uBendOffset = uniforms.uBendOffset;
+        shader.uniforms.uCurlForce = uniforms.uCurlForce;
+        shader.uniforms.uCurlOffset = uniforms.uCurlOffset;
+        shader.uniforms.uPageWidth = uniforms.uPageWidth;
+
+        shader.vertexShader = FLIPBOOK_BEND_GLSL + '\n' + shader.vertexShader;
+
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <begin_vertex>',
+            'vec3 transformed = fbCurlPos(fbBendPos(position));'
+        );
+
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <beginnormal_vertex>',
+            [
+                'vec3 objectNormal = fbCurlNrm(fbBendNrm(normal, position), position);',
+                '#ifdef USE_TANGENT',
+                '    vec3 objectTangent = vec3( tangent.xyz );',
+                '#endif',
+            ].join('\n')
+        );
+    };
+    mat.customProgramCacheKey = function () {
+        return 'flipbook_bend';
+    };
+    mat.needsUpdate = true;
+}
+
+/* ------------------------------------------------------------------ */
+
 FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     constructor(el, main, options) {
         super(main, options);
 
         this.wrapper = el;
 
-        this.options.cameraDistance = 2800;
+        if (this.options.cameraDistance == null) {
+            const fov = this.options.cameraFov != null ? this.options.cameraFov : 30;
+            this.options.cameraDistance = 2800 * Math.tan(15 * Math.PI / 180) / Math.tan(fov * Math.PI / 360);
+        }
 
         this.pageW = options.pageWidth;
         this.pageH = options.pageHeight;
@@ -34,7 +146,8 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 
     init3d() {
-        var VIEW_ANGLE = 30;
+        var o = this.options;
+        var VIEW_ANGLE = o.cameraFov != null ? o.cameraFov : 30;
         var ASPECT = this.main.wrapperW / this.main.wrapperH;
         var NEAR = 100;
         var FAR = 5000;
@@ -77,17 +190,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
 
         container.appendChild(this.renderer.domElement);
 
-        // --- DEBUG: OrbitControls ---
-        // this.debug = true;
-        // if (this.debug) {
-        //     this.orbitControls = new THREE.OrbitControls(this.Camera, container);
-        //     this.orbitControls.enableDamping = true;
-        //     this.orbitControls.dampingFactor = 0.1;
-        //     this.orbitControls.addEventListener('change', () => {
-        //         this.needsUpdate = true;
-        //     });
-        // }
-
         var htmlLayer = false;
         var pages = this.options.pages;
         var allHtmlOnly = pages.length > 0 && !o.pdfUrl;
@@ -105,18 +207,13 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             this.initHtmlContent();
         }
 
-
         c.style.position = 'relative';
         c.style.pointerEvents = 'none';
 
         c.addEventListener(
             'webglcontextlost',
             (event) => {
-                debugger;
-                // Prevent default behavior to stop automatic context restoration
-                // event.preventDefault();
                 console.log('WebGL context lost');
-                // Handle the context loss: free resources, notify the user, etc.
             },
             false
         );
@@ -137,10 +234,9 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 dl.shadow.camera.bottom = -(this.pageH * 0.5 + 20);
 
                 dl.shadow.camera.near = 200;
-                dl.shadow.camera.far = 2200;
                 dl.shadow.camera.far = 1800;
 
-                dl.shadow.radius = 4; // blur radius, try 2–8
+                dl.shadow.radius = 4;
 
                 var mat = new THREE.ShadowMaterial();
                 mat.opacity = this.options.shadowOpacity * 0.35;
@@ -148,31 +244,9 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 this.shadowPlane.position.set(0, 0, -30);
                 this.centerContainer.add(this.shadowPlane);
                 this.shadowPlane.receiveShadow = true;
-
-                // --- DEBUG: visible plane behind shadowPlane, same size ---
-                // if (this.debug) {
-                //     this.debugPlane = new THREE.Mesh(
-                //         new THREE.PlaneGeometry(this.pageW * 2.2, this.pageH * 2, 1, 1),
-                //         new THREE.MeshBasicMaterial({
-                //             color: 0xff00ff,
-                //             transparent: true,
-                //             opacity: 0.25,
-                //             side: THREE.DoubleSide,
-                //             depthWrite: false,
-                //         })
-                //     );
-                //     this.debugPlane.position.set(0, 0, -31); // 1 unit behind shadow plane
-                //     this.centerContainer.add(this.debugPlane);
-                // }
             }
 
             this.Scene.add(dl);
-
-            // --- DEBUG:
-            // if (this.debug) {
-            //     this.shadowCameraHelper = new THREE.CameraHelper(dl.shadow.camera);
-            //     this.Scene.add(this.shadowCameraHelper);
-            // }
         }
 
         this.centerContainer.position.set(0, 0, 0);
@@ -205,7 +279,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                     this.renderer.render(this.Scene, this.Camera);
                     this.needsUpdate = false;
 
-                    if (this.htmlLayer) {
+                    if (this.htmlLayer && this.htmlLayerVisible) {
                         this.cssRenderer.render(this.Scene, this.Camera);
                     }
                 }
@@ -226,10 +300,10 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 
     updatePixelRatio() {
-        const thresholdSize = 1200;
-        let minPixelRatio = this.options.minPixelRatio;
-        if (this.rendererW < thresholdSize || this.rendererH < thresholdSize) minPixelRatio = 2;
-        const pr = Math.max(window.devicePixelRatio, minPixelRatio);
+        const minPixelRatio = this.options.minPixelRatio ?? 1;
+        const maxPixelRatio = this.options.maxPixelRatio ?? 2;
+        const dpr = window.devicePixelRatio || 1;
+        const pr = Math.min(Math.max(dpr, minPixelRatio), maxPixelRatio);
         if (pr !== this.pixelRatio) {
             this.renderer.setPixelRatio(pr);
             this.pixelRatio = pr;
@@ -424,14 +498,37 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         }
 
         if ((phase == 'cancel' || phase == 'end') && fingerCount <= 1) {
-            if (this.view == 1 && this.draggingBook && distanceX < 0) {
-                this.nextPage();
-                this.draggingBook = false;
-                return;
-            }
-
-            if (this.view == 1 && this.draggingBook && distanceX > 0) {
-                this.prevPage();
+            if (this.view == 1 && this.draggingBook) {
+                // Commit if past 20% of page width OR a fast flick (vx > 0.8
+                // px/ms, matching BookSwipe's fling threshold). Otherwise
+                // animate centerContainer back to drag-start position.
+                const distance = Math.abs(distanceX);
+                const vx = duration ? distanceX / duration : 0;
+                const fling = Math.abs(vx) > 0.8;
+                // distance is screen px; pageWidth is logical units —
+                // centerContainer.scale.x is the logical→screen factor (see
+                // setBookPosition line 1382). Convert before comparing.
+                const scale = (this.centerContainer && this.centerContainer.scale && this.centerContainer.scale.x) || 1;
+                const distanceLogical = distance / scale;
+                const commit = distanceLogical > this.pageW * 0.2 || fling;
+                if (commit) {
+                    distanceX < 0 ? this.nextPage() : this.prevPage();
+                } else {
+                    const self = this;
+                    const startX = this.draggingBookStartX;
+                    const fromX = this.centerContainer.position.x;
+                    FLIPBOOK.animate({
+                        from: 0,
+                        to: 1,
+                        duration: 200,
+                        easing: 'easeOutSine',
+                        step: (v) => {
+                            self.centerContainer.position.x = fromX + (startX - fromX) * v;
+                            self.updateHtmlLayerPosition();
+                            self.updateLightPosition();
+                        },
+                    });
+                }
                 this.draggingBook = false;
                 return;
             }
@@ -537,21 +634,17 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         var zoomMin = Number(o.zoomMin);
 
         if (o.responsiveView && w <= o.responsiveViewTreshold && r1 < 2 * r2 && r1 < o.responsiveViewRatio) {
-            // responsive view
             this.view = 1;
 
             if (r2 > r1) {
-                // landscape book
                 this.sc = (zoomMin * r1) / (r2 * s);
             } else {
                 this.sc = 1;
             }
         } else {
-            // double page view
             this.view = 2;
 
             if (r1 < bw * r2) {
-                // landscape book
                 this.sc = (zoomMin * r1) / (bw * r2 * s);
             } else {
                 this.sc = 1;
@@ -601,11 +694,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
 
         this.updateShadowCamera();
 
-        // --- DEBUG:
-        // if (this.debug) {
-        //     if (this.shadowCameraHelper) this.shadowCameraHelper.update();
-        // }
-
         this.needsUpdate = true;
     }
 
@@ -642,7 +730,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 
     createPages() {
-        //create all pages
         var self = this;
         var hardness;
         var page;
@@ -746,6 +833,17 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             numSheets += 1;
         }
         for (i = 0; i < numSheets; i++) {
+            if (i === 0) {
+                self._sharedPageGeometry = new THREE.BoxGeometry(
+                    self.options.pageWidth, self.options.pageHeight, 0.01,
+                    self.options.pageSegmentsW, self.options.pageSegmentsH, 0
+                );
+                self._sharedPageGeometry.faceVertexUvs[1] = self._sharedPageGeometry.faceVertexUvs[0];
+                self._sharedEmptyGeometry = new THREE.BoxGeometry(
+                    self.options.pageWidth, self.options.pageHeight, 0.01, 1, 1, 0
+                );
+                self._sharedEmptyGeometry.faceVertexUvs[1] = self._sharedEmptyGeometry.faceVertexUvs[0];
+            }
             hardness = i == 0 || i == numSheets - 1 ? self.options.coverHardness : self.options.pageHardness;
             page = new FLIPBOOK.PageWebGL(self, i, hardness, self.options, preloaderMatF, preloaderMatB);
             self.pages.push(page);
@@ -802,6 +900,14 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             } else {
                 this.focusRight(time);
             }
+        } else if (this.view == 2 && !moved) {
+            // View==2 spread mode: set the final focus once so the book
+            // glides directly from current position to target without
+            // intermediate focusBoth calls in nextPage/prevPage interrupting.
+            var time = instant ? 0 : 600;
+            if (index <= 0) this.focusRight(time);
+            else if (index >= this.options.numPages && this.options.cover) this.focusLeft(time);
+            else this.focusBoth(time);
         }
 
         if (index % 2 != 0) {
@@ -843,13 +949,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
 
         if (this.rightIndex > index) {
             if (this.rightIndex - 2 > index) {
-                //first page
                 this.prevPage(false);
                 setTimeout(function () {
                     self.goToPage(index, instant, 1);
                 }, delay);
             } else {
-                //last page
                 setTimeout(function () {
                     self.prevPage();
                     if (typeof instant != 'undefined' && instant) {
@@ -862,14 +966,12 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             }
         } else if (this.rightIndex < index) {
             if (this.rightIndex + 2 < index) {
-                // first page
                 this.nextPage(false);
                 setTimeout(function () {
                     self.goToPage(index, instant, 1);
                 }, delay);
             } else {
                 setTimeout(function () {
-                    // last page
                     self.nextPage();
                     if (typeof instant != 'undefined' && instant) {
                         for (var i = 0; i < self.pages.length; i++) {
@@ -997,10 +1099,12 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 this.focusLeft(600, 200);
             }
         } else {
-            if (this.flippedright == 1 && this.options.cover) {
-                this.focusLeft(500, 200);
-            } else {
-                this.focusBoth(500, 50);
+            if (!this.goingToPage) {
+                if (this.flippedright == 1 && this.options.cover) {
+                    this.focusLeft(500, 200);
+                } else {
+                    this.focusBoth(500, 50);
+                }
             }
         }
 
@@ -1150,6 +1254,100 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 page.unload('back');
             }
         });
+
+        // Drop large-tier (zoom) materials + bitmap refs from any sheet that
+        // is NOT the currently visible spread. Only the current L/R pair is
+        // allowed to hold sz > pageTextureMedium; this keeps a max of one
+        // hi-res spread alive even after many flips while zoomed in.
+        const baseSize = this.options.pageTextureMedium || this.options.pageTextureSmall;
+        this.pages.forEach((sheet) => {
+            if (sheet === left || sheet === right) return;
+            if (!sheet.materials) return;
+            ['front', 'back'].forEach((side) => {
+                const sideMats = sheet.materials[side];
+                if (!sideMats) return;
+                Object.keys(sideMats).forEach((szStr) => {
+                    const sz = +szStr;
+                    if (sz <= baseSize) return;
+                    const mat = sideMats[szStr];
+                    if (mat) {
+                        const tex = mat.map;
+                        mat.dispose();
+                        if (tex) tex.dispose();
+                    }
+                    delete sideMats[szStr];
+                    // Drop the load-dedup promise for this size too. loadPageAsync
+                    // caches a resolved promise per side+size and never re-runs load()
+                    // while it exists — so without this, a later zoom-in back to this
+                    // page sees the stale promise and never re-renders the evicted tier.
+                    if (sheet._sidePromises && sheet._sidePromises[side]) delete sheet._sidePromises[side][szStr];
+                    const bookIdx = side === 'front' ? sheet.indexF : sheet.indexB;
+                    const pageRec = this.options.pages[bookIdx];
+                    if (pageRec && pageRec.imageBitmap) delete pageRec.imageBitmap[sz];
+                    const wasActive = (side === 'front' && sheet.sizeFront === sz) ||
+                                      (side === 'back' && sheet.sizeBack === sz);
+                    if (wasActive) {
+                        const remaining = Object.keys(sideMats).map(Number).sort((a, b) => b - a);
+                        if (remaining.length > 0) {
+                            if (side === 'front') sheet.sizeFront = remaining[0];
+                            else sheet.sizeBack = remaining[0];
+                            sheet.setMat(sideMats[remaining[0]], side);
+                        } else {
+                            if (side === 'front') {
+                                sheet.sizeFront = 0;
+                                sheet.setMat(sheet.preloaderMatF, 'front');
+                            } else {
+                                sheet.sizeBack = 0;
+                                sheet.setMat(sheet.preloaderMatB, 'back');
+                            }
+                        }
+                    }
+                });
+            });
+        });
+
+        // Also drop pdfservice's per-pdf-page caches at sizes > baseSize for
+        // pdf pages that don't back the current visible spread. Without this,
+        // page.canvas[sz] / page.imageBitmap[sz] / convertToImageBitmapPromises[sz]
+        // / renderingPromises[sz] all keep the bitmap alive on the JS side
+        // even after we drop the book-page reference.
+        const pdfSvc = this.main && this.main.pdfService;
+        if (pdfSvc && pdfSvc.pages) {
+            const doublePage = !!this.options.doublePage;
+            const visiblePdfIndices = new Set();
+            [left, right].forEach((sheet) => {
+                if (!sheet) return;
+                [sheet.indexF, sheet.indexB].forEach((bookIdx) => {
+                    if (typeof bookIdx !== 'number' || bookIdx < 0) return;
+                    const pdfIdx = doublePage ? Math.round(bookIdx / 2) : bookIdx;
+                    visiblePdfIndices.add(pdfIdx);
+                });
+            });
+            for (let i = 0; i < pdfSvc.pages.length; i++) {
+                const pdfPage = pdfSvc.pages[i];
+                if (!pdfPage) continue;
+                if (visiblePdfIndices.has(i)) continue;
+                ['imageBitmap', 'convertToImageBitmapPromises', 'renderingPromises', 'canvas'].forEach((key) => {
+                    const map = pdfPage[key];
+                    if (!map) return;
+                    Object.keys(map).forEach((szStr) => {
+                        if (+szStr <= baseSize) return;
+                        // Skip a render still in flight: renderPage created canvas[sz]
+                        // / renderingPromises[sz] but createPageImage hasn't produced
+                        // imageBitmap[sz] yet. Evicting now makes createPageImage call
+                        // convertToImageBitmap(undefined) -> throw (the neighbour-spread
+                        // crash on deep-link load).
+                        if (
+                            pdfPage.renderingPromises &&
+                            pdfPage.renderingPromises[szStr] &&
+                            !(pdfPage.imageBitmap && pdfPage.imageBitmap[szStr])
+                        )
+                            return;
+                        delete map[szStr];
+                    });
+                });
+            }
+        }
     }
 
     loadPageImage(page, side, callback) {}
@@ -1221,6 +1419,12 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             if (!this.movingTo) {
                 if (this.bookWidth != pos.bookWidth) {
                     this.bookWidth = pos.bookWidth;
+                    // Instant positioning (opening directly on a spread via
+                    // deeplink/startPage) changes how many pages are visible, which
+                    // changes the fit. Recompute it — the animated branch refits per
+                    // step; without this we keep the stale single-page (bookWidth=1)
+                    // fit and a landscape spread renders ~2x too wide (overflows).
+                    this.onResize(true);
                 }
                 this.centerContainer.position.x = pos.x * this.centerContainer.scale.x;
                 this.centerContainer.position.y = pos.y * this.centerContainer.scale.y;
@@ -1281,10 +1485,12 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 this.focusRight(600, 200);
             }
         } else {
-            if (this.flippedleft == 1) {
-                this.focusRight(500, 200);
-            } else {
-                this.focusBoth(500, 100);
+            if (!this.goingToPage) {
+                if (this.flippedleft == 1) {
+                    this.focusRight(500, 200);
+                } else {
+                    this.focusBoth(500, 100);
+                }
             }
         }
 
@@ -1320,18 +1526,20 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     async loadPrevSpread() {
         const left = this.pages[this.flippedleft - 1];
         const prev = this.pages[this.flippedleft - 2];
-        await this.loadPageAsync(prev, 'back');
+        const neighbourSize = this.options.pageTextureMedium || this.options.pageTextureSmall;
+        await this.loadPageAsync(prev, 'back', neighbourSize);
         this.pageLoaded(prev, 'back');
-        await this.loadPageAsync(left, 'front');
+        await this.loadPageAsync(left, 'front', neighbourSize);
         this.pageLoaded(left, 'front');
     }
 
     async loadNextSpread() {
         const right = this.pages[this.flippedleft];
         const next = this.pages[this.flippedleft + 1];
-        await this.loadPageAsync(right, 'back');
+        const neighbourSize = this.options.pageTextureMedium || this.options.pageTextureSmall;
+        await this.loadPageAsync(right, 'back', neighbourSize);
         this.pageLoaded(right, 'back');
-        await this.loadPageAsync(next, 'front');
+        await this.loadPageAsync(next, 'front', neighbourSize);
         this.pageLoaded(next, 'front');
     }
 
@@ -1341,84 +1549,60 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 
     _capturePageScreenshot(pageIndex, onComplete) {
+        // For html-only pages the rendered bitmap is size-independent (the
+        // html2canvas capture is fixed at h=1000). We cache it once on the
+        // page in `_htmlBitmap` and reuse for every texture size.
         var page = this.options.pages[pageIndex];
-        if (!page || !page.htmlContent || page._screenshotCapturing) {
+        if (!page || !page.htmlContent) {
             if (onComplete) onComplete();
             return;
         }
-        if (typeof FLIPBOOK === 'undefined' || typeof FLIPBOOK.captureHtmlPage !== 'function') {
+        if (page._htmlBitmap) {
+            if (onComplete) onComplete();
+            return;
+        }
+        if (page._htmlBitmapPromise) {
+            page._htmlBitmapPromise.then(function () { if (onComplete) onComplete(); });
+            return;
+        }
+        if (
+            typeof FLIPBOOK === 'undefined' ||
+            typeof FLIPBOOK.captureHtmlPage !== 'function' ||
+            typeof createImageBitmap !== 'function'
+        ) {
             if (onComplete) onComplete();
             return;
         }
 
-        page._screenshotCapturing = true;
-
-        // Page render size (not texture size). The htmlLayer uses 3D transforms
-        // and has 0x0 size, which breaks html2canvas — render at an offscreen clone.
         var ratio = this.pageHeight / this.pageWidth;
         var h = 1000;
         var w = Math.round(h / ratio);
 
-        FLIPBOOK.captureHtmlPage(page, w, h, this.options && this.options.main, 1.6).then(function (canvas) {
-            if (!canvas) {
-                page._screenshotCapturing = false;
-                if (onComplete) onComplete();
-                return;
-            }
-            // Convert canvas to Image for reliable Three.js texture upload
-            var img = new Image();
-            img.onload = function () {
-                var tex = new THREE.Texture(img);
-                tex.minFilter = THREE.LinearFilter;
-                tex.generateMipmaps = false;
-                tex.needsUpdate = true;
-                page._screenshotTexture = tex;
-                page._screenshotCapturing = false;
-                if (onComplete) onComplete();
-            };
-            img.src = canvas.toDataURL();
+        page._htmlBitmapPromise = FLIPBOOK.captureHtmlPage(
+            page,
+            w,
+            h,
+            this.options && this.options.main,
+            2
+        )
+            .then(async function (canvas) {
+                if (!canvas) return null;
+                var bitmap = await createImageBitmap(canvas);
+                try { canvas.width = canvas.height = 1; } catch (_) {}
+                page._htmlBitmap = bitmap;
+                return bitmap;
+            })
+            .catch(function () { return null; });
+
+        page._htmlBitmapPromise.then(function () {
+            if (onComplete) onComplete();
         });
-    }
-
-    _swapToScreenshotTexture(renderedPage, side) {
-        var pageIndex = side === 'front' ? renderedPage.indexF : renderedPage.indexB;
-        var page = this.options.pages[pageIndex];
-        if (!page || !page._screenshotTexture) return;
-
-        var size = this.currentPageTextureSize;
-        if (renderedPage.materials && renderedPage.materials[side] && renderedPage.materials[side][size]) {
-            var mat = renderedPage.materials[side][size];
-            if (!mat._origMap) {
-                mat._origMap = mat.map;
-                page._screenshotTexture.needsUpdate = true;
-                mat.map = page._screenshotTexture;
-                mat.needsUpdate = true;
-                // Force material recompile by setting it on the cube mesh
-                var matIndex = side === 'front' ? 4 : 5;
-                renderedPage.cube.material[matIndex] = mat;
-                this.needsUpdate = true;
-            }
-        }
-    }
-
-    _restoreOriginalTexture(renderedPage, side) {
-        var size = this.currentPageTextureSize;
-        if (renderedPage.materials && renderedPage.materials[side] && renderedPage.materials[side][size]) {
-            var mat = renderedPage.materials[side][size];
-            if (mat._origMap) {
-                mat.map = mat._origMap;
-                mat._origMap = null;
-                mat.needsUpdate = true;
-                this.needsUpdate = true;
-            }
-        }
     }
 
     _hideHTMLPage(page) {
         if (!page.htmlHidden) {
             page.style.display = 'none';
             page.htmlHidden = true;
-            page.querySelectorAll('video').forEach(function(v) { v.pause(); });
         }
     }
 
@@ -1426,15 +1610,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         if (page.htmlHidden) {
             page.style.display = 'block';
             page.htmlHidden = false;
-            page.querySelectorAll('video[autoplay]').forEach(function(v) {
-                v.play().catch(function() {});
-            });
         }
     }
 
     _emptyHTMLPage(page) {
         if (!page.emptyHTML) {
-            // page.innerHTML = '';
             page.emptyHTML = true;
         }
     }
@@ -1444,10 +1624,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         page.appendChild(html[0] || html);
         page.emptyHTML = false;
         this.startPageItems(html[0] || html);
-        // Autoplay videos when page content is added
-        page.querySelectorAll('video[autoplay]').forEach(function(v) {
-            v.play().catch(function() {});
-        });
     }
 
     updateHtmlLayer(force) {
@@ -1489,8 +1665,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         var html;
 
         if (this.options.doublePage) {
-            //cover
-
             if (this.rightIndex == 0) {
                 if (R > -1) html = this.options.pages[R].htmlContent;
                 if (html) {
@@ -1498,18 +1672,13 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                     this._showHTMLPage(this.pageR);
                     this.htmlLayerVisible = true;
                 }
-
-                //back cover
             } else if (this.rightIndex == this.pages.length * 2) {
                 if (L > -1) html = this.options.pages[L].htmlContent;
                 if (html) {
                     this._addHTMLContent(html, this.pageLInner);
                     this._showHTMLPage(this.pageL);
-
                     this.htmlLayerVisible = true;
                 }
-
-                //spreads
             } else {
                 if (L > -1) html = this.options.pages[L].htmlContent;
                 else if (R > -1) html = this.options.pages[R].htmlContent;
@@ -1517,7 +1686,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 if (html) {
                     this._addHTMLContent(html, this.pageCInner);
                     this._showHTMLPage(this.pageC);
-
                     this.htmlLayerVisible = true;
                 }
             }
@@ -1528,7 +1696,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 if (html) {
                     this._addHTMLContent(this.options.pages[L].htmlContent, this.pageLInner);
                     this._showHTMLPage(this.pageL);
-
                     this.htmlLayerVisible = true;
                 }
             }
@@ -1544,22 +1711,16 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             }
         }
 
-        // Restore original textures for HTML-only flipbooks
-        if (this._isHtmlOnly) {
-            for (var pi = 0; pi < this.pages.length; pi++) {
-                this._restoreOriginalTexture(this.pages[pi], 'front');
-                this._restoreOriginalTexture(this.pages[pi], 'back');
-            }
+        if (this.htmlLayerVisible) {
+            this.cssRenderer.render(this.Scene, this.Camera);
         }
-
         this.main.trigger('showpagehtml', { page: {} });
     }
 
     onZoom() {}
 
     render(rendering) {
-        var self = this;
-        self.rendering = rendering;
+        this.rendering = rendering;
     }
 
     zoomTo(amount, time, x, y) {
@@ -1602,7 +1763,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         newZoom = amount < this.options.zoomMin ? this.options.zoomMin : amount;
 
         if (newZoom == this.options.zoom) {
-            //reset book position
             var focusedLeft = this.isFocusedLeft();
 
             if (this.view == 1) {
@@ -1620,7 +1780,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             if (!this.zooming) {
                 this.zooming = true;
 
-                // Define start and end values
                 const startZoom = this.zoom;
                 const endZoom = newZoom;
                 const startX = this.centerContainer.position.x;
@@ -1702,9 +1861,19 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 
     _move(e, distanceX, distanceY) {
+        // Suppress native page scroll / pull-to-refresh while panning the
+        // zoomed book. _move only runs when isZoomed() (onSwipe routes here),
+        // so the unzoomed touch path is unaffected.
+        if (e && e.cancelable) e.preventDefault();
         if (distanceX != 0 || distanceY != 0) {
             this.moved = true;
-            let scaleFactor = ((this.zoom * this.wrapperH) / 1000) * this.sc;
+            // Use main.wrapperH (live) instead of this.wrapperH (cached on
+            // BookWebGL in onResize). main updates its dimensions on every
+            // resize but this.wrapperH can lag if our onResize doesn't run
+            // — observed mismatch (1138 vs cached 788) caused the book to
+            // pan 1.44× faster than the cursor.
+            const liveWrapperH = (this.main && this.main.wrapperH) || this.wrapperH;
+            let scaleFactor = ((this.zoom * liveWrapperH) / 1000) * this.sc;
             this.moveToPos({
                 x: this.centerContainerStart.x / this.sc + distanceX / scaleFactor,
                 y: this.centerContainerStart.y / this.sc - distanceY / scaleFactor,
@@ -1744,11 +1913,9 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 
     destroy() {
-        // Function to dispose materials
         function disposeMaterial(material) {
             if (!material) return;
 
-            // Dispose of textures
             if (material.map) material.map.dispose();
             if (material.lightMap) material.lightMap.dispose();
             if (material.bumpMap) material.bumpMap.dispose();
@@ -1768,20 +1935,16 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             if (material.transmissionMap) material.transmissionMap.dispose();
             if (material.thicknessMap) material.thicknessMap.dispose();
 
-            // Dispose of the material itself
             material.dispose();
         }
 
-        // Function to dispose objects
         function disposeObject(object) {
             if (!object) return;
 
-            // Dispose of geometries
             if (object.geometry) {
                 object.geometry.dispose();
             }
 
-            // Dispose of materials
             if (object.material) {
                 if (Array.isArray(object.material)) {
                     object.material.forEach((material) => disposeMaterial(material));
@@ -1791,11 +1954,9 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             }
         }
 
-        // Function to remove and dispose objects from the scene
         function removeAndDisposeObject(scene, object) {
             if (!scene || !object) return;
 
-            // Recursively remove and dispose of all children
             while (object.children.length > 0) {
                 removeAndDisposeObject(scene, object.children[0]);
             }
@@ -1804,11 +1965,9 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 object.parent.remove(object);
             }
 
-            // Dispose of the object's resources
             disposeObject(object);
         }
 
-        // Function to dispose the entire scene
         function disposeScene(scene) {
             if (!scene) return;
 
@@ -1817,13 +1976,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             }
         }
 
-        // Function to dispose the renderer and its DOM element
         function disposeRenderer(renderer) {
             if (!renderer) return;
 
             renderer.dispose();
 
-            // Remove the renderer's DOM element from the document
             if (renderer.domElement && renderer.domElement.parentNode) {
                 renderer.domElement.parentNode.removeChild(renderer.domElement);
             }
@@ -1844,6 +2001,10 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 };
 
+/* ------------------------------------------------------------------ */
+/*  PageWebGL – now uses GPU bend via uniforms                        */
+/* ------------------------------------------------------------------ */
+
 FLIPBOOK.PageWebGL = class {
     constructor(book, i, hard, options, preloaderMatF, preloaderMatB) {
         this.container = new THREE.Object3D();
@@ -1861,9 +2022,6 @@ FLIPBOOK.PageWebGL = class {
         this.angle = 0;
         this.force = 10;
         this.offset = 0;
-        this.mod = null;
-        this.bend = null;
-        this.pivot = null;
         this.isFlippedLeft = false;
         this.isFlippedRight = true;
         this.flippingLeft = false;
@@ -1891,11 +2049,6 @@ FLIPBOOK.PageWebGL = class {
         this.indexB = indexB;
 
         this.showing = false;
-        this.preloaderMatF = preloaderMatF;
-        this.preloaderMatB = preloaderMatB;
-
-        this.preloaderMatF = preloaderMatF;
-        this.preloaderMatB = preloaderMatB;
 
         this.htmlLoaded = {
             front: false,
@@ -1904,83 +2057,87 @@ FLIPBOOK.PageWebGL = class {
 
         this.animations = [];
 
-        var self = this;
+        /* ---- GPU bend uniforms (shared across all mats on this page) ---- */
+        this._bendUniforms = {
+            uBendForce: { value: 0 },
+            uBendOffset: { value: 0 },
+            uCurlForce: { value: 0 },
+            uCurlOffset: { value: 0.98 },
+            uPageWidth: { value: this.pW },
+        };
 
+        /* ---- Per-page material clones (so each page has its own uniforms) ---- */
+        var edgeMat = new THREE.MeshBasicMaterial({ color: 0xededed });
+        _patchBendMaterial(edgeMat, this._bendUniforms);
+
+        this.preloaderMatF = preloaderMatF.clone();
+        _patchBendMaterial(this.preloaderMatF, this._bendUniforms);
+        this.preloaderMatB = preloaderMatB.clone();
+        _patchBendMaterial(this.preloaderMatB, this._bendUniforms);
+
+        /* ---- Corner-curl (page 0 only) ---- */
         if (i == 0 && this.options.cornerCurl) {
             this.nfacesw = 20;
             this.nfacesh = 20;
-            var obj = { force: 0 };
 
             this.cornerCurlTween = FLIPBOOK.animate({
-                from: obj.force,
+                from: 0,
                 to: 1,
                 duration: 1000,
                 easing: 'easeInOutQuad',
                 repeat: Infinity,
                 yoyo: true,
-                step: function (f) {
-                    if (self.cornerCurl) {
-                        self.b2.force = f * -1.8;
-                        if (self.modF) self.modF.apply();
-                        self.book.needsUpdate = true;
+                step: (f) => {
+                    if (this.cornerCurl) {
+                        this._bendUniforms.uCurlForce.value = f * -1.8;
+                        this.book.needsUpdate = true;
                     }
                 },
             });
             this.animations.push(this.cornerCurlTween);
         }
 
-        this.gF = new THREE.BoxGeometry(this.pW, this.pH, 0.01, this.nfacesw, this.nfacesh, 0);
-        var basicMat = new THREE.MeshBasicMaterial({
-            color: 0xededed,
-        });
-        var mats = [basicMat, basicMat, basicMat, basicMat, preloaderMatF, preloaderMatB];
-
-        var mats2;
-        mats2 = [basicMat, basicMat, basicMat, basicMat, basicMat, basicMat];
-
-        if (this.options.pagePreloader) {
-            mats2 = [basicMat, basicMat, basicMat, basicMat, preloaderMatF, preloaderMatB];
+        /* ---- Geometry & mesh ---- */
+        if (this.nfacesw === options.pageSegmentsW && this.nfacesh === options.pageSegmentsH && book._sharedPageGeometry) {
+            this.gF = book._sharedPageGeometry;
+        } else {
+            this.gF = new THREE.BoxGeometry(this.pW, this.pH, 0.01, this.nfacesw, this.nfacesh, 0);
+            this.gF.faceVertexUvs[1] = this.gF.faceVertexUvs[0];
         }
 
-        this.cube = new THREE.Mesh(this.gF, mats);
+        var mats = [edgeMat, edgeMat, edgeMat, edgeMat, this.preloaderMatF, this.preloaderMatB];
+
+        var mats2;
+        mats2 = [edgeMat, edgeMat, edgeMat, edgeMat, edgeMat, edgeMat];
+
+        if (this.options.pagePreloader) {
+            mats2 = [edgeMat, edgeMat, edgeMat, edgeMat, this.preloaderMatF, this.preloaderMatB];
+        }
+
+        this.cube = new THREE.Mesh(
+            this.gF === book._sharedPageGeometry ? book._sharedEmptyGeometry : this.gF,
+            mats
+        );
         this.cube.position.x = this.pW * 0.5;
         if (this.options.shadows) {
             this.cube.castShadow = true;
             this.cube.receiveShadow = true;
         }
 
-        this.gF.faceVertexUvs[1] = this.gF.faceVertexUvs[0];
+        if (this.options.shadows) {
+            var depthMat = new THREE.MeshDepthMaterial({
+                depthPacking: THREE.RGBADepthPacking,
+            });
+            _patchBendMaterial(depthMat, this._bendUniforms);
+            this.cube.customDepthMaterial = depthMat;
+        }
 
         this.showMat();
 
-        this.cubeEmpty = new THREE.Mesh(new THREE.BoxGeometry(this.pW, this.pH, 0.01, 1, 1, 0), mats2);
-
+        this.cubeEmpty = new THREE.Mesh(book._sharedEmptyGeometry, mats2);
         this.cubeEmpty.position.x = this.pW * 0.5;
 
         this.pageFlippedAngle = (Math.PI * this.options.pageFlippedAngle) / 180;
-
-        this.bendF = new MOD3.Bend(0, 0, 0);
-        this.bendF.constraint = MOD3.ModConstant.LEFT;
-        if (this.pH > this.pW) {
-            this.bendF.switchAxes = true;
-        }
-
-        this.b2 = new MOD3.Bend(0, 0, 0);
-        this.b2.constraint = MOD3.ModConstant.LEFT;
-        if (this.pH > this.pW) {
-            this.b2.switchAxes = true;
-        }
-        this.b2.offset = 0.98;
-        this.b2.setAngle(1);
-
-        this.modF = new MOD3.ModifierStack(new MOD3.LibraryThree(), this.cube);
-        this.modF.addModifier(this.bendF);
-
-        if (i == 0 && this.options.cornerCurl) {
-            this.modF.addModifier(this.b2);
-        }
-
-        this.modF.apply();
     }
 
     startCornerCurl() {
@@ -1989,8 +2146,9 @@ FLIPBOOK.PageWebGL = class {
 
     stopCornerCurl() {
         this.cornerCurl = false;
-        this.b2.force = 0;
-        if (this.modF) this.modF.apply();
+        if (this._bendUniforms) {
+            this._bendUniforms.uCurlForce.value = 0;
+        }
     }
 
     loadHTML(side, callback) {
@@ -2107,7 +2265,9 @@ FLIPBOOK.PageWebGL = class {
     }
 
     loaded(side) {
-        const size = this.book.currentPageTextureSize;
+        // Use the size this side was actually loaded at, not the global —
+        // neighbours load at medium while the visible spread may be at large.
+        const size = side === 'front' ? this.sizeFront : this.sizeBack;
         if (this.materials && this.materials[side]) {
             this.setMat(this.materials[side][size], side);
         }
@@ -2135,12 +2295,6 @@ FLIPBOOK.PageWebGL = class {
 
         texture.minFilter = THREE.LinearFilter;
         texture.generateMipmaps = false;
-
-        // with anisotropy it is blurry
-
-        // texture.generateMipmaps = true;
-        // texture.minFilter = THREE.LinearMipmapLinearFilter;
-        // texture.anisotropy = this.book.renderer.capabilities.getMaxAnisotropy();
 
         texture.needsUpdate = true;
         return texture;
@@ -2178,6 +2332,7 @@ FLIPBOOK.PageWebGL = class {
             this.sizeBack = 0;
             this.setMat(this.preloaderMatB, 'back');
         }
+
     }
 
     disposeMat() {
@@ -2200,7 +2355,6 @@ FLIPBOOK.PageWebGL = class {
         }
 
         this.disposed = true;
-        // this.loaded = false;
     }
 
     createMaterial(map, side) {
@@ -2223,6 +2377,10 @@ FLIPBOOK.PageWebGL = class {
                 map: map,
             });
         }
+
+        /* Patch every new page-content material with bend shader */
+        _patchBendMaterial(mat, this._bendUniforms);
+
         return mat;
     }
 
@@ -2241,37 +2399,26 @@ FLIPBOOK.PageWebGL = class {
             this.angle = angle;
             this.container.rotation.y = -angle;
 
-            if (this.isFlippedLeft) {
-                this.bendF.force =
-                    (1.35 * Math.pow(-Math.abs(Math.cos(-angle / 2)), 1)) / Math.pow(this.pageHardness, 1.5);
-            } else {
-                this.bendF.force =
-                    (1.35 * Math.pow(Math.abs(Math.sin(-angle / 2)), 1)) / Math.pow(this.pageHardness, 1.5);
+            if (Math.abs(angle) > 0.03 && this.gF === this.book._sharedPageGeometry && this.cube.geometry !== this.gF) {
+                this.cube.geometry = this.gF;
             }
 
-            this.updateBend();
+            var force;
+            if (this.isFlippedLeft) {
+                force = (1.35 * Math.pow(-Math.abs(Math.cos(-angle / 2)), 1)) / Math.pow(this.pageHardness, 1.5);
+            } else {
+                force = (1.35 * Math.pow(Math.abs(Math.sin(-angle / 2)), 1)) / Math.pow(this.pageHardness, 1.5);
+            }
+
+            if (Math.abs(force) < 0.0001) force = 0;
+
+            if (this._lastBendForce !== force) {
+                this._lastBendForce = force;
+                this._bendUniforms.uBendForce.value = force;
+                this.stopCornerCurl();
+            }
 
             if (this.book.htmlLayerVisible && Math.abs(angle) > 0.03) {
-                // For HTML-only flipbooks, swap textures on visible pages before hiding HTML
-                if (this.book._isHtmlOnly) {
-                    // Swap the flipping page
-                    this.book._swapToScreenshotTexture(this, 'front');
-                    this.book._swapToScreenshotTexture(this, 'back');
-                    // Swap adjacent pages (at most 2 extra swaps)
-                    var prev = this.book.pages[this.index - 1];
-                    var next = this.book.pages[this.index + 1];
-                    if (prev) {
-                        this.book._swapToScreenshotTexture(prev, 'front');
-                        this.book._swapToScreenshotTexture(prev, 'back');
-                    }
-                    if (next) {
-                        this.book._swapToScreenshotTexture(next, 'front');
-                        this.book._swapToScreenshotTexture(next, 'back');
-                    }
-                    // Force immediate render so textures are visible before HTML is hidden
-                    this.book.renderer.render(this.book.Scene, this.book.Camera);
-                }
-
                 this.book._hideHTMLPage(this.book.pageL);
                 this.book._hideHTMLPage(this.book.pageR);
                 this.book._hideHTMLPage(this.book.pageC);
@@ -2286,24 +2433,6 @@ FLIPBOOK.PageWebGL = class {
             this.book.needsUpdate = true;
             this.book._zOrderDirty = true;
         }
-    }
-
-    updateBend() {
-        if (Math.abs(this.bendF.force) < 0.0001) {
-            this.bendF.force = 0;
-        }
-        if (this.bendForce == this.bendF.force) {
-            return;
-        }
-
-        this.bendForce = this.bendF.force;
-
-        this.stopCornerCurl();
-        if (this.modF) this.modF.apply();
-        this.gF.computeFaceNormals();
-        this.gF.computeVertexNormals(true);
-        this.book._zOrderDirty = true;
-        this.book.needsUpdate = true;
     }
 
     flipLeft(onComplete) {
@@ -2445,10 +2574,9 @@ FLIPBOOK.PageWebGL = class {
     }
 
     bendOut() {
-        var time = this.duration * Math.pow(Math.abs(this.bendF.force), 0.5) * 1000;
-
-        var force = this.bendF.force;
-        var offset = this.bendF.offset;
+        var force = this._bendUniforms.uBendForce.value;
+        var offset = this._bendUniforms.uBendOffset.value;
+        var time = this.duration * Math.pow(Math.abs(force), 0.5) * 1000;
 
         var a1 = FLIPBOOK.animate({
             from: force,
@@ -2456,8 +2584,9 @@ FLIPBOOK.PageWebGL = class {
             duration: time,
             easing: 'easeOutSine',
             step: (value) => {
-                this.bendF.force = value;
-                this.updateBend();
+                this._bendUniforms.uBendForce.value = value;
+                this._lastBendForce = value;
+                this.book.needsUpdate = true;
             },
             complete: () => {
                 this.flipFinished(this);
@@ -2471,11 +2600,11 @@ FLIPBOOK.PageWebGL = class {
             duration: time,
             easing: 'easeOutSine',
             step: (value) => {
-                this.bendF.offset = value;
-                this.updateBend();
+                this._bendUniforms.uBendOffset.value = value;
+                this.book.needsUpdate = true;
             },
             complete: () => {
-                this.bendF.offset = 0;
+                this._bendUniforms.uBendOffset.value = 0;
                 this.book.updateCornerCurl();
             },
         });
@@ -2484,14 +2613,10 @@ FLIPBOOK.PageWebGL = class {
         this.book._zOrderDirty = true;
     }
 
-    modApply() {
-        this.bendF.force = this.bendB.force = this.force;
-        this.bendF.offset = this.bendB.offset = this.offset;
-        this.updateBend();
-    }
     renderFlip(angle) {
         this._setAngle((-angle * 180) / Math.PI);
     }
+
     flipFinished() {
         if (this.flippingLeft) {
             this.flippingLeft = false;
@@ -2505,15 +2630,19 @@ FLIPBOOK.PageWebGL = class {
             this.isFlippedLeft = false;
         }
 
-        this.bendF.force = 0.0;
-        this.bendF.offset = 0.0;
-        this.updateBend();
+        this._bendUniforms.uBendForce.value = 0;
+        this._bendUniforms.uBendOffset.value = 0;
+        this._lastBendForce = 0;
         this.flipping = false;
         this.dragging = false;
+        this.book.needsUpdate = true;
         if (typeof this.onComplete != 'undefined') {
             this.onComplete(this);
         }
         this.book.flipFinnished();
+        if (this.gF === this.book._sharedPageGeometry) {
+            this.cube.geometry = this.book._sharedEmptyGeometry;
+        }
     }
 
     isFlippedLeft() {
@@ -2530,929 +2659,22 @@ FLIPBOOK.PageWebGL = class {
         this.animations.forEach(function (animation) {
             animation.stop();
         });
-        // this.matF = null;
-        // this.matB = null;
         this.gF.dispose();
         this.gF = null;
-        // this.gB.dispose();
-        // this.gB = null;
-        // this.cube.dispose();
         this.cube = null;
         this.cubeEmpty = null;
-        this.bendF = null;
-        this.modF = null;
-        // this.cubeEmpty.dispose();
-        // this.cubeEmpty = null;
+        this._bendUniforms = null;
         this.options = null;
         this.book = null;
         this.disposed = true;
     }
 };
 
-/* eslint-disable */
-{
-    /* MOD3D */
-    /**
-     *
-     * http://github.com/foo123/MOD3
-     *
-     * MOD3 3D Modifier Library (port of actionscript AS3Mod to javascript)
-     * supports: THREE.js, J3D, Copperlicht, Pre3D
-     *
-     * @author Nikos M.
-     * @url http://nikos-web-development.netai.net/
-     *
-     **/
-    var MOD3 = MOD3 || {};
-    (function (a) {
-        a.Constants = {
-            PI: Math.PI,
-            invPI: 1 / Math.PI,
-            halfPI: 0.5 * Math.PI,
-            doublePI: 2 * Math.PI,
-            toRad: (1 / 180) * Math.PI,
-            toDeg: (1 / 180) * Math.PI,
-        };
-        a.ModConstant = {
-            LEFT: -1,
-            RIGHT: 1,
-            NONE: 0,
-            X: 1,
-            Y: 2,
-            Z: 4,
-        };
-    })(MOD3);
-    (function (a) {
-        var c = a.Constants;
-        a.XMath = {};
-        a.XMath.normalize = function (c, d, e) {
-            return d - c == 0 ? 1 : a.XMath.trim(0, 1, (e - c) / d);
-        };
-        a.XMath.toRange = function (a, c, e) {
-            return c - a == 0 ? 0 : a + (c - a) * e;
-        };
-        a.XMath.inRange = function (a, c, e, f) {
-            typeof f == 'undefined' && (f = !1);
-            return f ? e >= a && e <= c : e > a && e < c;
-        };
-        a.XMath.sign = function (a, c) {
-            typeof c == 'undefined' && (c = 0);
-            return 0 == a ? c : a > 0 ? 1 : -1;
-        };
-        a.XMath.trim = function (a, c, e) {
-            return Math.min(c, Math.max(a, e));
-        };
-        a.XMath.wrap = function (a, c, e) {
-            return e < a ? e + (c - a) : e >= c ? e - (c - a) : e;
-        };
-        a.XMath.degToRad = function (a) {
-            return a * c.toRad;
-        };
-        a.XMath.radToDeg = function (a) {
-            return a * c.toDeg;
-        };
-        a.XMath.presicion = function (a, c) {
-            var e = Math.pow(10, c);
-            return Math.round(a * e) / e;
-        };
-        a.XMath.uceil = function (a) {
-            return a < 0 ? Math.floor(a) : Math.ceil(a);
-        };
-    })(MOD3);
-    (function (a) {
-        a.Range = function (a, b) {
-            this.start = 0;
-            this.end = 1;
-            if (typeof a != 'undefined') {
-                this.start = a;
-            }
-            if (typeof b != 'undefined') {
-                this.end = b;
-            }
-        };
-        a.Range.prototype.getSize = function () {
-            return this.end - this.start;
-        };
-        a.Range.prototype.move = function (a) {
-            this.start += a;
-            this.end += a;
-        };
-        a.Range.prototype.isIn = function (a) {
-            return a >= this.start && a <= this.end;
-        };
-        a.Range.prototype.normalize = function (c) {
-            return a.XMath.normalize(this.start, this.end, c);
-        };
-        a.Range.prototype.toRange = function (c) {
-            return a.XMath.toRange(this.start, this.end, c);
-        };
-        a.Range.prototype.trim = function (c) {
-            return a.XMath.trim(this.start, this.end, c);
-        };
-        a.Range.prototype.interpolate = function (a, b) {
-            return this.toRange(b.normalize(a));
-        };
-        a.Range.prototype.toString = function () {
-            return '[' + this.start + ' - ' + this.end + ']';
-        };
-    })(MOD3);
-    (function (a) {
-        a.Phase = function (a) {
-            this.value = 0;
-            if (typeof a != 'undefined') {
-                this.value = a;
-            }
-        };
-        a.Phase.prototype.getPhasedValue = function () {
-            return Math.sin(this.value);
-        };
-        a.Phase.prototype.getAbsPhasedValue = function () {
-            return Math.abs(this.getPhasedValue());
-        };
-        a.Phase.prototype.getNormValue = function () {
-            return (this.getPhasedValue() + 1) * 0.5;
-        };
-    })(MOD3);
-    (function (a) {
-        a.Point = function (a, b) {
-            this.y = this.x = 0;
-            if (typeof a != 'undefined') {
-                this.x = a;
-            }
-            if (typeof b != 'undefined') {
-                this.y = b;
-            }
-        };
-        a.Point.prototype.clone = function () {
-            return new a.Point(this.x, this.y);
-        };
-    })(MOD3);
-    (function (a) {
-        a.Matrix = function (a, b, d, e) {
-            this.m11 = 1;
-            this.m21 = this.m12 = 0;
-            this.m22 = 1;
-            if (typeof a != 'undefined') {
-                this.m11 = a;
-            }
-            if (typeof b != 'undefined') {
-                this.m12 = b;
-            }
-            if (typeof d != 'undefined') {
-                this.m21 = d;
-            }
-            if (typeof e != 'undefined') {
-                this.m22 = e;
-            }
-        };
-        a.Matrix.prototype.rotate = function (a) {
-            var b = Math.cos(a);
-            var a = Math.sin(a);
-            this.m11 = b;
-            this.m12 = -a;
-            this.m21 = a;
-            this.m22 = b;
-            return this;
-        };
-        a.Matrix.prototype.scale = function (a, b) {
-            this.m21 = this.m12 = 0;
-            if (typeof a != 'undefined') {
-                this.m22 = this.m11 = a;
-            }
-            if (typeof b != 'undefined') {
-                this.m22 = b;
-            }
-            return this;
-        };
-        a.Matrix.prototype.multiply = function (a) {
-            var b = this.m11;
-            var d = this.m12;
-            var e = this.m21;
-            var f = this.m22;
-            var g = a.m11;
-            var h = a.m12;
-            var i = a.m21;
-            var a = a.m22;
-            this.m11 = b * g + d * i;
-            this.m12 = b * h + d * a;
-            this.m21 = e * g + f * i;
-            this.m22 = e * h + f * a;
-            return this;
-        };
-        a.Matrix.prototype.transformPoint = function (c) {
-            return new a.Point(this.m11 * c.x + this.m12 * c.y, this.m21 * c.x + this.m22 * c.y);
-        };
-    })(MOD3);
-    (function (a) {
-        a.Vector3 = function (a, b, d) {
-            this.z = this.y = this.x = null;
-            this.x = a;
-            this.y = b;
-            this.z = d;
-        };
-        a.Vector3.ZERO = function () {
-            return new a.Vector3(0, 0, 0);
-        };
-        a.Vector3.dot = function (a, b) {
-            return a.x * b.x + a.y * b.y + a.z * b.z;
-        };
-        a.Vector3.prototype.clone = function () {
-            return new a.Vector3(this.x, this.y, this.z);
-        };
-        a.Vector3.prototype.equals = function (a) {
-            return this.x == a.x && this.y == a.y && this.z == a.z;
-        };
-        a.Vector3.prototype.zero = function () {
-            this.x = this.y = this.z = 0;
-        };
-        a.Vector3.prototype.negate = function () {
-            return new a.Vector3(-this.x, -this.y, -this.z);
-        };
-        a.Vector3.prototype.add = function (c) {
-            return new a.Vector3(this.x + c.x, this.y + c.y, this.z + c.z);
-        };
-        a.Vector3.prototype.subtract = function (c) {
-            return new a.Vector3(this.x - c.x, this.y - c.y, this.z - c.z);
-        };
-        a.Vector3.prototype.multiplyScalar = function (c) {
-            return new a.Vector3(this.x * c, this.y * c, this.z * c);
-        };
-        a.Vector3.prototype.multiply = function (c) {
-            return new a.Vector3(this.x * c.x, this.y * c.y, this.z * c.z);
-        };
-        a.Vector3.prototype.divide = function (c) {
-            c = 1 / c;
-            return new a.Vector3(this.x * c, this.y * c, this.z * c);
-        };
-        a.Vector3.prototype.normalize = function () {
-            var a = this.x;
-            var b = this.y;
-            var d = this.z;
-            var a = a * a + b * b + d * d;
-            a > 0 && ((a = 1 / Math.sqrt(a)), (this.x *= a), (this.y *= a), (this.z *= a));
-        };
-        a.Vector3.prototype.getMagnitude = function () {
-            var a = this.x;
-            var b = this.y;
-            var d = this.z;
-            return Math.sqrt(a * a + b * b + d * d);
-        };
-        a.Vector3.prototype.setMagnitude = function (a) {
-            this.normalize();
-            this.x *= a;
-            this.y *= a;
-            this.z *= a;
-        };
-        a.Vector3.prototype.toString = function () {
-            return '[' + this.x + ' , ' + this.y + ' , ' + this.z + ']';
-        };
-        a.Vector3.prototype.sum = function (a, b) {
-            return a.add(b);
-        };
-        a.Vector3.prototype.dot = function (a, b) {
-            return a.x * b.x + a.y * b.y + a.z * b.z;
-        };
-        a.Vector3.prototype.cross = function (c, b) {
-            var d = c.x;
-            var e = c.y;
-            var f = c.z;
-            var g = b.x;
-            var h = b.y;
-            var i = b.z;
-            return new a.Vector3(e * i - f * h, f * g - d * i, d * h - e * g);
-        };
-        a.Vector3.prototype.distance = function (a, b) {
-            var d = a.x - b.x;
-            var e = a.y - b.y;
-            var f = a.z - b.z;
-            return Math.sqrt(d * d + e * e + f * f);
-        };
-    })(MOD3);
-    (function (a) {
-        a.Matrix4 = function (a, b, d, e, f, g, h, i, n, m, o, k, p, l, j, q) {
-            this.n11 = 1;
-            this.n21 = this.n14 = this.n13 = this.n12 = 0;
-            this.n22 = 1;
-            this.n32 = this.n31 = this.n24 = this.n23 = 0;
-            this.n33 = 1;
-            this.n43 = this.n42 = this.n41 = this.n34 = 0;
-            this.n44 = 1;
-            if (typeof a != 'undefined') {
-                this.n11 = a;
-            }
-            if (typeof b != 'undefined') {
-                this.n12 = b;
-            }
-            if (typeof d != 'undefined') {
-                this.n13 = d;
-            }
-            if (typeof e != 'undefined') {
-                this.n14 = e;
-            }
-            if (typeof f != 'undefined') {
-                this.n21 = f;
-            }
-            if (typeof g != 'undefined') {
-                this.n22 = g;
-            }
-            if (typeof h != 'undefined') {
-                this.n23 = h;
-            }
-            if (typeof i != 'undefined') {
-                this.n24 = i;
-            }
-            if (typeof n != 'undefined') {
-                this.n31 = n;
-            }
-            if (typeof m != 'undefined') {
-                this.n32 = m;
-            }
-            if (typeof o != 'undefined') {
-                this.n33 = o;
-            }
-            if (typeof k != 'undefined') {
-                this.n34 = k;
-            }
-            if (typeof p != 'undefined') {
-                this.n41 = p;
-            }
-            if (typeof l != 'undefined') {
-                this.n42 = l;
-            }
-            if (typeof j != 'undefined') {
-                this.n43 = j;
-            }
-            if (typeof q != 'undefined') {
-                this.n44 = q;
-            }
-        };
-        a.Matrix4.prototype.translationMatrix = function (a, b, d) {
-            this.n14 = a;
-            this.n24 = b;
-            this.n34 = d;
-            return this;
-        };
-        a.Matrix4.prototype.scaleMatrix = function (a, b, d) {
-            this.n11 = a;
-            this.n22 = b;
-            this.n33 = d;
-            return this;
-        };
-        a.Matrix4.prototype.rotationMatrix = function (a, b, d, e) {
-            var f = Math.cos(e);
-            var g = Math.sin(e);
-            var e = 1 - f;
-            var h = a * b * e;
-            var i = b * d * e;
-            var n = a * d * e;
-            var m = g * d;
-            var o = g * b;
-            g *= a;
-            this.n11 = f + a * a * e;
-            this.n12 = -m + h;
-            this.n13 = o + n;
-            this.n14 = 0;
-            this.n21 = m + h;
-            this.n22 = f + b * b * e;
-            this.n23 = -g + i;
-            this.n24 = 0;
-            this.n31 = -o + n;
-            this.n32 = g + i;
-            this.n33 = f + d * d * e;
-            this.n34 = 0;
-            return this;
-        };
-        a.Matrix4.prototype.calculateMultiply = function (a, b) {
-            var d = a.n11;
-            var e = b.n11;
-            var f = a.n21;
-            var g = b.n21;
-            var h = a.n31;
-            var i = b.n31;
-            var n = a.n12;
-            var m = b.n12;
-            var o = a.n22;
-            var k = b.n22;
-            var p = a.n32;
-            var l = b.n32;
-            var j = a.n13;
-            var q = b.n13;
-            var r = a.n23;
-            var t = b.n23;
-            var s = a.n33;
-            var u = b.n33;
-            var v = a.n14;
-            var w = b.n14;
-            var z = a.n24;
-            var x = b.n24;
-            var A = a.n34;
-            var y = b.n34;
-            this.n11 = d * e + n * g + j * i;
-            this.n12 = d * m + n * k + j * l;
-            this.n13 = d * q + n * t + j * u;
-            this.n14 = d * w + n * x + j * y + v;
-            this.n21 = f * e + o * g + r * i;
-            this.n22 = f * m + o * k + r * l;
-            this.n23 = f * q + o * t + r * u;
-            this.n24 = f * w + o * x + r * y + z;
-            this.n31 = h * e + p * g + s * i;
-            this.n32 = h * m + p * k + s * l;
-            this.n33 = h * q + p * t + s * u;
-            this.n34 = h * w + p * x + s * y + A;
-        };
-        a.Matrix4.prototype.multiply = function (a, b) {
-            this.calculateMultiply(a, b);
-            return this;
-        };
-        a.Matrix4.prototype.multiplyVector = function (a, b) {
-            var d = b.x;
-            var e = b.y;
-            var f = b.z;
-            b.x = d * a.n11 + e * a.n12 + f * a.n13 + a.n14;
-            b.y = d * a.n21 + e * a.n22 + f * a.n23 + a.n24;
-            b.z = d * a.n31 + e * a.n32 + f * a.n33 + a.n34;
-        };
-    })(MOD3);
-    (function (a) {
-        a.VertexProxy = function (a) {
-            this.originalZ = this.originalY = this.originalX = this.ratioZ = this.ratioY = this.ratioX = null;
-            if (typeof a != 'undefined') {
-                this.vertex = a;
-            }
-        };
-        a.VertexProxy.prototype.setVertex = function () {};
-        a.VertexProxy.prototype.setRatios = function (a, b, d) {
-            this.ratioX = a;
-            this.ratioY = b;
-            this.ratioZ = d;
-        };
-        a.VertexProxy.prototype.setOriginalPosition = function (a, b, d) {
-            this.originalX = a;
-            this.originalY = b;
-            this.originalZ = d;
-        };
-        a.VertexProxy.prototype.getX = function () {};
-        a.VertexProxy.prototype.getY = function () {};
-        a.VertexProxy.prototype.getZ = function () {};
-        a.VertexProxy.prototype.setX = function () {};
-        a.VertexProxy.prototype.setY = function () {};
-        a.VertexProxy.prototype.setZ = function () {};
-        a.VertexProxy.prototype.getValue = function (c) {
-            switch (c) {
-                case a.ModConstant.X:
-                    return this.getX();
-                case a.ModConstant.Y:
-                    return this.getY();
-                case a.ModConstant.Z:
-                    return this.getZ();
-            }
-            return 0;
-        };
-        a.VertexProxy.prototype.setValue = function (c, b) {
-            switch (c) {
-                case a.ModConstant.X:
-                    this.setX(b);
-                    break;
-                case a.ModConstant.Y:
-                    this.setY(b);
-                    break;
-                case a.ModConstant.Z:
-                    this.setZ(b);
-            }
-        };
-        a.VertexProxy.prototype.getRatio = function (c) {
-            switch (c) {
-                case a.ModConstant.X:
-                    return this.ratioX;
-                case a.ModConstant.Y:
-                    return this.ratioY;
-                case a.ModConstant.Z:
-                    return this.ratioZ;
-            }
-            return -1;
-        };
-        a.VertexProxy.prototype.getOriginalValue = function (c) {
-            switch (c) {
-                case a.ModConstant.X:
-                    return this.originalX;
-                case a.ModConstant.Y:
-                    return this.originalY;
-                case a.ModConstant.Z:
-                    return this.originalZ;
-            }
-            return 0;
-        };
-        a.VertexProxy.prototype.reset = function () {
-            this.setX(this.originalX);
-            this.setY(this.originalY);
-            this.setZ(this.originalZ);
-        };
-        a.VertexProxy.prototype.collapse = function () {
-            this.originalX = this.getX();
-            this.originalY = this.getY();
-            this.originalZ = this.getZ();
-        };
-        a.VertexProxy.prototype.getVector = function () {
-            return new a.Vector3(this.getX(), this.getY(), this.getZ());
-        };
-        a.VertexProxy.prototype.setVector = function (a) {
-            this.setX(a.x);
-            this.setY(a.y);
-            this.setZ(a.z);
-        };
-        a.VertexProxy.prototype.getRatioVector = function () {
-            return new a.Vector3(this.ratioX, this.ratioY, this.ratioZ);
-        };
-    })(MOD3);
-    (function (a) {
-        a.FaceProxy = function () {
-            this.vertices = [];
-        };
-        a.FaceProxy.prototype.addVertex = function (a) {
-            this.vertices.push(a);
-        };
-        a.FaceProxy.prototype.getVertices = function () {
-            return this.vertices;
-        };
-    })(MOD3);
-    (function (a) {
-        a.MeshProxy = function () {
-            this.depth =
-                this.height =
-                this.width =
-                this.minAxis =
-                this.midAxis =
-                this.maxAxis =
-                this.minZ =
-                this.minY =
-                this.minX =
-                this.maxZ =
-                this.maxY =
-                this.maxX =
-                    null;
-            this.vertices = [];
-            this.faces = [];
-            this.mesh = null;
-        };
-        a.MeshProxy.prototype.getVertices = function () {
-            return this.vertices;
-        };
-        a.MeshProxy.prototype.getFaces = function () {
-            return this.faces;
-        };
-        a.MeshProxy.prototype.analyzeGeometry = function () {
-            for (
-                var c = this.getVertices(),
-                    b = c.length,
-                    d = b,
-                    e,
-                    f,
-                    g,
-                    h,
-                    i,
-                    n,
-                    m,
-                    o,
-                    k,
-                    p,
-                    l = !0,
-                    j = Math.min,
-                    q = Math.max;
-                --d >= 0;
-
-            ) {
-                (e = c[d]),
-                    (f = e.getX()),
-                    (g = e.getY()),
-                    (h = e.getZ()),
-                    l
-                        ? ((i = n = f), (m = o = g), (k = p = h), (l = !1))
-                        : ((i = j(i, f)), (m = j(m, g)), (k = j(k, h)), (n = q(n, f)), (o = q(o, g)), (p = q(p, h))),
-                    e.setOriginalPosition(f, g, h);
-            }
-            f = n - i;
-            g = o - m;
-            var depth = p - k;
-            this.width = f;
-            this.height = g;
-            this.depth = depth;
-            this.minX = i;
-            this.maxX = n;
-            this.minY = m;
-            this.maxY = o;
-            this.minZ = k;
-            this.maxZ = p;
-            d = q(f, q(g, depth));
-            j = j(f, j(g, depth));
-            if (d == f && j == g) {
-                (this.minAxis = a.ModConstant.Y), (this.midAxis = a.ModConstant.Z), (this.maxAxis = a.ModConstant.X);
-            } else if (d == f && j == depth) {
-                (this.minAxis = a.ModConstant.Z), (this.midAxis = a.ModConstant.Y), (this.maxAxis = a.ModConstant.X);
-            } else if (d == g && j == f) {
-                (this.minAxis = a.ModConstant.X), (this.midAxis = a.ModConstant.Z), (this.maxAxis = a.ModConstant.Y);
-            } else if (d == g && j == depth) {
-                (this.minAxis = a.ModConstant.Z), (this.midAxis = a.ModConstant.X), (this.maxAxis = a.ModConstant.Y);
-            } else if (d == depth && j == f) {
-                (this.minAxis = a.ModConstant.X), (this.midAxis = a.ModConstant.Y), (this.maxAxis = a.ModConstant.Z);
-            } else if (d == depth && j == g) {
-                (this.minAxis = a.ModConstant.Y), (this.midAxis = a.ModConstant.X), (this.maxAxis = a.ModConstant.Z);
-            }
-            for (d = b; --d >= 0; ) {
-                (e = c[d]), e.setRatios((e.getX() - i) / f, (e.getY() - m) / g, (e.getZ() - k) / depth);
-            }
-        };
-        a.MeshProxy.prototype.resetGeometry = function () {
-            for (var a = this.getVertices(), b = a.length; --b >= 0; ) {
-                a[b].reset();
-            }
-        };
-        a.MeshProxy.prototype.collapseGeometry = function () {
-            for (var a = this.getVertices(), b = a.length; --b >= 0; ) {
-                a[b].collapse();
-            }
-            this.analyzeGeometry();
-        };
-        a.MeshProxy.prototype.getMin = function (c) {
-            switch (c) {
-                case a.ModConstant.X:
-                    return this.minX;
-                case a.ModConstant.Y:
-                    return this.minY;
-                case a.ModConstant.Z:
-                    return this.minZ;
-            }
-            return -1;
-        };
-        a.MeshProxy.prototype.getMax = function (c) {
-            switch (c) {
-                case a.ModConstant.X:
-                    return this.maxX;
-                case a.ModConstant.Y:
-                    return this.maxY;
-                case a.ModConstant.Z:
-                    return this.maxZ;
-            }
-            return -1;
-        };
-        a.MeshProxy.prototype.getSize = function (c) {
-            switch (c) {
-                case a.ModConstant.X:
-                    return this.width;
-                case a.ModConstant.Y:
-                    return this.height;
-                case a.ModConstant.Z:
-                    return this.depth;
-            }
-            return -1;
-        };
-        a.MeshProxy.prototype.setMesh = function (a) {
-            this.mesh = a;
-            this.vertices = [];
-            this.faces = [];
-        };
-        a.MeshProxy.prototype.postApply = function () {};
-        a.MeshProxy.prototype.updateMeshPosition = function () {};
-    })(MOD3);
-    (function (a) {
-        a.Modifier = function () {
-            this.mod = null;
-        };
-        a.Modifier.prototype.setModifiable = function (a) {
-            this.mod = a;
-        };
-        a.Modifier.prototype.getVertices = function () {
-            return this.mod.getVertices();
-        };
-        a.Modifier.prototype.apply = function () {};
-    })(MOD3);
-    (function (a) {
-        a.Library3d = function () {
-            this.id = '';
-            this.vertexClass = this.meshClass = null;
-        };
-    })(MOD3);
-    (function (a) {
-        a.PluginFactory = {};
-        a.PluginFactory.getMeshProxy = function (a) {
-            return new a.meshClass();
-        };
-    })(MOD3);
-    (function (a) {
-        a.ModifierStack = function (c, b) {
-            this.lib3d = c;
-            this.stack = this.baseMesh = null;
-            this.baseMesh = a.PluginFactory.getMeshProxy(c);
-            this.baseMesh.setMesh(b);
-            this.baseMesh.analyzeGeometry();
-            this.stack = [];
-        };
-        a.ModifierStack.prototype.addModifier = function (a) {
-            a.setModifiable(this.baseMesh);
-            this.stack.push(a);
-        };
-        a.ModifierStack.prototype.apply = function () {
-            this.baseMesh.resetGeometry();
-            for (var a = this.stack, b = a.length, d = 0; d < b; ) {
-                a[d++].apply();
-            }
-            this.baseMesh.postApply();
-        };
-        a.ModifierStack.prototype.collapse = function () {
-            this.apply();
-            this.baseMesh.collapseGeometry();
-            this.stack = [];
-        };
-        a.ModifierStack.prototype.clear = function () {
-            this.stack = [];
-        };
-        a.ModifierStack.prototype.getMeshInfo = function () {
-            return this.baseMesh;
-        };
-    })(MOD3);
-    (function (a) {
-        a.Bend = function (c, b, d) {
-            this.diagAngle = this.angle = this.offset = this.force = null;
-            this.constraint = a.ModConstant.NONE;
-            this.m2 = this.m1 = this.origin = this.height = this.width = this.mid = this.min = this.max = null;
-            this.switchAxes = !1;
-            this.force = c;
-            this.offset = b;
-            this.setAngle(d);
-        };
-        a.Bend.prototype = new a.Modifier();
-        a.Bend.prototype.constructor = a.Bend;
-        a.Bend.prototype.setAngle = function (c) {
-            this.angle = c;
-            this.m1 = new a.Matrix();
-            this.m1.rotate(c);
-            this.m2 = new a.Matrix();
-            this.m2.rotate(-c);
-        };
-        a.Bend.prototype.setModifiable = function (c) {
-            a.Modifier.prototype.setModifiable.call(this, c);
-            this.max = this.switchAxes ? this.mod.midAxis : this.mod.maxAxis;
-            this.min = this.mod.minAxis;
-            this.mid = this.switchAxes ? this.mod.maxAxis : this.mod.midAxis;
-            this.width = this.mod.getSize(this.max);
-            this.height = this.mod.getSize(this.mid);
-            this.origin = this.mod.getMin(this.max);
-            this.diagAngle = Math.atan(this.width / this.height);
-        };
-        a.Bend.prototype.apply = function () {
-            if (this.force != 0) {
-                for (
-                    var c = this.mod.getVertices(),
-                        b = c.length,
-                        d = this.width,
-                        e = this.offset,
-                        f = this.origin,
-                        g = this.max,
-                        h = this.min,
-                        i = this.mid,
-                        n = this.m1,
-                        m = this.m2,
-                        o = f + d * e,
-                        k = d / Math.PI / this.force,
-                        p = a.Constants.doublePI * (d / (k * a.Constants.doublePI)),
-                        l,
-                        j,
-                        q,
-                        r,
-                        t = 1 / d,
-                        s = a.Constants.halfPI,
-                        u = Math.sin,
-                        v = Math.cos;
-                    --b >= 0;
-
-                ) {
-                    (d = c[b]),
-                        (l = d.getValue(g)),
-                        (j = d.getValue(i)),
-                        (q = d.getValue(h)),
-                        (j = n.transformPoint(new a.Point(l, j))),
-                        (l = j.x),
-                        (j = j.y),
-                        (r = (l - f) * t),
-                        (this.constraint == a.ModConstant.LEFT && r <= e) ||
-                            (this.constraint == a.ModConstant.RIGHT && r >= e) ||
-                            ((r = s - p * e + p * r),
-                            (l = u(r) * (k + q)),
-                            (r = v(r) * (k + q)),
-                            (q = l - k),
-                            (l = o - r)),
-                        (j = m.transformPoint(new a.Point(l, j))),
-                        (l = j.x),
-                        (j = j.y),
-                        d.setValue(g, l),
-                        d.setValue(i, j),
-                        d.setValue(h, q);
-                }
-            }
-        };
-    })(MOD3);
-    (function (a) {
-        a.LibraryThree = function () {
-            this.id = 'Three.js';
-            this.meshClass = a.MeshThree;
-            this.vertexClass = a.VertexThree;
-        };
-        a.LibraryThree.prototype = new a.Library3d();
-        a.LibraryThree.prototype.constructor = a.LibraryThree;
-    })(MOD3);
-    (function (a) {
-        a.VertexThree = function (a) {
-            this.mesh = a;
-        };
-        a.VertexThree.prototype = new a.VertexProxy();
-        a.VertexThree.prototype.setVertex = function (a) {
-            this.vertex = a;
-            this.originalX = a.x;
-            this.originalY = a.y;
-            this.originalZ = a.z;
-        };
-        a.VertexThree.prototype.getX = function () {
-            return this.vertex.x;
-        };
-        a.VertexThree.prototype.getY = function () {
-            return this.vertex.y;
-        };
-        a.VertexThree.prototype.getZ = function () {
-            return this.vertex.z;
-        };
-        a.VertexThree.prototype.setX = function (a) {
-            this.vertex.x = a;
-            a = this.mesh;
-            a.geometry.verticesNeedUpdate = !0;
-            a.geometry.normalsNeedUpdate = !0;
-            a.geometry.buffersNeedUpdate = !0;
-            a.geometry.dynamic = !0;
-        };
-        a.VertexThree.prototype.setY = function (a) {
-            this.vertex.y = a;
-            a = this.mesh;
-            a.geometry.verticesNeedUpdate = !0;
-            a.geometry.normalsNeedUpdate = !0;
-            a.geometry.buffersNeedUpdate = !0;
-            a.geometry.dynamic = !0;
-        };
-        a.VertexThree.prototype.setZ = function (a) {
-            this.vertex.z = a;
-            a = this.mesh;
-            a.geometry.verticesNeedUpdate = !0;
-            a.geometry.normalsNeedUpdate = !0;
-            a.geometry.buffersNeedUpdate = !0;
-            a.geometry.dynamic = !0;
-        };
-    })(MOD3);
-    (function (a) {
-        a.MeshThree = function () {};
-        a.MeshThree.prototype = new a.MeshProxy();
-        a.MeshThree.prototype.setMesh = function (c) {
-            a.MeshProxy.prototype.setMesh.call(this, c);
-            for (
-                var c = [],
-                    b = 0,
-                    d = this.mesh.geometry.vertices,
-                    e = d.length,
-                    f = this.mesh.geometry.faces,
-                    g = f.length,
-                    h,
-                    b = 0;
-                b < e;
-
-            ) {
-                (h = new a.VertexThree(this.mesh)), h.setVertex(d[b]), this.vertices.push(h), (c[d[b]] = h), b++;
-            }
-            for (b = 0; b < g; ) {
-                (e = new a.FaceProxy()),
-                    f[b] instanceof THREE.Face3
-                        ? (e.addVertex(c[d[f[b].a]]), e.addVertex(c[d[f[b].b]]), e.addVertex(c[d[f[b].c]]))
-                        : f[b] instanceof THREE.Face4 &&
-                          (e.addVertex(c[d[f[b].a]]),
-                          e.addVertex(c[d[f[b].b]]),
-                          e.addVertex(c[d[f[b].c]]),
-                          e.addVertex(c[d[f[b].d]])),
-                    this.faces.push(e),
-                    b++;
-            }
-            // delete lookup;
-        };
-        a.MeshThree.prototype.updateMeshPosition = function (a) {
-            var b = this.mesh;
-            b.position.x += a.x;
-            b.position.y += a.y;
-            b.position.z += a.z;
-        };
-    })(MOD3);
-}
+/* ------------------------------------------------------------------ */
+/*  CSS3D helpers (unchanged)                                         */
+/* ------------------------------------------------------------------ */
 
 {
-    /**
-     * Based on http://www.emagix.net/academic/mscs-project/item/camera-sync-with-css3-and-webgl-threejs
-     * @author mrdoob / http://mrdoob.com/
-     * @author yomotsu / https://yomotsu.net/
-     */
-
     FLIPBOOK.CSS3DObject = function (element) {
         THREE.Object3D.call(this);
 
@@ -3478,8 +2700,6 @@ FLIPBOOK.PageWebGL = class {
 
     FLIPBOOK.CSS3DSprite.prototype = Object.create(FLIPBOOK.CSS3DObject.prototype);
     FLIPBOOK.CSS3DSprite.prototype.constructor = FLIPBOOK.CSS3DSprite;
-
-    //
 
     FLIPBOOK.CSS3DRenderer = function () {
         var _this = this;
@@ -3635,8 +2855,6 @@ FLIPBOOK.PageWebGL = class {
                 var style;
 
                 if (object instanceof FLIPBOOK.CSS3DSprite) {
-                    // http://swiftcoder.wordpress.com/2008/11/25/constructing-a-billboard-matrix/
-
                     matrix.copy(camera.matrixWorldInverse);
                     matrix.transpose();
                     matrix.copyPosition(object.matrixWorld);
@@ -3770,10 +2988,6 @@ FLIPBOOK.PageWebGL = class {
             renderObject(scene, scene, camera, cameraCSSMatrix);
 
             if (isIE) {
-                // IE10 and 11 does not support 'preserve-3d'.
-                // Thus, z-order in 3D will not work.
-                // We have to calc z-order manually and set CSS z-index for IE.
-                // FYI: z-index can't handle object intersection
                 zOrder(scene);
             }
         };

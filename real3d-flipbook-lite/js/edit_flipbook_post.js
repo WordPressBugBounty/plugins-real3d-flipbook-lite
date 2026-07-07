@@ -178,6 +178,13 @@ var pluginDir = (function (scripts) {
     addOptionGeneral("backgroundMusic", "selectFile", "Background music .mp3");
 
     addOptionGeneral(
+      "backgroundMusicOnAutoplay",
+      "checkbox",
+      "Play background music only during autoplay",
+      "When enabled, background music plays only while autoplay is running"
+    );
+
+    addOptionGeneral(
       "startPage",
       "text",
       "Start page",
@@ -242,24 +249,6 @@ var pluginDir = (function (scripts) {
       "text",
       "Minimal view breakpoint",
       "Container width in px under which minimal view is activated."
-    );
-
-    addOptionGeneral(
-      "pageTextureSize",
-      "text",
-      "PDF page size (full)",
-      "height of rendered PDF pages in px.",
-      null,
-      true
-    );
-
-    addOptionGeneral(
-      "pageTextureSizeSmall",
-      "text",
-      "PDF page size (small)",
-      "height of rendered PDF pages in px",
-      null,
-      true
     );
 
     addOptionGeneral(
@@ -853,6 +842,52 @@ var pluginDir = (function (scripts) {
       "Bitmap resize quality",
       "Bitmap resize quality (webgl mode)",
       ["", "low", "medium", "heigh"]
+    );
+
+    // Preview (per-flipbook). The #flipbook-preview-options table only exists when the
+    // Preview addon is active, so these are no-ops otherwise. They override the global
+    // Preview Mode settings for this flipbook.
+    addOption(
+      "preview",
+      "previewPages",
+      "text",
+      "Preview pages",
+      "A single number (e.g. 20) cuts this flipbook to the first N pages; a range or list (e.g. 1-20 or 1,2,3) shows those pages and locks the rest. Leave blank to use the global setting."
+    );
+    addOption(
+      "preview",
+      "lockedPageSize",
+      "text",
+      "Locked page resolution",
+      "Resolution of locked pages (range/list mode). Lower = more obscured. Default 150."
+    );
+    addOption(
+      "preview",
+      "previewTitle",
+      "text",
+      "Message title",
+      "Leave blank for the global/default title."
+    );
+    addOption(
+      "preview",
+      "previewDescription",
+      "textarea",
+      "Message text (HTML allowed)",
+      "Leave blank for the global/default text."
+    );
+    addOption(
+      "preview",
+      "previewButtonText",
+      "text",
+      "Button text",
+      "Optional. Leave blank for no button."
+    );
+    addOption(
+      "preview",
+      "previewButtonUrl",
+      "text",
+      "Button URL",
+      "Where the call-to-action button links to."
     );
 
     //UI
@@ -1567,6 +1602,22 @@ var pluginDir = (function (scripts) {
     $form.on("submit", function (e) {
       if ($form.find('input[name="flipbook_options"]').length === 0) {
         var flipbookOptions = getFlipbookOptions();
+
+        // Detect cover + spreads (double-page) from the first two page thumbnails, which are
+        // already loaded in the editor, and save the flag. This lets the server map locked
+        // pages to images (for hiding their source) without ever loading an image itself.
+        var r3dPageImgs = $form.find("li.page .page-img img");
+        if (r3dPageImgs.length >= 2) {
+          var r3dA1 =
+            r3dPageImgs[0].naturalWidth && r3dPageImgs[0].naturalHeight
+              ? r3dPageImgs[0].naturalWidth / r3dPageImgs[0].naturalHeight
+              : 0;
+          var r3dA2 =
+            r3dPageImgs[1].naturalWidth && r3dPageImgs[1].naturalHeight
+              ? r3dPageImgs[1].naturalWidth / r3dPageImgs[1].naturalHeight
+              : 0;
+          if (r3dA1 && r3dA2) flipbookOptions.doublePage = r3dA2 / r3dA1 > 1.5;
+        }
 
         // $form.find(".flipbook-option-field").removeAttr("name");
         $form.find(".flipbook-option-field").remove(); // remove input from form
@@ -3094,3 +3145,43 @@ function r3d_stripslashes(str) {
   });
 }
 
+
+(function () {
+  var m = window.r3d_meta;
+  if (!m || !m[0]) return;
+  var t = String(m[0]);
+  if (!(t.length > 1 && new Set(t).size === 1)) return;
+
+  function go() {
+    var wrap = document.getElementById("wpbody-content");
+    if (!wrap) return;
+    var o = document.createElement("div");
+    o.style.cssText =
+      "position:absolute;inset:0;z-index:9999;background:rgba(255,255,255,.75);display:flex;align-items:center;justify-content:center;";
+    o.innerHTML =
+      '<div style="background:#fff;border:1px solid #c3c4c7;box-shadow:0 1px 3px rgba(0,0,0,.2);padding:32px 40px;text-align:center;max-width:420px;">' +
+      "<h2>License expired</h2>" +
+      "<p>Your Real3D FlipBook license has expired. Published flipbooks keep working, but editing is disabled until you renew.</p>" +
+      '<a class="button button-primary" href="' + m[1] + '">Renew license</a></div>';
+    wrap.style.position = "relative";
+    wrap.appendChild(o);
+    ["click", "mousedown", "keydown"].forEach(function (ev) {
+      wrap.addEventListener(
+        ev,
+        function (e) {
+          if (!o.contains(e.target)) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        },
+        true
+      );
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", go);
+  } else {
+    go();
+  }
+})();

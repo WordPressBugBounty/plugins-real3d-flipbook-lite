@@ -3,9 +3,19 @@
   document.addEventListener("DOMContentLoaded", function () {
     var books = document.querySelectorAll(".real3dflipbook");
     if (books.length > 0) {
+      var globalScript = document.getElementById(
+        "real3dflipbook-global-options"
+      );
+      var o_global = globalScript ? JSON.parse(globalScript.textContent) : {};
+
       books.forEach(function (bookElement) {
-        var o = window["flipbookOptions_" + bookElement.id];
-        var o_global = window["flipbookOptions_global"];
+        var configScript = document.querySelector(
+          '.real3dflipbook-options[data-book-id="' + bookElement.id + '"]'
+        );
+
+        if (!configScript) return;
+
+        var o = JSON.parse(configScript.textContent);
 
         function convertStrings(obj) {
           Object.keys(obj).forEach(function (key) {
@@ -81,6 +91,27 @@
         }
 
         o = FLIPBOOK.extend(true, {}, o_global, o);
+
+        // Compose the preview message from the structured fields. Per-flipbook values
+        // already override the global ones via the deep merge above. If nothing is set,
+        // previewMessage stays empty so the viewer's built-in defaults are shown.
+        if (!o.previewMessage) {
+          var previewMsg = "";
+          if (o.previewTitle)
+            previewMsg +=
+              '<h2 style="margin:0 0 10px;font-size:20px;">' + o.previewTitle + "</h2>";
+          if (o.previewDescription)
+            previewMsg +=
+              '<div style="margin:0 0 14px;">' + o.previewDescription + "</div>";
+          if (o.previewButtonText && o.previewButtonUrl)
+            previewMsg +=
+              '<a href="' +
+              o.previewButtonUrl +
+              '" target="_blank" style="display:inline-block;background:#2C6ECB;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">' +
+              o.previewButtonText +
+              "</a>";
+          if (previewMsg) o.previewMessage = previewMsg;
+        }
 
         o.assets = {
           preloader: o.rootFolder + "assets/images/preloader.jpg",
