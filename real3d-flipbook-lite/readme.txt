@@ -4,7 +4,7 @@ Donate link: https://codecanyon.net/item/real3d-flipbook-wordpress-plugin/694258
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 5.0
+Stable tag: 5.0.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -534,6 +534,10 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 * Improvement: updated flipbook viewer engine
 * Improvement: performance and compatibility updates
 * Fix: various bug fixes
+
+= 5.0.1 =
+* Improvement: redesigned Upgrade to PRO admin page
+* Improvement: redesigned Add-ons admin page
 
 
 == Upgrade to PRO for More Features ==
