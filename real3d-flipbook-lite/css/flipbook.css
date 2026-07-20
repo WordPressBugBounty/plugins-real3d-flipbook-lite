@@ -79,7 +79,8 @@
   touch-action: none;
 }
 
-.flipbook-page-html {
+.flipbook-page-html .textLayer,
+.flipbook-page-html-only .htmlContent {
   user-select: text;
   -webkit-user-select: text;
 }
@@ -817,6 +818,8 @@
 }
 
 .flipbook-side-menu.flipbook-side-menu-right {
+  left: auto;
+  right: 0;
   transform: translateX(100%);
   box-shadow: -4px 0 12px rgba(0, 0, 0, 0.12);
   clip-path: inset(0 0 0 -20px);
