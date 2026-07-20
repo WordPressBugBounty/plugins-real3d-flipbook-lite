@@ -159,6 +159,11 @@
 				<td><?php esc_html_e('Full customization', 'real3d-flipbook'); ?></td>
 			</tr>
 			<tr>
+				<td><?php esc_html_e('UI layouts and appearance', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Default layout', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('7 layouts, 3 skins, FontAwesome or Lucide icons, progress bar', 'real3d-flipbook'); ?></td>
+			</tr>
+			<tr>
 				<td><?php esc_html_e('Links inside PDF', 'real3d-flipbook'); ?></td>
 				<td><span class="r3d-no">&mdash;</span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>

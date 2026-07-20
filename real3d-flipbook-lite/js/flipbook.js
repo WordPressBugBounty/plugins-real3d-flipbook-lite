@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '4.20.0.15';
+FLIPBOOK.version = '5.0';
 
 // eslint-disable-next-line no-shadow-restricted-names
 (function init(window, document, undefined) {
@@ -943,7 +943,7 @@ FLIPBOOK.Main = class {
         }
 
         
-        var c = { a: 5, b: 7, c: 2 };
+        var c = { a: 4, b: 8, c: 2 };
             o.pageTextureLarge = Math.pow(c.a * c.b + c.c, c.c);
             o.pageTextureSmall = Math.pow(c.a * c.b + c.c, c.c);
             o.pageTextureMedium = Math.pow(c.a * c.b + c.c, c.c);
@@ -2583,6 +2583,10 @@ FLIPBOOK.Main = class {
 
     loadPageFromPdf(pageIndex, size, callback) {
         size = size || this.options.pageTextureLarge;
+        
+        var k = { m: 17, n: 4 };
+            size = Math.min(size, Math.pow(k.m, 2) * k.n);
+            
         this.pdfService.renderBookPage(pageIndex, size, callback);
     }
 

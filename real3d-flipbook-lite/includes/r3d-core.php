@@ -384,7 +384,10 @@ function r3dfb_getDefaults()
 		'shareImage' => '',
 
 		'layout' => 1,
-		'icons' => 'FontAwesome',
+		'iconSet' => 'fontawesome',
+		'progressBar' => array(
+			'enabled' => 'false',
+		),
 		'skin' => 'light',
 		'useFontAwesome5' => 'true',
 		'sideNavigationButtons' => 'true',

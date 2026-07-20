@@ -1123,19 +1123,21 @@ var pluginDir = (function (scripts) {
       e.preventDefault();
 
       Swal.fire({
-        title: "This is a PRO feature",
+        width: 420,
         html:
-          '<div style="text-align:left;max-width:340px;margin:0 auto;">' +
-          '<p style="margin:0 0 12px;color:#50575e;">Upgrade to Real3D Flipbook PRO to unlock:</p>' +
-          '<ul style="list-style:none;margin:0 0 14px;padding:0;color:#1d2327;line-height:2;">' +
-          '<li><span style="color:#84af05;font-weight:700;">&#10003;</span> High resolution pages with deep zoom</li>' +
-          '<li><span style="color:#84af05;font-weight:700;">&#10003;</span> PDF links and text search</li>' +
-          '<li><span style="color:#84af05;font-weight:700;">&#10003;</span> Toolbar and UI customization</li>' +
-          '<li><span style="color:#84af05;font-weight:700;">&#10003;</span> Google Analytics events</li>' +
-          '<li><span style="color:#84af05;font-weight:700;">&#10003;</span> Mobile and global settings</li>' +
+          '<div style="text-align:center;">' +
+          '<span style="display:inline-block;background:linear-gradient(180deg,#f8ce47,#edaf1e);color:#59430a;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 14px;border-radius:999px;box-shadow:0 1px 2px rgba(0,0,0,0.18);text-shadow:0 1px 0 rgba(255,255,255,0.35);">PRO</span>' +
+          '<h2 style="margin:12px 0 4px;font-size:20px;font-weight:600;color:#1d2327;">This is a PRO feature</h2>' +
+          '<p style="margin:0 0 16px;color:#50575e;font-size:13px;">Upgrade to Real3D Flipbook PRO to unlock:</p>' +
+          '<ul style="list-style:none;display:inline-block;text-align:left;margin:0 0 16px;padding:0;color:#1d2327;font-size:13.5px;line-height:2.1;">' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>High resolution pages with deep zoom</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>PDF links and text search</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Toolbar and UI customization</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Google Analytics events</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Mobile and global settings</li>' +
           '</ul>' +
-          '<p style="margin:0 0 4px;font-size:12px;color:#787c82;">Plans from $49/year &middot; 30-day money-back guarantee</p>' +
-          '<a style="font-size:12px;" href="https://real3dflipbook.com/?ref=wp-lite-popup" target="_blank">See live demos</a>' +
+          '<div style="background:#f6f7f7;border-radius:8px;padding:9px 12px;margin:0 0 10px;font-size:12px;color:#50575e;">Plans from $49/year &middot; 30-day money-back guarantee</div>' +
+          '<a style="font-size:12px;color:#2271b1;" href="https://real3dflipbook.com/?ref=wp-lite-popup" target="_blank">See live demos</a>' +
           '</div>',
         showCancelButton: true,
         showCloseButton: true,
