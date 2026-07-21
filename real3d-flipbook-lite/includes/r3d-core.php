@@ -114,418 +114,420 @@ if (!function_exists("r3d_common_folder_from_pages")) {
 	}
 }
 
-function r3dfb_getDefaults()
-{
-	return array(
+if (!function_exists("r3dfb_getDefaults")) {
+	function r3dfb_getDefaults()
+	{
+		return array(
 
-		'pages' => array(),
-		'pdfUrl' => '',
-		'printPdfUrl' => '',
-		'tableOfContent' => array(),
-		'id' => '',
-		'bookId' => '',
-		'date' => '',
-		'lightboxThumbnailUrl' => '',
-		'mode' => 'normal',
-		'viewMode' => 'webgl',
-		'rangeChunkSize' => '256',
-		'minPixelRatio' => '1',
-		'pdfTextLayer' => 'true',
-		'zoomMin' => '0.9',
-		'zoomStep' => '2',
-		'zoomSize' => '',
-		'zoomReset' => 'false',
-		'doubleClickZoom' => 'true',
-		'pageDrag' => 'true',
-		'singlePageMode' => 'false',
-		'pageFlipDuration' => '1',
-		'sound' => 'true',
-		'startPage' => '1',
-		'pageNumberOffset' => '0',
-		'deeplinking' => array(
-			'enabled' => 'false',
-			'prefix' => ''
-		),
-		'responsiveView' => 'true',
-		'responsiveViewTreshold' => '768',
-		'responsiveViewRatio' => '1',
-		'minimalView' => 'true',
-		'minimalViewBreakpoint' => '600',
-		'cover' => 'true',
-		'backCover' => 'true',
-		'scaleCover' => 'false',
-		'pageCaptions' => 'false',
-		'height' => '400',
-		'responsiveHeight' => 'true',
-		'containerRatio' => '',
-		'thumbnailsOnStart' => 'false',
-		'contentOnStart' => 'false',
-		'searchOnStart' => '',
-		'searchResultsThumbs' => 'false',
-		'tableOfContentCloseOnClick' => 'true',
-		'thumbsCloseOnClick' => 'true',
-		'autoplayOnStart' => 'false',
-		'autoplayInterval' => '3000',
-		'autoplayLoop' => 'true',
-		'autoplayStartPage' => '1',
-		'autoplayLoop' => 'true',
-		'rightToLeft' => 'false',
-		'pageWidth' => '',
-		'pageHeight' => '',
-		'thumbSize' => '130',
-		'logoImg' => '',
-		'logoUrl' => '',
-		'logoUrlTarget' => '',
-		'logoCSS' => 'position:absolute;left:0;top:0;',
-		'menuSelector' => '',
-		'zIndex' => 'auto',
-		'preloaderText' => '',
-		'googleAnalyticsTrackingCode' => '',
-		'pdfBrowserViewerIfIE' => 'false',
-		'modeMobile' => '',
-		'viewModeMobile' => '',
-		'aspectMobile' => '',
-		'aspectRatioMobile' => '0.71',
-		'singlePageModeIfMobile' => 'false',
-		'logoHideOnMobile' => 'false',
-		'mobile' => array(
+			'pages' => array(),
+			'pdfUrl' => '',
+			'printPdfUrl' => '',
+			'tableOfContent' => array(),
+			'id' => '',
+			'bookId' => '',
+			'date' => '',
+			'lightboxThumbnailUrl' => '',
+			'mode' => 'normal',
+			'viewMode' => 'webgl',
+			'rangeChunkSize' => '256',
+			'minPixelRatio' => '1',
+			'pdfTextLayer' => 'true',
+			'zoomMin' => '0.9',
+			'zoomStep' => '2',
+			'zoomSize' => '',
+			'zoomReset' => 'false',
+			'doubleClickZoom' => 'true',
+			'pageDrag' => 'true',
+			'singlePageMode' => 'false',
+			'pageFlipDuration' => '1',
+			'sound' => 'true',
+			'startPage' => '1',
+			'pageNumberOffset' => '0',
+			'deeplinking' => array(
+				'enabled' => 'false',
+				'prefix' => ''
+			),
+			'responsiveView' => 'true',
+			'responsiveViewTreshold' => '768',
+			'responsiveViewRatio' => '1',
+			'minimalView' => 'true',
+			'minimalViewBreakpoint' => '600',
+			'cover' => 'true',
+			'backCover' => 'true',
+			'scaleCover' => 'false',
+			'pageCaptions' => 'false',
+			'height' => '400',
+			'responsiveHeight' => 'true',
+			'containerRatio' => '',
 			'thumbnailsOnStart' => 'false',
 			'contentOnStart' => 'false',
-			'pagesInMemory' => '6',
+			'searchOnStart' => '',
+			'searchResultsThumbs' => 'false',
+			'tableOfContentCloseOnClick' => 'true',
+			'thumbsCloseOnClick' => 'true',
+			'autoplayOnStart' => 'false',
+			'autoplayInterval' => '3000',
+			'autoplayLoop' => 'true',
+			'autoplayStartPage' => '1',
+			'autoplayLoop' => 'true',
+			'rightToLeft' => 'false',
+			'pageWidth' => '',
+			'pageHeight' => '',
+			'thumbSize' => '130',
+			'logoImg' => '',
+			'logoUrl' => '',
+			'logoUrlTarget' => '',
+			'logoCSS' => 'position:absolute;left:0;top:0;',
+			'menuSelector' => '',
+			'zIndex' => 'auto',
+			'preloaderText' => '',
+			'googleAnalyticsTrackingCode' => '',
+			'pdfBrowserViewerIfIE' => 'false',
+			'modeMobile' => '',
+			'viewModeMobile' => '',
+			'aspectMobile' => '',
+			'aspectRatioMobile' => '0.71',
+			'singlePageModeIfMobile' => 'false',
+			'logoHideOnMobile' => 'false',
+			'mobile' => array(
+				'thumbnailsOnStart' => 'false',
+				'contentOnStart' => 'false',
+				'pagesInMemory' => '6',
+				'bitmapResizeHeight' => '',
+				'bitmapResizeQuality' => '',
+				'currentPage' => array(
+					'enabled' => 'false'
+				),
+				'pdfUrl' => '',
+				'minimalViewBreakpoint' => '360',
+				'zoomMin' => '',
+				'autoplayInterval' => ''
+
+			),
+			'lightboxCssClass' => '',
+			'lightboxLink' => '',
+			'lightboxLinkNewWindow' => 'true',
+			'lightboxBackground' => 'rgb(81, 85, 88)',
+			'lightboxBackgroundPattern' => '',
+			'lightboxBackgroundImage' => '',
+			'lightboxContainerCSS' => 'display:inline-block;padding:10px;',
+			'lightboxThumbnailHeight' => '300',
+			'lightboxThumbnailUrlCSS' => 'display:block;',
+			'lightboxThumbnailInfo' => 'false',
+			'lightboxThumbnailInfoText' => '',
+			'lightboxThumbnailInfoCSS' => 'top: 0;  width: 100%; height: 100%; font-size: 16px; color: #000; background: rgba(255,255,255,.8); ',
+			'showTitle' => 'false',
+			'showDate' => 'false',
+			'hideThumbnail' => 'false',
+			'lightboxText' => '',
+			'lightboxTextCSS' => 'display:block;',
+			'lightboxTextPosition' => 'top',
+			'lightBoxOpened' => 'false',
+			'lightBoxFullscreen' => 'false',
+			'lightboxStartPage' => '',
+			'lightboxMarginV' => '0',
+			'lightboxMarginH' => '0',
+			'lights' => 'true',
+			'lightPositionX' => '0',
+			'lightPositionY' => '150',
+			'lightPositionZ' => '1400',
+			'lightIntensity' => '0.6',
+			'shadows' => 'true',
+			'shadowMapSize' => '2048',
+			'shadowOpacity' => '0.2',
+			'shadowDistance' => '15',
+			'pageHardness' => '2',
+			'coverHardness' => '2',
+			'pageRoughness' => '1',
+			'pageMetalness' => '0',
+			'pageSegmentsW' => '6',
+			'pageSegmentsH' => '1',
+			'pagesInMemory' => '20',
 			'bitmapResizeHeight' => '',
 			'bitmapResizeQuality' => '',
+			'pageMiddleShadowSize' => '4',
+			'pageMiddleShadowColorL' => '#7F7F7F',
+			'pageMiddleShadowColorR' => '#AAAAAA',
+			'antialias' => 'false',
+			'pan' => '0',
+			'tilt' => '0',
+			'rotateCameraOnMouseDrag' => 'true',
+			'panMax' => '20',
+			'panMin' => '-20',
+			'tiltMax' => '0',
+			'tiltMin' => '0',
 			'currentPage' => array(
+				'enabled' => 'true',
+				'title' => __('Current page', 'real3d-flipbook'),
+				'hAlign' => 'left',
+				'vAlign' => 'top'
+			),
+			'btnAutoplay' => array(
+				'enabled' => 'true',
+				'title' => __('Auto flip', 'real3d-flipbook')
+			),
+			'btnNext' => array(
+				'enabled' => 'true',
+				'title' => __('Next Page', 'real3d-flipbook')
+			),
+			'btnLast' => array(
+				'enabled' => 'false',
+				'title' => __('Last Page', 'real3d-flipbook')
+			),
+			'btnPrev' => array(
+				'enabled' => 'true',
+				'title' => __('Previous Page', 'real3d-flipbook')
+			),
+			'btnFirst' => array(
+				'enabled' => 'false',
+				'title' => __('First Page', 'real3d-flipbook')
+			),
+			'btnZoomIn' => array(
+				'enabled' => 'true',
+				'title' => __('Zoom in', 'real3d-flipbook')
+			),
+			'btnZoomOut' => array(
+				'enabled' => 'true',
+				'title' => __('Zoom out', 'real3d-flipbook')
+			),
+			'btnToc' => array(
+				'enabled' => 'true',
+				'title' => __('Table of Contents', 'real3d-flipbook')
+			),
+			'btnThumbs' => array(
+				'enabled' => 'true',
+				'title' => __('Pages', 'real3d-flipbook')
+			),
+			'btnShare' => array(
+				'enabled' => 'true',
+				'title' => __('Share', 'real3d-flipbook')
+			),
+			'btnNotes' => array(
+				'enabled' => 'false',
+				'title' => __('Notes', 'real3d-flipbook')
+			),
+			'btnDownloadPages' => array(
+				'enabled' => 'false',
+				'url' => '',
+				'title' => __('Download pages', 'real3d-flipbook')
+			),
+			'btnDownloadPdf' => array(
+				'enabled' => 'true',
+				'url' => '',
+				'title' => __('Download PDF', 'real3d-flipbook'),
+				'forceDownload' => 'true',
+				'openInNewWindow' => 'true'
+			),
+			'btnSound' => array(
+				'enabled' => 'true',
+				'title' => __('Sound', 'real3d-flipbook')
+			),
+			'btnExpand' => array(
+				'enabled' => 'true',
+				'title' => __('Toggle fullscreen', 'real3d-flipbook')
+			),
+			'btnSingle' => array(
+				'enabled' => 'true',
+				'title' => __('Toggle single page', 'real3d-flipbook')
+			),
+			'btnSearch' => array(
+				'enabled' => 'false',
+				'title' => __('Search', 'real3d-flipbook')
+			),
+			'search' => array(
+				'enabled' => 'false',
+				'title' => __('Search', 'real3d-flipbook')
+			),
+			'btnBookmark' => array(
+				'enabled' => 'false',
+				'title' => __('Bookmark', 'real3d-flipbook')
+			),
+			'btnPrint' => array(
+				'enabled' => 'true',
+				'title' => __('Print', 'real3d-flipbook')
+			),
+			'btnTools' => array(
+				'enabled' => 'true',
+				'title' => __('More', 'real3d-flipbook')
+			),
+			'btnClose' => array(
+				'enabled' => 'true',
+				'title' => __('Close', 'real3d-flipbook')
+			),
+
+			'whatsapp' => array(
+				'enabled' => 'true'
+			),
+			'twitter' => array(
+				'enabled' => 'true'
+			),
+			'facebook' => array(
+				'enabled' => 'true'
+			),
+			'pinterest' => array(
+				'enabled' => 'true'
+			),
+			'email' => array(
+				'enabled' => 'true'
+			),
+			'linkedin' => array(
+				'enabled' => 'true'
+			),
+			'digg' => array(
 				'enabled' => 'false'
 			),
-			'pdfUrl' => '',
-			'minimalViewBreakpoint' => '360',
-			'zoomMin' => '',
-			'autoplayInterval' => ''
+			'reddit' => array(
+				'enabled' => 'false'
+			),
 
-		),
-		'lightboxCssClass' => '',
-		'lightboxLink' => '',
-		'lightboxLinkNewWindow' => 'true',
-		'lightboxBackground' => 'rgb(81, 85, 88)',
-		'lightboxBackgroundPattern' => '',
-		'lightboxBackgroundImage' => '',
-		'lightboxContainerCSS' => 'display:inline-block;padding:10px;',
-		'lightboxThumbnailHeight' => '300',
-		'lightboxThumbnailUrlCSS' => 'display:block;',
-		'lightboxThumbnailInfo' => 'false',
-		'lightboxThumbnailInfoText' => '',
-		'lightboxThumbnailInfoCSS' => 'top: 0;  width: 100%; height: 100%; font-size: 16px; color: #000; background: rgba(255,255,255,.8); ',
-		'showTitle' => 'false',
-		'showDate' => 'false',
-		'hideThumbnail' => 'false',
-		'lightboxText' => '',
-		'lightboxTextCSS' => 'display:block;',
-		'lightboxTextPosition' => 'top',
-		'lightBoxOpened' => 'false',
-		'lightBoxFullscreen' => 'false',
-		'lightboxStartPage' => '',
-		'lightboxMarginV' => '0',
-		'lightboxMarginH' => '0',
-		'lights' => 'true',
-		'lightPositionX' => '0',
-		'lightPositionY' => '150',
-		'lightPositionZ' => '1400',
-		'lightIntensity' => '0.6',
-		'shadows' => 'true',
-		'shadowMapSize' => '2048',
-		'shadowOpacity' => '0.2',
-		'shadowDistance' => '15',
-		'pageHardness' => '2',
-		'coverHardness' => '2',
-		'pageRoughness' => '1',
-		'pageMetalness' => '0',
-		'pageSegmentsW' => '6',
-		'pageSegmentsH' => '1',
-		'pagesInMemory' => '20',
-		'bitmapResizeHeight' => '',
-		'bitmapResizeQuality' => '',
-		'pageMiddleShadowSize' => '4',
-		'pageMiddleShadowColorL' => '#7F7F7F',
-		'pageMiddleShadowColorR' => '#AAAAAA',
-		'antialias' => 'false',
-		'pan' => '0',
-		'tilt' => '0',
-		'rotateCameraOnMouseDrag' => 'true',
-		'panMax' => '20',
-		'panMin' => '-20',
-		'tiltMax' => '0',
-		'tiltMin' => '0',
-		'currentPage' => array(
-			'enabled' => 'true',
-			'title' => __('Current page', 'real3d-flipbook'),
-			'hAlign' => 'left',
-			'vAlign' => 'top'
-		),
-		'btnAutoplay' => array(
-			'enabled' => 'true',
-			'title' => __('Auto flip', 'real3d-flipbook')
-		),
-		'btnNext' => array(
-			'enabled' => 'true',
-			'title' => __('Next Page', 'real3d-flipbook')
-		),
-		'btnLast' => array(
-			'enabled' => 'false',
-			'title' => __('Last Page', 'real3d-flipbook')
-		),
-		'btnPrev' => array(
-			'enabled' => 'true',
-			'title' => __('Previous Page', 'real3d-flipbook')
-		),
-		'btnFirst' => array(
-			'enabled' => 'false',
-			'title' => __('First Page', 'real3d-flipbook')
-		),
-		'btnZoomIn' => array(
-			'enabled' => 'true',
-			'title' => __('Zoom in', 'real3d-flipbook')
-		),
-		'btnZoomOut' => array(
-			'enabled' => 'true',
-			'title' => __('Zoom out', 'real3d-flipbook')
-		),
-		'btnToc' => array(
-			'enabled' => 'true',
-			'title' => __('Table of Contents', 'real3d-flipbook')
-		),
-		'btnThumbs' => array(
-			'enabled' => 'true',
-			'title' => __('Pages', 'real3d-flipbook')
-		),
-		'btnShare' => array(
-			'enabled' => 'true',
-			'title' => __('Share', 'real3d-flipbook')
-		),
-		'btnNotes' => array(
-			'enabled' => 'false',
-			'title' => __('Notes', 'real3d-flipbook')
-		),
-		'btnDownloadPages' => array(
-			'enabled' => 'false',
-			'url' => '',
-			'title' => __('Download pages', 'real3d-flipbook')
-		),
-		'btnDownloadPdf' => array(
-			'enabled' => 'true',
-			'url' => '',
-			'title' => __('Download PDF', 'real3d-flipbook'),
-			'forceDownload' => 'true',
-			'openInNewWindow' => 'true'
-		),
-		'btnSound' => array(
-			'enabled' => 'true',
-			'title' => __('Sound', 'real3d-flipbook')
-		),
-		'btnExpand' => array(
-			'enabled' => 'true',
-			'title' => __('Toggle fullscreen', 'real3d-flipbook')
-		),
-		'btnSingle' => array(
-			'enabled' => 'true',
-			'title' => __('Toggle single page', 'real3d-flipbook')
-		),
-		'btnSearch' => array(
-			'enabled' => 'false',
-			'title' => __('Search', 'real3d-flipbook')
-		),
-		'search' => array(
-			'enabled' => 'false',
-			'title' => __('Search', 'real3d-flipbook')
-		),
-		'btnBookmark' => array(
-			'enabled' => 'false',
-			'title' => __('Bookmark', 'real3d-flipbook')
-		),
-		'btnPrint' => array(
-			'enabled' => 'true',
-			'title' => __('Print', 'real3d-flipbook')
-		),
-		'btnTools' => array(
-			'enabled' => 'true',
-			'title' => __('More', 'real3d-flipbook')
-		),
-		'btnClose' => array(
-			'enabled' => 'true',
-			'title' => __('Close', 'real3d-flipbook')
-		),
+			'shareUrl' => '',
+			'shareTitle' => '',
+			'shareImage' => '',
 
-		'whatsapp' => array(
-			'enabled' => 'true'
-		),
-		'twitter' => array(
-			'enabled' => 'true'
-		),
-		'facebook' => array(
-			'enabled' => 'true'
-		),
-		'pinterest' => array(
-			'enabled' => 'true'
-		),
-		'email' => array(
-			'enabled' => 'true'
-		),
-		'linkedin' => array(
-			'enabled' => 'true'
-		),
-		'digg' => array(
-			'enabled' => 'false'
-		),
-		'reddit' => array(
-			'enabled' => 'false'
-		),
+			'layout' => 1,
+			'iconSet' => 'fontawesome',
+			'progressBar' => array(
+				'enabled' => 'false',
+			),
+			'skin' => 'light',
+			'useFontAwesome5' => 'true',
+			'sideNavigationButtons' => 'true',
+			'menuNavigationButtons' => 'false',
+			'backgroundColor' => 'rgb(81, 85, 88)',
+			'backgroundPattern' => '',
+			'backgroundImage' => '',
+			'backgroundTransparent' => 'false',
 
-		'shareUrl' => '',
-		'shareTitle' => '',
-		'shareImage' => '',
+			'menuBackground' => '',
+			'menuShadow' => '',
+			'menuMargin' => '0',
+			'menuPadding' => '0',
+			'menuOverBook' => 'false',
+			'menuFloating' => 'false',
+			'menuTransparent' => 'false',
 
-		'layout' => 1,
-		'iconSet' => 'fontawesome',
-		'progressBar' => array(
-			'enabled' => 'false',
-		),
-		'skin' => 'light',
-		'useFontAwesome5' => 'true',
-		'sideNavigationButtons' => 'true',
-		'menuNavigationButtons' => 'false',
-		'backgroundColor' => 'rgb(81, 85, 88)',
-		'backgroundPattern' => '',
-		'backgroundImage' => '',
-		'backgroundTransparent' => 'false',
+			'menu2Background' => '',
+			'menu2Shadow' => '',
+			'menu2Margin' => '0',
+			'menu2Padding' => '0',
+			'menu2OverBook' => 'true',
+			'menu2Floating' => 'false',
+			'menu2Transparent' => 'true',
 
-		'menuBackground' => '',
-		'menuShadow' => '',
-		'menuMargin' => '0',
-		'menuPadding' => '0',
-		'menuOverBook' => 'false',
-		'menuFloating' => 'false',
-		'menuTransparent' => 'false',
+			'skinColor' => '',
+			'skinBackground' => '',
 
-		'menu2Background' => '',
-		'menu2Shadow' => '',
-		'menu2Margin' => '0',
-		'menu2Padding' => '0',
-		'menu2OverBook' => 'true',
-		'menu2Floating' => 'false',
-		'menu2Transparent' => 'true',
+			'hideMenu' => 'false',
+			'menuAlignHorizontal' => 'center',
+			'btnColor' => '',
+			'btnColorHover' => '',
+			'btnBackground' => 'none',
+			'btnRadius' => '0',
+			'btnMargin' => '0',
+			'btnSize' => '18',
+			'btnPaddingV' => '10',
+			'btnPaddingH' => '10',
+			'btnShadow' => '',
+			'btnTextShadow' => '',
+			'btnBorder' => '',
+			'arrowColor' => '#fff',
+			'arrowColorHover' => '#fff',
+			'arrowBackground' => 'rgba(0,0,0,0)',
+			'arrowBackgroundHover' => 'rgba(0, 0, 0, .15)',
+			'arrowRadius' => '4',
+			'arrowMargin' => '4',
+			'arrowSize' => '40',
+			'arrowPadding' => '10',
+			'arrowTextShadow' => '0px 0px 1px rgba(0, 0, 0, 1)',
+			'arrowBorder' => '',
+			'closeBtnColorHover' => '#FFF',
+			'closeBtnBackground' => 'rgba(0,0,0,.4)',
+			'closeBtnRadius' => '0',
+			'closeBtnMargin' => '0',
+			'closeBtnSize' => '20',
+			'closeBtnPadding' => '5',
+			'closeBtnTextShadow' => '',
+			'closeBtnBorder' => '',
+			'floatingBtnColor' => '',
+			'floatingBtnColorHover' => '',
+			'floatingBtnBackground' => '',
+			'floatingBtnBackgroundHover' => '',
+			'floatingBtnRadius' => '',
+			'floatingBtnMargin' => '',
+			'floatingBtnSize' => '',
+			'floatingBtnPadding' => '',
+			'floatingBtnShadow' => '',
+			'floatingBtnTextShadow' => '',
+			'floatingBtnBorder' => '',
+			'currentPageMarginV' => '5',
+			'currentPageMarginH' => '5',
+			'arrowsAlwaysEnabledForNavigation' => 'true',
+			'arrowsDisabledNotFullscreen' => 'true',
+			'touchSwipeEnabled' => 'true',
+			'fitToWidth' => 'false',
+			'rightClickEnabled' => 'true',
+			'linkColor' => 'rgba(0, 0, 0, 0)',
+			'linkColorHover' => 'rgba(255, 255, 0, 1)',
+			'linkOpacity' => '0.4',
+			'linkTarget' => '_blank',
+			'pdfAutoLinks' => 'false',
+			'disableRange' => 'false',
 
-		'skinColor' => '',
-		'skinBackground' => '',
+			'strings' => array(
+				'print' => __('Print', 'real3d-flipbook'),
+				'printLeftPage' => __('Print left page', 'real3d-flipbook'),
+				'printRightPage' => __('Print right page', 'real3d-flipbook'),
+				'printCurrentPage' => __('Print current page', 'real3d-flipbook'),
+				'printAllPages' => __('Print all pages', 'real3d-flipbook'),
+				'download' => __('Download', 'real3d-flipbook'),
+				'downloadLeftPage' => __('Download left page', 'real3d-flipbook'),
+				'downloadRightPage' => __('Download right page', 'real3d-flipbook'),
+				'downloadCurrentPage' => __('Download current page', 'real3d-flipbook'),
+				'downloadAllPages' => __('Download all pages', 'real3d-flipbook'),
+				'bookmarks' => __('Bookmarks', 'real3d-flipbook'),
+				'bookmarkLeftPage' => __('Bookmark left page', 'real3d-flipbook'),
+				'bookmarkRightPage' => __('Bookmark right page', 'real3d-flipbook'),
+				'bookmarkCurrentPage' => __('Bookmark current page', 'real3d-flipbook'),
+				'search' => __('Search', 'real3d-flipbook'),
+				'findInDocument' => __('Find in document', 'real3d-flipbook'),
+				'pagesFoundContaining' => __('pages found containing', 'real3d-flipbook'),
+				'noMatches' => __('No matches', 'real3d-flipbook'),
+				'matchesFound' => __('matches found', 'real3d-flipbook'),
+				'page' => __('Page', 'real3d-flipbook'),
+				'matches' => __('matches', 'real3d-flipbook'),
+				'thumbnails' => __('Thumbnails', 'real3d-flipbook'),
+				'tableOfContent' => __('Table of Contents', 'real3d-flipbook'),
+				'share' => __('Share', 'real3d-flipbook'),
+				'pressEscToClose' => __('Press ESC to close', 'real3d-flipbook'),
+				'password' => __('Password', 'real3d-flipbook'),
+				'addNote' => __('Add note', 'real3d-flipbook'),
+				'typeInYourNote' => __('Type in your note...', 'real3d-flipbook'),
+			),
 
-		'hideMenu' => 'false',
-		'menuAlignHorizontal' => 'center',
-		'btnColor' => '',
-		'btnColorHover' => '',
-		'btnBackground' => 'none',
-		'btnRadius' => '0',
-		'btnMargin' => '0',
-		'btnSize' => '18',
-		'btnPaddingV' => '10',
-		'btnPaddingH' => '10',
-		'btnShadow' => '',
-		'btnTextShadow' => '',
-		'btnBorder' => '',
-		'arrowColor' => '#fff',
-		'arrowColorHover' => '#fff',
-		'arrowBackground' => 'rgba(0,0,0,0)',
-		'arrowBackgroundHover' => 'rgba(0, 0, 0, .15)',
-		'arrowRadius' => '4',
-		'arrowMargin' => '4',
-		'arrowSize' => '40',
-		'arrowPadding' => '10',
-		'arrowTextShadow' => '0px 0px 1px rgba(0, 0, 0, 1)',
-		'arrowBorder' => '',
-		'closeBtnColorHover' => '#FFF',
-		'closeBtnBackground' => 'rgba(0,0,0,.4)',
-		'closeBtnRadius' => '0',
-		'closeBtnMargin' => '0',
-		'closeBtnSize' => '20',
-		'closeBtnPadding' => '5',
-		'closeBtnTextShadow' => '',
-		'closeBtnBorder' => '',
-		'floatingBtnColor' => '',
-		'floatingBtnColorHover' => '',
-		'floatingBtnBackground' => '',
-		'floatingBtnBackgroundHover' => '',
-		'floatingBtnRadius' => '',
-		'floatingBtnMargin' => '',
-		'floatingBtnSize' => '',
-		'floatingBtnPadding' => '',
-		'floatingBtnShadow' => '',
-		'floatingBtnTextShadow' => '',
-		'floatingBtnBorder' => '',
-		'currentPageMarginV' => '5',
-		'currentPageMarginH' => '5',
-		'arrowsAlwaysEnabledForNavigation' => 'true',
-		'arrowsDisabledNotFullscreen' => 'true',
-		'touchSwipeEnabled' => 'true',
-		'fitToWidth' => 'false',
-		'rightClickEnabled' => 'true',
-		'linkColor' => 'rgba(0, 0, 0, 0)',
-		'linkColorHover' => 'rgba(255, 255, 0, 1)',
-		'linkOpacity' => '0.4',
-		'linkTarget' => '_blank',
-		'pdfAutoLinks' => 'false',
-		'disableRange' => 'false',
-
-		'strings' => array(
-			'print' => __('Print', 'real3d-flipbook'),
-			'printLeftPage' => __('Print left page', 'real3d-flipbook'),
-			'printRightPage' => __('Print right page', 'real3d-flipbook'),
-			'printCurrentPage' => __('Print current page', 'real3d-flipbook'),
-			'printAllPages' => __('Print all pages', 'real3d-flipbook'),
-			'download' => __('Download', 'real3d-flipbook'),
-			'downloadLeftPage' => __('Download left page', 'real3d-flipbook'),
-			'downloadRightPage' => __('Download right page', 'real3d-flipbook'),
-			'downloadCurrentPage' => __('Download current page', 'real3d-flipbook'),
-			'downloadAllPages' => __('Download all pages', 'real3d-flipbook'),
-			'bookmarks' => __('Bookmarks', 'real3d-flipbook'),
-			'bookmarkLeftPage' => __('Bookmark left page', 'real3d-flipbook'),
-			'bookmarkRightPage' => __('Bookmark right page', 'real3d-flipbook'),
-			'bookmarkCurrentPage' => __('Bookmark current page', 'real3d-flipbook'),
-			'search' => __('Search', 'real3d-flipbook'),
-			'findInDocument' => __('Find in document', 'real3d-flipbook'),
-			'pagesFoundContaining' => __('pages found containing', 'real3d-flipbook'),
-			'noMatches' => __('No matches', 'real3d-flipbook'),
-			'matchesFound' => __('matches found', 'real3d-flipbook'),
-			'page' => __('Page', 'real3d-flipbook'),
-			'matches' => __('matches', 'real3d-flipbook'),
-			'thumbnails' => __('Thumbnails', 'real3d-flipbook'),
-			'tableOfContent' => __('Table of Contents', 'real3d-flipbook'),
-			'share' => __('Share', 'real3d-flipbook'),
-			'pressEscToClose' => __('Press ESC to close', 'real3d-flipbook'),
-			'password' => __('Password', 'real3d-flipbook'),
-			'addNote' => __('Add note', 'real3d-flipbook'),
-			'typeInYourNote' => __('Type in your note...', 'real3d-flipbook'),
-		),
-
-		'access' => 'free', //free, woo_subscription, ...
-		'backgroundMusic' => '',
-		'backgroundMusicOnAutoplay' => 'false',
-		'cornerCurl' => 'false',
-		'pdfTools' => array(
-			'pageHeight' => 1500,
-			'thumbHeight' => 200,
-			'quality' => 0.8,
-			'textLayer' => 'true',
-			'autoConvert' => 'true'
-		),
-		'slug' => '',
-		'convertPDFLinks' => 'true',
-		'convertPDFLinksWithClass' => '',
-		'convertPDFLinksWithoutClass' => '',
-		'overridePDFEmbedder' => 'true',
-		'overrideDflip' => 'true',
-		'overrideWonderPDFEmbed' => 'true',
-		'override3DFlipBook' => 'true',
-		'overridePDFjsViewer' => 'true',
-		'resumeReading' => 'false',
-		'previewPages' => '',
-		'previewMode' => '',
-	);
+			'access' => 'free', //free, woo_subscription, ...
+			'backgroundMusic' => '',
+			'backgroundMusicOnAutoplay' => 'false',
+			'cornerCurl' => 'false',
+			'pdfTools' => array(
+				'pageHeight' => 1500,
+				'thumbHeight' => 200,
+				'quality' => 0.8,
+				'textLayer' => 'true',
+				'autoConvert' => 'true'
+			),
+			'slug' => '',
+			'convertPDFLinks' => 'true',
+			'convertPDFLinksWithClass' => '',
+			'convertPDFLinksWithoutClass' => '',
+			'overridePDFEmbedder' => 'true',
+			'overrideDflip' => 'true',
+			'overrideWonderPDFEmbed' => 'true',
+			'override3DFlipBook' => 'true',
+			'overridePDFjsViewer' => 'true',
+			'resumeReading' => 'false',
+			'previewPages' => '',
+			'previewMode' => '',
+		);
+	}
 }
 

@@ -4,7 +4,7 @@ Donate link: https://codecanyon.net/item/real3d-flipbook-wordpress-plugin/694258
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 5.0.4
+Stable tag: 5.0.5
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -551,6 +551,9 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 = 5.0.4 =
 * Fix: Table of Contents and side panels open on the right side in right-to-left mode
 * Fix: click and drag to pan when zoomed in 2D and 3D mode
+
+= 5.0.5 =
+* Fix: PHP fatal error when Real3D Flipbook PRO and Lite are active at the same time
 
 
 == Upgrade to PRO for More Features ==

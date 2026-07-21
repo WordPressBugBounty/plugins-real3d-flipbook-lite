@@ -378,6 +378,7 @@ FLIPBOOK.Main = class {
         lightboxCSS: '',
         catalogStylesheet: '',
         catalogCSS: '',
+        customCSS: '',
         lightboxPreload: false,
         lightboxShowMenu: false,
         lightboxCloseOnBack: true,
@@ -1549,6 +1550,13 @@ FLIPBOOK.Main = class {
                 style.setAttribute('data-flipbook-catalog', '');
                 this.bookLayer.insertBefore(style, this.bookLayer.firstChild);
             }
+        }
+
+        if (this.options.customCSS) {
+            const style = document.createElement('style');
+            style.textContent = this.options.customCSS;
+            style.setAttribute('data-flipbook-custom', '');
+            (this.bookLayer || this.wrapper || document.head).appendChild(style);
         }
 
         var rtl = this.options.rightToLeft;
