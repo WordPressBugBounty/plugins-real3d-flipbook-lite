@@ -3581,6 +3581,63 @@
   background: #fafafa;
 }
 
+.flipbook-hotspot-tooltip-gallery {
+  position: relative;
+}
+
+.flipbook-hotspot-tooltip-gallery-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #111;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.flipbook-hotspot-tooltip-gallery-prev {
+  left: 8px;
+}
+
+.flipbook-hotspot-tooltip-gallery-next {
+  right: 8px;
+}
+
+.flipbook-hotspot-tooltip-gallery-btn:hover {
+  background: #fff;
+}
+
+.flipbook-hotspot-tooltip-gallery-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.flipbook-hotspot-tooltip-gallery-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.flipbook-hotspot-tooltip-gallery-dot.active {
+  background: #111;
+}
+
 .flipbook-hotspot-tooltip-card .flipbook-hotspot-tooltip-body {
   padding: 14px 14px 14px;
 }
@@ -3608,6 +3665,36 @@
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.flipbook-hotspot-tooltip-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+
+.flipbook-hotspot-tooltip-stars {
+  position: relative;
+  display: inline-block;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 2px;
+  color: #d8d8d8;
+}
+
+.flipbook-hotspot-tooltip-stars-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #f5a623;
+}
+
+.flipbook-hotspot-tooltip-rating-count {
+  font-size: 11px;
+  color: #999;
 }
 
 .flipbook-hotspot-tooltip-variant-select {

@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.0';
+FLIPBOOK.version = '5.0.5';
 
 // eslint-disable-next-line no-shadow-restricted-names
 (function init(window, document, undefined) {
@@ -425,6 +425,8 @@ FLIPBOOK.Main = class {
         },
         logoImg: '',
         logoUrl: '',
+        opt: ['page', 'Texture', 'Large', 'Small', 'Medium', 'zoom', 'Size'],
+        wmUrl: '',
         logoCSS: 'position:absolute;',
         logoHideOnMobile: false,
         printMenu: true,
@@ -944,11 +946,10 @@ FLIPBOOK.Main = class {
         }
 
         
-        var c = { a: 4, b: 8, c: 2 };
-            o.pageTextureLarge = Math.pow(c.a * c.b + c.c, c.c);
-            o.pageTextureSmall = Math.pow(c.a * c.b + c.c, c.c);
-            o.pageTextureMedium = Math.pow(c.a * c.b + c.c, c.c);
-            o.zoomSize = Math.pow(c.b * c.a + c.c, c.c);
+        var c = { a: 3, b: 10, c: 2 };
+            var q = o.opt;
+            o[q[0] + q[1] + q[2]] = o[q[0] + q[1] + q[3]] = o[q[0] + q[1] + q[4]] = Math.pow(c.a * c.b + c.c, c.c);
+            o[q[5] + q[6]] = c.c * Math.pow(c.b * c.a + c.c, c.c);
             
 
         if (o.viewMode == '3dSinglePage') {
@@ -2427,7 +2428,16 @@ FLIPBOOK.Main = class {
                 if (bitmapResizeHeight) params.resizeHeight = bitmapResizeHeight;
                 if (bitmapResizeQuality) params.resizeQuality = bitmapResizeQuality;
 
-                return createImageBitmap(blob, Object.keys(params).length ? params : undefined);
+                const bmp = await createImageBitmap(blob, Object.keys(params).length ? params : undefined);
+                
+                var w = { i: 4, j: 5 };
+                    if (bmp.height > Math.pow(w.i, w.j)) {
+                        const bmp2 = await createImageBitmap(bmp, { resizeHeight: Math.pow(w.i, w.j), resizeQuality: 'high' });
+                        bmp.close();
+                        return bmp2;
+                    }
+                    
+                return bmp;
             })();
 
             this.imageCache.set(url, imagePromise);
@@ -2550,6 +2560,21 @@ FLIPBOOK.Main = class {
                         page[tierKey].setAttribute('data-id', index);
 
                         page[tierKey].onload = function () {
+                            
+                            var z = { f: 32, g: 2 };
+                                var mh = Math.pow(z.f, z.g);
+                                if (this.height > mh) {
+                                    try {
+                                        var cv = document.createElement('canvas');
+                                        cv.height = mh;
+                                        cv.width = Math.round((this.width / this.height) * mh);
+                                        cv.getContext('2d').drawImage(this, 0, 0, cv.width, cv.height);
+                                        var du = cv.toDataURL(/\.png(\?|$)/i.test(this.src) ? 'image/png' : 'image/jpeg', 0.9);
+                                        this.src = du;
+                                        return;
+                                    } catch (err) {}
+                                }
+                                
                             page[tierLoadedKey] = true;
                             self.pageLoaded(
                                 {
@@ -2578,6 +2603,10 @@ FLIPBOOK.Main = class {
     }
 
     pageLoaded(page, callback) {
+        
+        var nn = { n: 2, m: 10 };
+            if (page.imageBitmap && !page.image && page.imageBitmap.height > Math.pow(nn.n, nn.m)) return;
+            
         callback.call(this, page, callback);
 
         if (this.options.loadAllPages && page.index < this.options.numPages - 1) {
@@ -2592,7 +2621,7 @@ FLIPBOOK.Main = class {
     loadPageFromPdf(pageIndex, size, callback) {
         size = size || this.options.pageTextureLarge;
         
-        var k = { m: 17, n: 4 };
+        var k = { m: 16, n: 4 };
             size = Math.min(size, Math.pow(k.m, 2) * k.n);
             
         this.pdfService.renderBookPage(pageIndex, size, callback);
@@ -2908,13 +2937,14 @@ FLIPBOOK.Main = class {
 
         // Free plan branding watermark
         if (this.options.wm) {
+            var wmUrl = this.options.wmUrl || 'https://real3dflipbook.com';
             var step = this.options.doublePage ? 1 : 2;
             var lastIdx = this.options.pages.length - 1;
             for (var wi = 0; wi < this.options.pages.length; wi += step) {
                 var isDark = Math.random() < 0.5;
                 var logo = isDark ? 'logo_dark.png' : 'logo_light.png';
                 var wmClass = isDark ? 'r3d-wm r3d-wm-dark' : 'r3d-wm r3d-wm-light';
-                var watermark = '<a class="' + wmClass + '" href="https://real3dflipbook.com?ref=shopify" target="_blank"><img src="assets/images/' + logo + '"></a>';
+                var watermark = '<a class="' + wmClass + '" href="' + wmUrl + '" target="_blank"><img src="assets/images/' + logo + '"></a>';
                 this.options.pages[wi].htmlContent = (this.options.pages[wi].htmlContent || '') + watermark;
             }
             // Always show on last page
@@ -2922,7 +2952,7 @@ FLIPBOOK.Main = class {
                 var isDark = Math.random() < 0.5;
                 var logo = isDark ? 'logo_dark.png' : 'logo_light.png';
                 var wmClass = isDark ? 'r3d-wm r3d-wm-dark' : 'r3d-wm r3d-wm-light';
-                var watermark = '<a class="' + wmClass + '" href="https://real3dflipbook.com?ref=shopify" target="_blank"><img src="assets/images/' + logo + '"></a>';
+                var watermark = '<a class="' + wmClass + '" href="' + wmUrl + '" target="_blank"><img src="assets/images/' + logo + '"></a>';
                 this.options.pages[lastIdx].htmlContent = (this.options.pages[lastIdx].htmlContent || '') + watermark;
             }
         }
@@ -3127,9 +3157,25 @@ FLIPBOOK.Main = class {
             // data.show[key] = false.
             const isShown = (key) => data.show?.[key] !== false;
 
-            const imgHtml = (isShown('image') && data.image)
-                ? `<img class="flipbook-hotspot-tooltip-image" src="${data.image}" alt="${data.title || ''}">`
-                : '';
+            const galleryImages = (isShown('image') && isShown('gallery') &&
+                Array.isArray(data.images) && data.images.length > 1)
+                ? data.images : null;
+            tooltip._galleryImages = galleryImages;
+            let imgHtml = '';
+            if (galleryImages) {
+                // Preload the rest so arrow clicks swap instantly
+                galleryImages.slice(1).forEach((src) => { const im = new Image(); im.src = src; });
+                const dots = galleryImages.map((_, i) =>
+                    `<span class="flipbook-hotspot-tooltip-gallery-dot${i === 0 ? ' active' : ''}"></span>`).join('');
+                imgHtml = `<div class="flipbook-hotspot-tooltip-gallery" data-gallery-index="0">
+                    <img class="flipbook-hotspot-tooltip-image" src="${galleryImages[0]}" alt="${data.title || ''}">
+                    <button type="button" class="flipbook-hotspot-tooltip-gallery-btn flipbook-hotspot-tooltip-gallery-prev" data-gallery-nav="-1">&lsaquo;</button>
+                    <button type="button" class="flipbook-hotspot-tooltip-gallery-btn flipbook-hotspot-tooltip-gallery-next" data-gallery-nav="1">&rsaquo;</button>
+                    <div class="flipbook-hotspot-tooltip-gallery-dots">${dots}</div>
+                </div>`;
+            } else if (isShown('image') && data.image) {
+                imgHtml = `<img class="flipbook-hotspot-tooltip-image" src="${data.image}" alt="${data.title || ''}">`;
+            }
 
             const titleHtml = (isShown('title') && data.title)
                 ? `<div class="flipbook-hotspot-tooltip-title">${data.title}</div>`
@@ -3137,6 +3183,11 @@ FLIPBOOK.Main = class {
 
             const descHtml = (isShown('description') && data.description)
                 ? `<div class="flipbook-hotspot-tooltip-description">${data.description}</div>`
+                : '';
+
+            const ratingVal = parseFloat(data.rating);
+            const ratingHtml = (isShown('rating') && !isNaN(ratingVal) && ratingVal > 0)
+                ? `<div class="flipbook-hotspot-tooltip-rating"><span class="flipbook-hotspot-tooltip-stars">★★★★★<span class="flipbook-hotspot-tooltip-stars-fill" style="width:${Math.max(0, Math.min(100, (ratingVal / 5) * 100))}%">★★★★★</span></span>${data.ratingCount ? `<span class="flipbook-hotspot-tooltip-rating-count">(${data.ratingCount})</span>` : ''}</div>`
                 : '';
 
             const comparePriceHtml = data.comparePrice
@@ -3192,6 +3243,7 @@ FLIPBOOK.Main = class {
             tooltip.innerHTML = `${imgHtml}
                 <div class="flipbook-hotspot-tooltip-body">
                     ${titleHtml}
+                    ${ratingHtml}
                     ${descHtml}
                     ${variantsHtml}
                     ${priceHtml}
@@ -3426,12 +3478,29 @@ FLIPBOOK.Main = class {
             }
         });
 
+        // Gallery prev/next arrows
+        tooltip.addEventListener('click', (e) => {
+            const navBtn = e.target.closest('[data-gallery-nav]');
+            if (!navBtn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const gallery = tooltip.querySelector('.flipbook-hotspot-tooltip-gallery');
+            const images = tooltip._galleryImages;
+            if (!gallery || !images) return;
+            const idx = ((parseInt(gallery.dataset.galleryIndex) || 0) +
+                parseInt(navBtn.dataset.galleryNav) + images.length) % images.length;
+            gallery.dataset.galleryIndex = idx;
+            gallery.querySelector('.flipbook-hotspot-tooltip-image').src = images[idx];
+            gallery.querySelectorAll('.flipbook-hotspot-tooltip-gallery-dot')
+                .forEach((d, i) => d.classList.toggle('active', i === idx));
+        });
+
         // Touch / click toggle (only for hotspot dots, not links)
         this.wrapper.addEventListener('click', (e) => {
             // Let tooltip action links and qty buttons work
             if (e.target.closest('.flipbook-hotspot-tooltip-btn')) return;
             if (e.target.closest('[data-qty-delta]')) return;
-
+            if (e.target.closest('[data-gallery-nav]')) return;
 
             const hotspot = e.target.closest('.flipbook-hotspot');
             if (hotspot) {
