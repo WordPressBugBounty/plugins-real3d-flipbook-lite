@@ -2907,6 +2907,12 @@
   cursor: pointer;
 }
 
+/* Zoomed above fit: clicking a page zooms back out — advertise it. The
+   per-page .zoomed hook below only tracks click-zoom, not +/wheel/pinch. */
+.flipbook-bookLayer.flipbook-zoomed-in .flipbook-page-html {
+  cursor: zoom-out;
+}
+
 .flipbook-page-html.zoomed {
   cursor: zoom-out;
 }
@@ -3489,6 +3495,15 @@
 
 .flipbook-hotspot:not(.flipbook-page-item-link):hover {
   background: transparent !important;
+}
+
+.flipbook-hotspot:focus-visible {
+  outline: 2px solid var(--hotspot-dot-color, #2C6ECB);
+  outline-offset: 2px;
+}
+
+.flipbook-hotspot-tooltip:focus {
+  outline: none;
 }
 
 .flipbook-hotspot-dot {

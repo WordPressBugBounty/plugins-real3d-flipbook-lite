@@ -368,13 +368,20 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 
     initHtmlContent() {
+        // The html layer is positioned with a plain 2D translate+scale (see
+        // _updateHtmlLayerFlat) instead of the CSS3D renderer: layers inside
+        // a perspective/preserve-3d subtree rasterize at a fixed scale in
+        // Chromium and text blurs; a non-composited 2D transform re-rasters
+        // at the effective scale, so idle pages are natively sharp.
+        const pw1000 = (1000 * this.options.pageWidth) / this.options.pageHeight;
+
         var htmlLayer = document.createElement('div');
         htmlLayer.className = 'htmlLayer ' + Math.random();
 
         this.pageR = document.createElement('div');
         this.pageR.classList.add('R');
         this.pageR.style.cssText = `
-    width: ${(1000 * this.options.pageWidth) / this.options.pageHeight}px;
+    width: ${pw1000}px;
     height: 1000px;
     position: absolute;
     top: -500px;
@@ -389,11 +396,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         this.pageL = document.createElement('div');
         this.pageL.classList.add('L');
         this.pageL.style.cssText = `
-    width: ${(1000 * this.options.pageWidth) / this.options.pageHeight}px;
+    width: ${pw1000}px;
     height: 1000px;
     position: absolute;
     top: -500px;
-    left: ${(-1000 * this.options.pageWidth) / this.options.pageHeight}px;
+    left: ${-pw1000}px;
     pointer-events: none;
 `;
 
@@ -418,11 +425,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         this.pageC = document.createElement('div');
         this.pageC.classList.add('C');
         this.pageC.style.cssText = `
-    width: ${(centerWdith * 1000 * this.options.pageWidth) / this.options.pageHeight}px;
+    width: ${centerWdith * pw1000}px;
     height: 1000px;
     position: absolute;
     top: -500px;
-    left: ${(-1000 * this.options.pageWidth) / positionMultiplier / this.options.pageHeight}px;
+    left: ${-pw1000 / positionMultiplier}px;
     pointer-events: none;
 `;
         htmlLayer.appendChild(this.pageC);
@@ -432,15 +439,95 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         this.pageCInner.classList.add('CInner');
         this.pageC.appendChild(this.pageCInner);
 
-        this.htmlLayer = new FLIPBOOK.CSS3DObject(htmlLayer);
-        this.Scene.add(this.htmlLayer);
-        this.cssRenderer = new FLIPBOOK.CSS3DRenderer();
-        this.wrapper.appendChild(this.cssRenderer.domElement);
-        this.cssRenderer.domElement.style.position = 'absolute';
-        this.cssRenderer.domElement.style.top = '0';
-        this.cssRenderer.domElement.style.left = '0';
-        this.cssRenderer.domElement.style.pointerEvents = 'none';
-        this.cssRenderer.domElement.className = 'cssRenderer ' + Math.random();
+        const tilted =
+            (this.options.tilt || 0) !== 0 || (this.options.pan || 0) !== 0;
+
+        if (tilted) {
+            // Angled presentation: only the CSS3D pipeline renders the
+            // layer's perspective correctly — keep the previous behavior
+            // (geometrically true, softer text).
+            this.htmlLayer = new FLIPBOOK.CSS3DObject(htmlLayer);
+            this.Scene.add(this.htmlLayer);
+            this.cssRenderer = new FLIPBOOK.CSS3DRenderer();
+            this.wrapper.appendChild(this.cssRenderer.domElement);
+            this.cssRenderer.domElement.style.position = 'absolute';
+            this.cssRenderer.domElement.style.top = '0';
+            this.cssRenderer.domElement.style.left = '0';
+            this.cssRenderer.domElement.style.pointerEvents = 'none';
+            this.cssRenderer.domElement.className = 'cssRenderer ' + Math.random();
+            return;
+        }
+
+        // Flat 2D positioning shims. The htmlLayer/cssRenderer objects keep
+        // their old shape so existing call sites (position writes, scale.set,
+        // setSize, render) stay untouched — every mutation re-applies the
+        // plain 2D transform via _updateHtmlLayerFlat.
+        this._htmlLayerEl = htmlLayer;
+        htmlLayer.style.position = 'absolute';
+        htmlLayer.style.top = '0';
+        htmlLayer.style.left = '0';
+        htmlLayer.style.transformOrigin = '0 0';
+
+        const self = this;
+        this.htmlLayer = {
+            element: htmlLayer,
+            position: {
+                _x: 0,
+                _y: 0,
+                get x() { return this._x; },
+                set x(v) { this._x = v; self._updateHtmlLayerFlat(); },
+                get y() { return this._y; },
+                set y(v) { this._y = v; self._updateHtmlLayerFlat(); },
+            },
+            scale: { set: function () { self._updateHtmlLayerFlat(); } },
+        };
+
+        const flatDom = document.createElement('div');
+        flatDom.appendChild(htmlLayer);
+        this.cssRenderer = {
+            domElement: flatDom,
+            setSize: function (w, h) {
+                self._cssW = w;
+                self._cssH = h;
+                self._updateHtmlLayerFlat();
+            },
+            render: function () { self._updateHtmlLayerFlat(); },
+        };
+        this.wrapper.appendChild(flatDom);
+        flatDom.style.position = 'absolute';
+        flatDom.style.top = '0';
+        flatDom.style.left = '0';
+        flatDom.style.pointerEvents = 'none';
+        flatDom.className = 'cssRenderer ' + Math.random();
+    }
+
+    // Plain 2D placement of the html layer, replicating what the CSS3D
+    // camera produced for a flat, front-facing layer: world→screen scale is
+    // k = fovPx / cameraZ (perspective projection at the book plane), the
+    // layer's own world scale is this.sc. Non-composited 2D transforms
+    // re-rasterize at the effective scale — sharp text. (With non-zero
+    // tilt/pan the book is angled and a flat overlay is approximate.)
+    _updateHtmlLayerFlat() {
+        const el = this._htmlLayerEl;
+        if (!el) return;
+        const w = this._cssW || (this.wrapper ? this.wrapper.clientWidth : 0);
+        const h = this._cssH || (this.wrapper ? this.wrapper.clientHeight : 0);
+        const cam = this.Camera;
+        const camZ = this.cameraZ || (cam && cam.position.z) || 1;
+        const fovPx = cam ? cam.projectionMatrix.elements[5] * (h / 2) : camZ;
+        const k = fovPx / camZ;
+        const camX = cam ? cam.position.x : 0;
+        const camY = cam ? cam.position.y : 0;
+        const s = (this.sc || 1) * k;
+        const p = this.htmlLayer.position;
+        el.style.transform =
+            'translate(' +
+            (w / 2 + (p._x - camX) * k) +
+            'px,' +
+            (h / 2 - (p._y - camY) * k) +
+            'px) scale(' +
+            s +
+            ')';
     }
 
     enablePrev(val) {
@@ -670,6 +757,10 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
 
         this.wrapperW = w;
         this.wrapperH = h;
+
+        // Re-pick the texture tier for the new display size — required since
+        // the small tier adapts to the container. Cached sizes make this cheap.
+        this.loadPages();
     }
 
     updateCameraPosition() {
@@ -693,6 +784,9 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         this.Camera.lookAt(this.Scene.position);
 
         this.updateShadowCamera();
+
+        // Camera distance affects the html layer's screen scale (k factor).
+        if (this._htmlLayerEl) this._updateHtmlLayerFlat();
 
         this.needsUpdate = true;
     }
@@ -1226,15 +1320,24 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             }
         });
 
+        // Only the newest invocation may apply materials — wheel/animation
+        // fire loadPages per tick, and a slow render resolving late must not
+        // clobber the newer tier's applied material with its stale one.
+        const seq = (this._loadPagesSeq = (this._loadPagesSeq || 0) + 1);
+        const stale = () => seq !== this._loadPagesSeq;
+
         main.setLoadingProgress(0.1);
 
         await this.loadPageAsync(leftPage, 'back');
+        if (stale()) return;
         this.pageLoaded(leftPage, 'back');
         await this.loadPageAsync(rightPage, 'front');
+        if (stale()) return;
         this.pageLoaded(rightPage, 'front');
         main.setLoadingProgress(1);
         await this.loadHTMLAsync(leftPage, 'back');
         await this.loadHTMLAsync(rightPage, 'front');
+        if (stale()) return;
         updateHtmlLayer.call(self);
         this.unloadPages();
         loadMorePages.call(self);
@@ -1417,7 +1520,10 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             this.animations.push(this.bookMoveTween);
         } else {
             if (!this.movingTo) {
-                if (this.bookWidth != pos.bookWidth) {
+                // Drag-pan (_move) calls without bookWidth — only treat it as
+                // a change request when the caller actually provides one, or
+                // the refit collapses sc to 1 and landscape books jump.
+                if (pos.bookWidth !== undefined && this.bookWidth != pos.bookWidth) {
                     this.bookWidth = pos.bookWidth;
                     // Instant positioning (opening directly on a spread via
                     // deeplink/startPage) changes how many pages are visible, which
@@ -2265,11 +2371,19 @@ FLIPBOOK.PageWebGL = class {
     }
 
     loaded(side) {
-        // Use the size this side was actually loaded at, not the global —
-        // neighbours load at medium while the visible spread may be at large.
-        const size = side === 'front' ? this.sizeFront : this.sizeBack;
-        if (this.materials && this.materials[side]) {
-            this.setMat(this.materials[side][size], side);
+        // Prefer the current global tier when this sheet has it cached — on a
+        // zoom round trip everything is promise-cached, so no load runs and
+        // sizeFront/sizeBack stay stuck at the last fresh render; the global
+        // tier is what re-applies the sharp texture. Fall back to the size the
+        // side was actually loaded at (neighbours load at medium while the
+        // visible spread may be at large), and never setMat(undefined) — that
+        // would blank the page instead of keeping the last good texture.
+        const tier = this.book.currentPageTextureSize;
+        const loadedSize = side === 'front' ? this.sizeFront : this.sizeBack;
+        const mats = this.materials && this.materials[side];
+        const size = mats && mats[tier] ? tier : loadedSize;
+        if (mats && mats[size]) {
+            this.setMat(mats[size], side);
         }
     }
 

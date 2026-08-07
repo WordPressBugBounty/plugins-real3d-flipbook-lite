@@ -17,14 +17,15 @@
           '<h2 style="margin:12px 0 4px;font-size:20px;font-weight:600;color:#1d2327;">This is a PRO feature</h2>' +
           '<p style="margin:0 0 16px;color:#50575e;font-size:13px;">Upgrade to Real3D Flipbook PRO to unlock:</p>' +
           '<ul style="list-style:none;display:inline-block;text-align:left;margin:0 0 16px;padding:0;color:#1d2327;font-size:13.5px;line-height:2.1;">' +
-          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>High resolution pages with deep zoom</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>4K resolution zoom</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Optimized page loading</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>PDF links and text search</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Toolbar and UI customization</li>' +
-          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Google Analytics events</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Analytics and deep linking</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Mobile and global settings</li>' +
           '</ul>' +
-          '<div style="background:#f6f7f7;border-radius:8px;padding:9px 12px;margin:0 0 10px;font-size:12px;color:#50575e;">Plans from $49/year &middot; 30-day money-back guarantee</div>' +
-          '<a style="font-size:12px;color:#2271b1;" href="https://real3dflipbook.com/?ref=wp-lite-popup" target="_blank">See live demos</a>' +
+          '<div style="background:#f6f7f7;border-radius:8px;padding:9px 12px;margin:0 0 10px;font-size:12px;color:#50575e;">Plans from $49/year &middot; 30-day money-back guarantee &middot; Your flipbooks carry over</div>' +
+          '<a style="font-size:12px;color:#2271b1;" href="https://real3dflipbook.com/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=popup-settings" target="_blank">See live demos</a>' +
           '</div>',
         showCancelButton: true,
         showCloseButton: true,
@@ -35,7 +36,7 @@
       }).then((result) => {
         if (result.isConfirmed) {
           window.open(
-            "https://real3dflipbook.com/wordpress/?ref=wp-lite-popup#pricing",
+            "https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=popup-settings",
             "_blank"
           );
         }

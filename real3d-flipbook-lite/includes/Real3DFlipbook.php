@@ -61,7 +61,7 @@ class Real3DFlipbook
 
 		wp_register_script("real3d-flipbook-threejs", $this->PLUGIN_DIR_URL . "js/libs/three.min.js", array(), $this->PLUGIN_VERSION, true);
 
-		wp_register_script("real3d-flipbook-webgl", $this->PLUGIN_DIR_URL . "js/flipbook.webgl.min.js", array('real3d-flipbook', 'real3d-flipbook-threejs'), $this->PLUGIN_VERSION, true);
+		wp_register_script("real3d-flipbook-webgl", $this->PLUGIN_DIR_URL . "js/flipbook.webgl.vertex.min.js", array('real3d-flipbook', 'real3d-flipbook-threejs'), $this->PLUGIN_VERSION, true);
 
 		wp_register_script("real3d-flipbook-pdfjs", $this->PLUGIN_DIR_URL . "js/libs/pdf.min.js", array(), $this->PLUGIN_VERSION, true);
 		wp_register_script("real3d-flipbook-pdfworkerjs", $this->PLUGIN_DIR_URL . "js/libs/pdf.worker.min.js", array(), $this->PLUGIN_VERSION, true);
@@ -1096,7 +1096,7 @@ class Real3DFlipbook
 
 		add_meta_box(
 			'real3d_pro_features',
-			esc_html__('Get More Features with Real3D Flipbook PRO', 'real3d-flipbook'), // Title of the metabox
+			esc_html__('Upgrade to PRO', 'real3d-flipbook'), // Title of the metabox
 			array($this, 'pro_features_metabox_content'), // Callback function that will echo the content of the metabox
 			'r3d',
 			'normal',
@@ -1136,6 +1136,7 @@ class Real3DFlipbook
 		?>
 <div style="padding:4px 8px 10px;">
 	<style>
+	.r3d-pro-mb-head { margin: 6px 0 0; color: #1d2327; font-size: 13px; }
 	.r3d-pro-mb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; margin: 10px 0 16px; }
 	.r3d-pro-mb-grid span { color: #50575e; font-size: 13px; }
 	.r3d-pro-mb-grid .r3d-check { color: #84af05; font-weight: 700; margin-right: 4px; }
@@ -1144,16 +1145,17 @@ class Real3DFlipbook
 	.r3d-pro-mb-actions .button-primary:hover, .r3d-pro-mb-actions .button-primary:focus { background: #719504; border-color: #5e7c03; }
 	.r3d-pro-mb-note { color: #787c82; font-size: 12px; margin-top: 8px; }
 	</style>
+	<p class="r3d-pro-mb-head"><?php esc_html_e('This flipbook renders at standard resolution — PRO renders sharp 4K with optimized multi-tier page loading.', 'real3d-flipbook'); ?></p>
 	<div class="r3d-pro-mb-grid">
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('High resolution pages with deep zoom', 'real3d-flipbook'); ?></span>
+		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('4K resolution zoom', 'real3d-flipbook'); ?></span>
+		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Optimized page loading', 'real3d-flipbook'); ?></span>
 		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('PDF links and text search', 'real3d-flipbook'); ?></span>
 		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Toolbar and UI customization', 'real3d-flipbook'); ?></span>
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Google Analytics events', 'real3d-flipbook'); ?></span>
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Mobile settings', 'real3d-flipbook'); ?></span>
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Global settings for all flipbooks', 'real3d-flipbook'); ?></span>
+		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Analytics and deep linking', 'real3d-flipbook'); ?></span>
+		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Mobile and global settings', 'real3d-flipbook'); ?></span>
 	</div>
 	<div class="r3d-pro-mb-actions">
-		<a class="button button-primary" href="<?php echo esc_url('https://real3dflipbook.com/wordpress/?ref=wp-lite-metabox#pricing'); ?>" target="_blank">
+		<a class="button button-primary" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=metabox'); ?>" target="_blank">
 			<?php esc_html_e('Upgrade to PRO', 'real3d-flipbook'); ?>
 		</a>
 		<a href="<?php echo esc_url(admin_url('admin.php?page=real3d_flipbook_upgrade')); ?>">

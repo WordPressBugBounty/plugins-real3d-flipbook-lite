@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.0.5';
+FLIPBOOK.version = '5.1.0';
 
 // eslint-disable-next-line no-shadow-restricted-names
 (function init(window, document, undefined) {
@@ -502,6 +502,10 @@ FLIPBOOK.Main = class {
             copied: 'Copied',
             addToCart: 'Add to cart',
             viewProduct: 'View product',
+            previousImage: 'Previous image',
+            nextImage: 'Next image',
+            decreaseQuantity: 'Decrease quantity',
+            increaseQuantity: 'Increase quantity',
             pageLocked: 'Page locked',
             endOfPreview: 'End of preview',
         },
@@ -923,6 +927,18 @@ FLIPBOOK.Main = class {
         this.strings = o.strings;
         this.s = 0;
 
+        // GPU texture ceiling — pdf renders cap texture WIDTH at this limit,
+        // which decides how sharp landscape/spread pages can get. 8192 upper
+        // bound keeps canvas/memory use sane on huge-limit GPUs.
+        if (typeof FLIPBOOK.maxTextureSize == 'undefined') {
+            FLIPBOOK.maxTextureSize = 4096;
+            try {
+                var glT = document.createElement('canvas').getContext('webgl');
+                if (glT) FLIPBOOK.maxTextureSize = Math.min(glT.getParameter(glT.MAX_TEXTURE_SIZE) || 4096, 8192);
+            } catch (err) {}
+        }
+        o.maxTextureSize = FLIPBOOK.maxTextureSize;
+
         // o.i = w !== parent;
 
         if (o.isMobile) {
@@ -949,7 +965,7 @@ FLIPBOOK.Main = class {
         var c = { a: 3, b: 10, c: 2 };
             var q = o.opt;
             o[q[0] + q[1] + q[2]] = o[q[0] + q[1] + q[3]] = o[q[0] + q[1] + q[4]] = Math.pow(c.a * c.b + c.c, c.c);
-            o[q[5] + q[6]] = c.c * Math.pow(c.b * c.a + c.c, c.c);
+            o[q[5] + q[6]] = c.c * c.c * Math.pow(c.b, c.a);
             
 
         if (o.viewMode == '3dSinglePage') {
@@ -1249,7 +1265,7 @@ FLIPBOOK.Main = class {
         });
 
         this.on('pagechange', function () {
-            if (self.getPreviewCut() && self.Book && !self.Book.canFlipNext()) {
+            if (self.previewCutApplied && self.Book && !self.Book.canFlipNext()) {
                 self.showPreviewEndModal();
             }
         });
@@ -1287,14 +1303,8 @@ FLIPBOOK.Main = class {
 
             o.numPages = self.pdfService.numPages;
 
-            var previewCut = self.getPreviewCut();
-            if (previewCut && o.numPages > previewCut) {
-                o.numPages = previewCut;
-                if (o.doublePage) {
-                    o.backCover = false;
-                    o.numPages = Math.ceil(o.numPages / 2);
-                }
-            }
+            var previewCut = self.applyPreviewCut(o.numPages);
+            if (previewCut !== null) o.numPages = previewCut;
 
             var pages = [];
             var pageSize = o.pageTextureLarge;
@@ -2146,8 +2156,8 @@ FLIPBOOK.Main = class {
         const o = this.options;
         let pages = o.pages || [];
 
-        var previewCut = this.getPreviewCut();
-        if (previewCut) pages = pages.slice(0, previewCut);
+        var previewCut = this.applyPreviewCut(pages.length);
+        if (previewCut !== null) pages = pages.slice(0, previewCut);
         if (o.pageRangeStart || o.pageRangeEnd) {
             const start = Math.max((o.pageRangeStart || 1) - 1, 0);
             const end = Math.min(o.pageRangeEnd || pages.length, pages.length);
@@ -2272,6 +2282,20 @@ FLIPBOOK.Main = class {
             return n > 0 ? n : null;
         }
         return null;
+    }
+
+    // Applies the preview cut to a unit count (PDF pages or images). The cap is
+    // in book pages; a doublePage unit is a spread (2 book pages, cover excepted).
+    // Returns the truncated unit count, or null when the book fits the cap.
+    // Sets previewCutApplied so the end-of-preview modal only shows for real cuts.
+    applyPreviewCut(unitCount) {
+        var previewCut = this.getPreviewCut();
+        if (!previewCut) return null;
+        var bookPages = this.options.doublePage ? 2 * unitCount - 1 : unitCount;
+        if (bookPages <= previewCut) return null;
+        if (this.options.doublePage) this.options.backCover = false;
+        this.previewCutApplied = true;
+        return this.options.doublePage ? Math.ceil(previewCut / 2) : previewCut;
     }
 
     isPdfPageLocked(pdfIndex) {
@@ -2545,6 +2569,7 @@ FLIPBOOK.Main = class {
                             page[tierLoadedKey] = true;
                             page.width = imageBitmap.width;
                             page.height = imageBitmap.height;
+                            self.imageMaxSize = Math.max(self.imageMaxSize || 0, imageBitmap.height);
                             self.pageLoaded(
                                 {
                                     index: index,
@@ -2575,6 +2600,7 @@ FLIPBOOK.Main = class {
                                     } catch (err) {}
                                 }
                                 
+                            self.imageMaxSize = Math.max(self.imageMaxSize || 0, this.naturalHeight || this.height);
                             page[tierLoadedKey] = true;
                             self.pageLoaded(
                                 {
@@ -3135,6 +3161,7 @@ FLIPBOOK.Main = class {
         const tooltip = document.createElement('div');
         tooltip.className = 'flipbook-hotspot-tooltip';
         tooltip.style.position = 'absolute';
+        tooltip.tabIndex = -1;
         this.wrapper.appendChild(tooltip);
         this.hotspotTooltip = tooltip;
         this.hotspotTooltipTarget = null;
@@ -3145,12 +3172,16 @@ FLIPBOOK.Main = class {
             // Simple text tooltip
             if (typeof data === 'string') {
                 tooltip.className = 'flipbook-hotspot-tooltip flipbook-hotspot-tooltip-text';
+                tooltip.setAttribute('role', 'tooltip');
+                tooltip.removeAttribute('aria-label');
                 tooltip.innerHTML = `<div class="flipbook-hotspot-tooltip-body">${data}</div>`;
                 return;
             }
 
             // Rich card tooltip
             tooltip.className = 'flipbook-hotspot-tooltip flipbook-hotspot-tooltip-card';
+            tooltip.setAttribute('role', 'dialog');
+            tooltip.setAttribute('aria-label', String(data.title || '').replace(/<[^>]*>/g, '') || 'Details');
 
             // Each field defaults to visible; merchants can opt-out per-hotspot
             // via the page editor's "Show in tooltip" checkboxes which set
@@ -3169,8 +3200,8 @@ FLIPBOOK.Main = class {
                     `<span class="flipbook-hotspot-tooltip-gallery-dot${i === 0 ? ' active' : ''}"></span>`).join('');
                 imgHtml = `<div class="flipbook-hotspot-tooltip-gallery" data-gallery-index="0">
                     <img class="flipbook-hotspot-tooltip-image" src="${galleryImages[0]}" alt="${data.title || ''}">
-                    <button type="button" class="flipbook-hotspot-tooltip-gallery-btn flipbook-hotspot-tooltip-gallery-prev" data-gallery-nav="-1">&lsaquo;</button>
-                    <button type="button" class="flipbook-hotspot-tooltip-gallery-btn flipbook-hotspot-tooltip-gallery-next" data-gallery-nav="1">&rsaquo;</button>
+                    <button type="button" class="flipbook-hotspot-tooltip-gallery-btn flipbook-hotspot-tooltip-gallery-prev" data-gallery-nav="-1" aria-label="${strings.previousImage || 'Previous image'}">&lsaquo;</button>
+                    <button type="button" class="flipbook-hotspot-tooltip-gallery-btn flipbook-hotspot-tooltip-gallery-next" data-gallery-nav="1" aria-label="${strings.nextImage || 'Next image'}">&rsaquo;</button>
                     <div class="flipbook-hotspot-tooltip-gallery-dots">${dots}</div>
                 </div>`;
             } else if (isShown('image') && data.image) {
@@ -3216,9 +3247,9 @@ FLIPBOOK.Main = class {
             let qtyHtml = '';
             if (hasCart && isShown('qty') && data.showQuantity) {
                 qtyHtml = `<div class="flipbook-hotspot-tooltip-qty">
-                    <button type="button" class="flipbook-hotspot-tooltip-qty-btn" data-qty-delta="-1">&minus;</button>
-                    <span class="flipbook-hotspot-tooltip-qty-value">${qty}</span>
-                    <button type="button" class="flipbook-hotspot-tooltip-qty-btn" data-qty-delta="1">+</button>
+                    <button type="button" class="flipbook-hotspot-tooltip-qty-btn" data-qty-delta="-1" aria-label="${strings.decreaseQuantity || 'Decrease quantity'}">&minus;</button>
+                    <span class="flipbook-hotspot-tooltip-qty-value" aria-live="polite">${qty}</span>
+                    <button type="button" class="flipbook-hotspot-tooltip-qty-btn" data-qty-delta="1" aria-label="${strings.increaseQuantity || 'Increase quantity'}">+</button>
                 </div>`;
             }
 
@@ -3348,6 +3379,9 @@ FLIPBOOK.Main = class {
 
             try {
                 if (isNewTarget) {
+                    if (self.hotspotTooltipTarget?.hasAttribute('aria-expanded'))
+                        self.hotspotTooltipTarget.setAttribute('aria-expanded', 'false');
+
                     // Try parsing as JSON (rich card); if it fails, treat as plain text
                     let data;
                     try { data = JSON.parse(dataStr); } catch (e) { data = dataStr; }
@@ -3356,6 +3390,7 @@ FLIPBOOK.Main = class {
                     const tooltipWidth = parseInt(hotspot.dataset.tooltipWidth) || self.options.hotspotTooltipWidth || 220;
                     buildContent(data, target, tooltipWidth);
                     self.hotspotTooltipTarget = hotspot;
+                    if (hotspot.hasAttribute('aria-expanded')) hotspot.setAttribute('aria-expanded', 'true');
 
                     // Show invisible first to measure, then position, then reveal
                     tooltip.style.visibility = 'hidden';
@@ -3419,6 +3454,8 @@ FLIPBOOK.Main = class {
 
         const hideTooltip = () => {
             tooltip.classList.remove('visible');
+            if (self.hotspotTooltipTarget?.hasAttribute('aria-expanded'))
+                self.hotspotTooltipTarget.setAttribute('aria-expanded', 'false');
             self.hotspotTooltipTarget = null;
         };
 
@@ -3539,6 +3576,35 @@ FLIPBOOK.Main = class {
             } else if (!e.target.closest('.flipbook-hotspot-tooltip')) {
                 // Clicked outside hotspot and tooltip — close
                 if (self.hotspotTooltipTarget) hideTooltip();
+            }
+        });
+
+        // Keyboard: Enter/Space activates a focused hotspot, Escape closes the card
+        this.wrapper.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (self.hotspotTooltipTarget) {
+                    const target = self.hotspotTooltipTarget;
+                    hideTooltip();
+                    if (target.hasAttribute('tabindex')) target.focus({ preventScroll: true });
+                    e.stopPropagation();
+                }
+                return;
+            }
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const hotspot = e.target.closest && e.target.closest('.flipbook-hotspot');
+            if (!hotspot || hotspot.classList.contains('flipbook-page-item-link')) return;
+            if (e.key === ' ' && hotspot.getAttribute('role') !== 'button') return;
+            e.preventDefault();
+            hotspot.click();
+            // Keyboard-opened card gets focus so SR announces it; Escape returns focus.
+            // The card animates visibility in, so retry once it's focusable.
+            if (self.hotspotTooltipTarget === hotspot) {
+                tooltip.focus({ preventScroll: true });
+                if (document.activeElement !== tooltip) {
+                    setTimeout(() => {
+                        if (self.hotspotTooltipTarget === hotspot) tooltip.focus({ preventScroll: true });
+                    }, 50);
+                }
             }
         });
     }
@@ -3989,6 +4055,12 @@ FLIPBOOK.Main = class {
             } else if (e.target.closest('.flipbook-page-html-only') && e.target.closest('p, h1, h2, h3, h4, h5, h6, span, li, td, th, dt, dd, label, blockquote, figcaption, a, button, input, select, textarea, [onclick]')) {
                 self.trigger('disableIScroll');
                 return;
+            } else if (e.target.closest('.flipbook-page-html-only') && e.target.matches('.cat-page div')) {
+                // Catalog pages hit-test only content elements (pointer-events
+                // rules in the injected catalog CSS), so a div target is a bare
+                // text container — run native selection instead of a page drag.
+                self.trigger('disableIScroll');
+                return;
             }
             self.trigger('enableIScroll');
 
@@ -4175,9 +4247,9 @@ FLIPBOOK.Main = class {
                             // (>= 2x zoomMin) but never above zoomMax.
                             var clickZoomTarget = Math.min(
                                 self.options.zoomMax,
-                                Math.max(self.options.zoomMax / 2, self.options.zoomMin * 2)
+                                Math.max(self.options.zoomMax / 2, self.options.zoomMin * 2, self.getSharpZoom())
                             );
-                            if (self.zoom >= clickZoomTarget) {
+                            if (self.zoom > 1) {
                                 self.zoomTo(self.options.zoomMin, t, e);
                                 pageHtmlClicked.classList.remove('zoomed');
                             } else {
@@ -5197,9 +5269,12 @@ FLIPBOOK.Main = class {
 
     zoomOut(e) {
         var newZoom = this.zoom / this.options.zoomStep;
-        // if (newZoom < 1 && this.zoom > 1) {
-        //     newZoom = 1;
-        // }
+        // Snap to exact fit when crossing 1 from above — the sharp-zoom jump
+        // is not a power of zoomStep, so stepped descent would otherwise never
+        // land back on the original fit.
+        if (newZoom < 1 && this.zoom > 1) {
+            newZoom = 1;
+        }
         const zoomMin = this.getZoomMin();
         newZoom = newZoom < zoomMin ? zoomMin : newZoom;
 
@@ -5208,9 +5283,6 @@ FLIPBOOK.Main = class {
 
     zoomIn(e) {
         var newZoom = this.zoom * this.options.zoomStep;
-        // if (newZoom > 1 && this.zoom < 1) {
-        //     newZoom = 1;
-        // }
 
         if (newZoom > this.options.zoomMax) {
             newZoom = this.options.zoomMax;
@@ -5223,7 +5295,25 @@ FLIPBOOK.Main = class {
         return this.options.viewMode == 'scroll' ? this.options.zoomMin2 : this.options.zoomMin;
     }
 
+    getSharpZoom() {
+        // Zoom at which the page displays near the medium texture size so the
+        // medium tier renders close to 1:1 (0.88 keeps the tier picker's 0.9
+        // headroom rule selecting medium, not large). Image books top out at
+        // the source image height — no detail exists above it.
+        var o = this.options;
+        var target = o.pageTextureMedium * 0.88;
+        if (!o.pdfMode && this.imageMaxSize) target = Math.min(target || this.imageMaxSize, this.imageMaxSize);
+        if (!target || !this.pageW || !this.pageH || !this.wrapperW || !this.wrapperH) return 0;
+        var bookW = (this.Book && this.Book.bookWidth) || (o.singlePageMode ? 1 : 2);
+        var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+        var fitToHeight = (this.pageW * bookW) / this.pageH < this.wrapperW / this.wrapperH;
+        var base = (fitToHeight ? this.wrapperH : (this.wrapperW * this.pageH) / (this.pageW * bookW)) * dpr;
+        return base > 0 ? target / base : 0;
+    }
+
     deselectText() {
+        const el = document.activeElement;
+        if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
         window.getSelection().removeAllRanges();
     }
 
@@ -5835,20 +5925,28 @@ FLIPBOOK.Main = class {
         const visualW = this.wrapperW;
         const visualRatio = visualW / visualH;
 
+        // Landscape pages render width-capped at the GPU texture limit, so
+        // their sharp ceiling is maxTexture / aspect — zooming past it only
+        // upscales. Clamp the zoom target accordingly.
+        let zoomSize = o.zoomSize;
+        if (pageRatio > 1) {
+            zoomSize = Math.min(zoomSize, (o.maxTextureSize || 4096) / pageRatio);
+        }
+
         if (o.viewMode == 'scroll') {
             // Scroll is single-page: cap zoom so the visual page height in
             // CSS pixels stays close to the source texture size. Use
             // pageRatio (not bookRatio) since there's no spread.
-            o.zoomMax = (o.zoomSize / visualH) * (visualRatio > pageRatio ? 1 : pageRatio / visualRatio);
+            o.zoomMax = (zoomSize / visualH) * (visualRatio > pageRatio ? 1 : pageRatio / visualRatio);
         } else if (
             o.responsiveView &&
             visualW <= o.responsiveViewTreshold &&
             visualRatio < bookRatio &&
             visualRatio < o.responsiveViewRatio
         ) {
-            o.zoomMax = (o.zoomSize / visualH) * (visualRatio > pageRatio ? 1 : pageRatio / visualRatio);
+            o.zoomMax = (zoomSize / visualH) * (visualRatio > pageRatio ? 1 : pageRatio / visualRatio);
         } else {
-            o.zoomMax = (o.zoomSize / visualH) * (visualRatio > bookRatio ? 1 : bookRatio / visualRatio);
+            o.zoomMax = (zoomSize / visualH) * (visualRatio > bookRatio ? 1 : bookRatio / visualRatio);
         }
 
         o.zoomMax = Math.max(o.zoomMax, o.zoomMin);
@@ -7004,7 +7102,17 @@ FLIPBOOK.ZoomLayer = class {
                 // space (matches PDF text layer assumed pageHeight = 1000).
                 htmlEl.style.width = ((1000 * scaledFitW) / scaledFitH) + 'px';
                 htmlEl.style.height = '1000px';
-                htmlEl.style.transform = 'scale(' + (scaledFitH / 1000) + ') translateZ(0)';
+                const k = scaledFitH / 1000;
+                if (window.CSS && CSS.supports && CSS.supports('zoom', '2')) {
+                    // zoom re-lays-out content at the target scale, so text
+                    // rasterizes natively sharp at any factor. transform:scale
+                    // on a composited (translateZ) layer keeps the 1000px
+                    // raster and GPU-upscales it — blurry idle pages.
+                    htmlEl.style.zoom = k;
+                    htmlEl.style.transform = '';
+                } else {
+                    htmlEl.style.transform = 'scale(' + k + ') translateZ(0)';
+                }
             }
         });
     }
@@ -7311,8 +7419,13 @@ FLIPBOOK.Book = class {
         // Multi-tier texture selection: small → medium → large. The largest
         // tier (pageTextureLarge) is what zoomMax also targets. filter(Boolean)
         // skips the medium tier if it isn't configured (e.g. mobile defaults).
+        // The small tier adapts down to ~1.12x the display size: bilinear-only
+        // minification (no mipmaps on NPOT textures) aliases beyond ~2x
+        // downscale, so a fixed small tier looks distorted on small books.
+        // 250px steps so zoom/resize reuse cached renders, 500px floor.
+        const fitSmall = Math.max(500, Math.ceil((pageSizePhysical * 1.12) / 250) * 250);
         const tiers = [
-            pageTextureSmall,
+            Math.min(pageTextureSmall, fitSmall),
             o.pageTextureMedium,
             pageTextureLarge,
         ].filter(Boolean);
@@ -8358,7 +8471,7 @@ FLIPBOOK.Thumbnails = class {
                 this.main.searchingString = str;
                 this.clearInput.classList.add('flipbook-hidden');
             }
-        });
+        }, 500);
     }
 
     getThumbIndexForPage(pageIndex) {
@@ -8431,13 +8544,6 @@ FLIPBOOK.Thumbnails = class {
 
         if (firstResult) {
             main.goToPage(adjustedPageIndex + 1, true);
-
-            setTimeout(() => {
-                findInput.focus();
-                findInput.setSelectionRange(findInput.value.length, findInput.value.length);
-            }, 50);
-
-            findInput.focus();
         }
 
         this.thumbsScroller.appendChild(searchMatch);
@@ -8480,7 +8586,8 @@ FLIPBOOK.Thumbnails = class {
         this.setTitle(this.options.strings.search);
         this.findInput.value = '';
         this.clearInput.classList.add('flipbook-hidden');
-        this.findInput.focus({ preventScroll: true });
+        const active = document.activeElement;
+        if (!active || active.tagName !== 'INPUT') this.findInput.focus({ preventScroll: true });
         this.active = 'search';
     }
 
