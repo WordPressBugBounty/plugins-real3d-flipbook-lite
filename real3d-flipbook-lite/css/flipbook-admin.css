@@ -241,7 +241,7 @@
   display: inline-block;
 }
 
-#real3dflipbook-admin .dashicons {
+#real3dflipbook-admin .edit-media-header > button.dashicons {
   font-size: 100px;
   display: inline-block;
   height: 100px;
@@ -770,7 +770,6 @@ a.r3d-pro {
   width: 28px;
   text-align: center;
 }
-#real3dflipbook-admin .r3d-mb-table td.r3d-mb-drag .dashicons,
 .r3d-mb-table td.r3d-mb-drag .dashicons {
   color: #a7aaad;
   cursor: move;
@@ -801,7 +800,6 @@ a.r3d-pro {
   width: 34px;
   text-align: center;
 }
-#real3dflipbook-admin .r3d-mb-table .r3d-mb-more .dashicons,
 .r3d-mb-table .r3d-mb-more .dashicons {
   cursor: pointer;
   color: #787c82;

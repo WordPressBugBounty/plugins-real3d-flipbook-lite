@@ -1,10 +1,10 @@
 === Real3D Flipbook – 3D FlipBook, PDF FlipBook, PDF Viewer, PDF Embedder ===
 Contributors: creativeinteractivemedia
-Donate link: https://codecanyon.net/item/real3d-flipbook-wordpress-plugin/6942587
+Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 5.1.0
+Stable tag: 5.1.1
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -59,6 +59,7 @@ Embed PDF files easily anywhere on your website. Display your PDFs and images as
 
 - **[Live Demo](https://real3dflipbook.com)**
 - **[Try Your PDF](https://real3dflipbook.com#try)**
+- **[Lite vs PRO comparison](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-links)**
 - **[User Manual](https://real3dflipbook.gitbook.io/wp-lite/)**
 
 ### **Support**
@@ -112,13 +113,17 @@ Embed PDF files easily anywhere on your website. Display your PDFs and images as
 
 ### **Advanced Features in PRO Version**
 
-Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
+Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-pro-section)** to unlock:
 
-- **PDF Hyperlinks:** Interactive links within your PDFs.
-- **Text Search and Select:** Enable users to search and select text.
-- **Customizable Toolbar:** Add or remove toolbar buttons.
-- **Unlimited Pages and File Sizes:** Handle large PDFs with ease.
-- **Advanced Customization:** More control over flipbook appearance and behavior.
+- **4K Resolution Zoom:** Pages stay razor sharp at any zoom level — fine print and detailed artwork included. Lite renders standard resolution.
+- **Optimized Page Loading:** Multi-tier page textures — the right size per device and zoom level, for faster loading.
+- **PDF Hyperlinks:** Links inside your PDF stay clickable in the flipbook.
+- **Text Search and Selection:** Readers can search and select the full text of every page.
+- **Toolbar and UI Customization:** 7 layouts, 3 skins, custom colors, icons and buttons.
+- **Google Analytics and Deep Linking:** Track flipbook events and link directly to any page.
+- **Mobile and Global Settings:** Different setup for phones, shared defaults for all flipbooks.
+
+**[See Lite vs PRO side by side](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-pro-section)** — the same PDF rendered by both, and you can test your own PDF with PRO right on that page. Plans from $49/year with a 30-day money-back guarantee. All your existing flipbooks and settings carry over.
 
 ---
 
@@ -165,6 +170,10 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 ---
 
 == Frequently Asked Questions ==
+
+ **What is the difference between Lite and PRO?**
+
+- Lite covers the basics — PDF and image flipbooks with realistic 3D page flip. PRO adds 4K resolution with deep zoom, optimized page loading, working PDF links, text search, toolbar and UI customization, Google Analytics, deep linking, mobile and global settings. See the **[Lite vs PRO comparison](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-faq)** — the same PDF rendered by both, side by side.
 
  **How do I create a flipbook?**
 
@@ -567,6 +576,10 @@ Upgrade to **[Real 3D FlipBook PRO](https://real3dflipbook.com)** to unlock:
 = 5.1.0 =
 * Improvements in zoom — sharper page rendering at every zoom level, deeper zoom
 
+= 5.1.1 =
+* Improvement: PRO feature comparison shown in the flipbook editor
+
 
 == Upgrade to PRO for More Features ==
-Unlock advanced features like PDF hyperlinks, text search, custom toolbar configurations, and much more. Enhance your content presentation with [Real3D FlipBook PRO](https://real3dflipbook.com).
+
+PRO adds 4K resolution zoom, working PDF links, text search, full toolbar and UI customization, Google Analytics and more — and all your existing flipbooks carry over. **[See Lite vs PRO side by side](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-bottom)** and test your own PDF with PRO. Plans from $49/year with a 30-day money-back guarantee.

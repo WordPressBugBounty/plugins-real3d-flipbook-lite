@@ -44,7 +44,8 @@ class Real3DFlipbook
 		register_activation_hook(REAL3D_FLIPBOOK_FILE, array($this, 'activation_hook'));
 	}
 
-	public function activation_hook($network_wide) {}
+	public function activation_hook($network_wide) {
+		}
 
 	public function enqueue_scripts()
 	{
@@ -163,6 +164,21 @@ class Real3DFlipbook
 				update_option('r3d_autoload_disabled', true);
 				$this->set_real3dflipbook_options_autoload_no();
 			}
+
+			
+			if (false !== strpos(REAL3D_FLIPBOOK_FILE, 'real3d-flipbook-lite')) {
+				$r3d_ids = get_option('real3dflipbooks_ids');
+				if (is_array($r3d_ids)) {
+					foreach ($r3d_ids as $r3d_id) {
+						$r3d_book = get_option('real3dflipbook_' . (string)$r3d_id);
+						if (is_array($r3d_book) && !isset($r3d_book['createdWith'])) {
+							$r3d_book['createdWith'] = 'lite-existing';
+							update_option('real3dflipbook_' . (string)$r3d_id, $r3d_book);
+						}
+					}
+				}
+			}
+			
 		}
 
 		$flipbook_global_options = get_option("real3dflipbook_global");
@@ -599,9 +615,14 @@ class Real3DFlipbook
 					unset($flipbook['viewMode']);
 				}
 
-				if (false === get_option('real3dflipbook_' . (string)$flipbook_id)) {
+				$r3d_existing = get_option('real3dflipbook_' . (string)$flipbook_id);
+				if (false === $r3d_existing) {
+					$flipbook['createdWith'] = (false !== strpos(REAL3D_FLIPBOOK_FILE, 'real3d-flipbook-lite')) ? 'lite' : 'pro';
 					add_option('real3dflipbook_' . (string)$flipbook_id, $flipbook, '', 'no');
 				} else {
+					if (is_array($r3d_existing) && isset($r3d_existing['createdWith']) && !isset($flipbook['createdWith'])) {
+						$flipbook['createdWith'] = $r3d_existing['createdWith'];
+					}
 					update_option('real3dflipbook_' . (string)$flipbook_id, $flipbook);
 				}
 			}

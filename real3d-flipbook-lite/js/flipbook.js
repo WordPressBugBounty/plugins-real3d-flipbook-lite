@@ -6437,19 +6437,17 @@ FLIPBOOK.Main = class {
     setBookmarkedPages(arr) {
         localStorage.setItem(this.options.name + '_flipbook_bookmarks', arr.join(';'));
     }
-    async bitmapToBlobUrl(bmp) {
+    async bitmapToBlob(bmp) {
+        // The bitmap belongs to the page cache and can be shared by two book
+        // pages (doublePage spreads) — never close() it here; that detaches
+        // the cached copy and the next print/render throws "image source is
+        // detached".
         // OffscreenCanvas when available (fast path)
         if (typeof OffscreenCanvas !== 'undefined') {
             const oc = new OffscreenCanvas(bmp.width, bmp.height);
             const ctx = oc.getContext('2d');
             ctx.drawImage(bmp, 0, 0);
-            const blob = await oc.convertToBlob({ type: 'image/png' });
-            // If you won't reuse the bitmap, free it
-            if (bmp.close)
-                try {
-                    bmp.close();
-                } catch (_) {}
-            return URL.createObjectURL(blob);
+            return oc.convertToBlob({ type: 'image/png' });
         }
         // Fallback to regular canvas
         const c = document.createElement('canvas');
@@ -6458,13 +6456,71 @@ FLIPBOOK.Main = class {
         const ctx = c.getContext('2d');
         ctx.drawImage(bmp, 0, 0);
         const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
-        if (bmp.close)
-            try {
-                bmp.close();
-            } catch (_) {}
         // help GC
         c.width = c.height = 1;
-        return URL.createObjectURL(blob);
+        return blob;
+    }
+
+    async bitmapToBlobUrl(bmp) {
+        return URL.createObjectURL(await this.bitmapToBlob(bmp));
+    }
+
+    // One printable item per page — {url} for direct sources, {blob} for
+    // rendered bitmaps and html captures. Sequential on purpose: one capture
+    // canvas alive at a time.
+    async collectPrintItems() {
+        const items = [];
+        for (let i = 0; i < this.options.pages.length; i++) {
+            const page = this.options.pages[i];
+            if (!page || page.locked) continue;
+            try {
+                if (page.print || page.src) {
+                    items.push({ url: page.print || page.src });
+                } else if (page.images && Object.keys(page.images).length) {
+                    const tiers = Object.keys(page.images)
+                        .map(Number)
+                        .sort((a, b) => b - a);
+                    const img = page.images[tiers[0]];
+                    const s = img && (img.currentSrc || img.src);
+                    if (s && s.indexOf('blob:') === 0) {
+                        const blob = await fetch(s)
+                            .then((r) => r.blob())
+                            .catch(() => null);
+                        if (blob) items.push({ blob });
+                    } else if (s) {
+                        items.push({ url: s });
+                    }
+                } else if (page.imageBitmap && Object.keys(page.imageBitmap).length) {
+                    const tiers = Object.keys(page.imageBitmap)
+                        .map(Number)
+                        .filter((s) => page.imageBitmap[s] && page.imageBitmap[s].width)
+                        .sort((a, b) => b - a);
+                    if (tiers.length) {
+                        items.push({ blob: await this.bitmapToBlob(page.imageBitmap[tiers[0]]) });
+                    }
+                } else if (page.htmlContent && !this.options.pdfMode) {
+                    if (page._htmlBitmap && page._htmlBitmap.width) {
+                        items.push({ blob: await this.bitmapToBlob(page._htmlBitmap) });
+                    } else if (FLIPBOOK.captureHtmlPage) {
+                        const canvas = await FLIPBOOK.captureHtmlPage(
+                            page,
+                            this.options.htmlPageWidth || 1000,
+                            this.options.htmlPageHeight || 1414,
+                            this,
+                            2
+                        ).catch(() => null);
+                        if (canvas) {
+                            const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+                            canvas.width = canvas.height = 1;
+                            if (blob) items.push({ blob });
+                        }
+                    }
+                }
+            } catch (e) {
+                // skip pages that fail to serialize
+            }
+        }
+        return items;
     }
 
     async urlToBlobUrl(u) {
@@ -6473,7 +6529,7 @@ FLIPBOOK.Main = class {
         return URL.createObjectURL(blob);
     }
 
-    async printPage(index, _) {
+    async printPage(index, _, retried) {
         const page = this.options.pages[index];
         const size = this.options.pageTextureLarge;
 
@@ -6508,11 +6564,54 @@ FLIPBOOK.Main = class {
             }
 
             // 4) ImageBitmap path — must serialize once, use blob URL
-        } else if (page.imageBitmap && page.imageBitmap[size]) {
+            // (a detached bitmap has width 0 — skip it so the reload below
+            // re-renders instead of drawImage throwing)
+        } else if (page.imageBitmap && page.imageBitmap[size] && page.imageBitmap[size].width) {
             const bmp = page.imageBitmap[size];
             const blobUrl = await this.bitmapToBlobUrl(bmp);
             tempBlobUrls.push(blobUrl);
             url = blobUrl;
+
+            // Retry pass: the render may have landed under a different key
+            // (license caps rescale the render) — print the largest tier.
+        } else if (retried && page.imageBitmap) {
+            const tiers = Object.keys(page.imageBitmap)
+                .map(Number)
+                .filter((s) => page.imageBitmap[s] && page.imageBitmap[s].width)
+                .sort((a, b) => b - a);
+            if (tiers.length) {
+                const blobUrl = await this.bitmapToBlobUrl(page.imageBitmap[tiers[0]]);
+                tempBlobUrls.push(blobUrl);
+                url = blobUrl;
+            }
+
+            // 5) HTML pages (catalogs) — no src/images; print the cached
+            // webgl capture, or capture the page now (works in any view mode).
+            // pdfMode pages can carry htmlContent as an overlay (page-editor
+            // elements) — those must print the rendered PDF page instead.
+        } else if (page.htmlContent && !this.options.pdfMode) {
+            if (page._htmlBitmap && page._htmlBitmap.width) {
+                const blobUrl = await this.bitmapToBlobUrl(page._htmlBitmap);
+                tempBlobUrls.push(blobUrl);
+                url = blobUrl;
+            } else if (FLIPBOOK.captureHtmlPage) {
+                const canvas = await FLIPBOOK.captureHtmlPage(
+                    page,
+                    this.options.htmlPageWidth || 1000,
+                    this.options.htmlPageHeight || 1414,
+                    this,
+                    2
+                ).catch(() => null);
+                if (canvas) {
+                    const blob = await new Promise((r) => canvas.toBlob(r, 'image/png'));
+                    canvas.width = canvas.height = 1;
+                    if (blob) {
+                        const blobUrl = URL.createObjectURL(blob);
+                        tempBlobUrls.push(blobUrl);
+                        url = blobUrl;
+                    }
+                }
+            }
         }
         // } catch (e) {
         //     console.warn('printPage: building URL failed, will try to loadPage()', e);
@@ -6531,15 +6630,17 @@ FLIPBOOK.Main = class {
             return;
         }
 
-        // Nothing usable yet — load the page, then retry
+        // Nothing usable yet — load the page, then retry once (html pages
+        // used to re-enter forever and overflow the stack)
+        if (retried) return;
         const pageToLoad = this.options.cover ? index : index + 1;
         this.loadPage(pageToLoad, size, () => {
             // re-enter; now one of the fast paths should trigger
-            this.printPage(index);
+            this.printPage(index, undefined, true);
         });
     }
 
-    downloadPage(index) {
+    async downloadPage(index, retried) {
         }
 
     printFile(url) {
@@ -6572,6 +6673,20 @@ FLIPBOOK.Main = class {
     togglePrintWindow(url) {
         const isIframe = window.self !== window.top;
         if (isIframe && url) {
+            // blob: URLs are origin-bound — the parent page can't load them.
+            // Send the Blob itself (structured clone); the parent mints its
+            // own object URL and prints it.
+            if (url.indexOf('blob:') === 0) {
+                fetch(url)
+                    .then((r) => r.blob())
+                    .then((blob) => {
+                        parent.postMessage({ type: 'print', blob: blob }, '*');
+                    })
+                    .catch(() => {
+                        parent.postMessage({ type: 'print', url: url }, '*');
+                    });
+                return;
+            }
             parent.postMessage(
                 {
                     type: 'print',
@@ -6586,7 +6701,7 @@ FLIPBOOK.Main = class {
         var printContent = '';
 
         if (url) {
-            printContent = url;
+            printContent = '<img src="' + url + '"/>\n';
         } else if (self.options.printPdfUrl) {
             self.printFile(self.options.printPdfUrl);
             return;
@@ -6596,21 +6711,10 @@ FLIPBOOK.Main = class {
         }
 
         function printme() {
-            var link = 'about:blank';
-            var pw = window.open(link, '_new');
+            var pw = window.open('about:blank', '_new');
+            if (!pw) return;
             pw.document.open();
-            if (url) {
-                printContent = '<img src="' + url + '"/>\n';
-            } else {
-                for (var i = 0; i < self.options.pages.length; i++) {
-                    if (self.options.pages[i].src) {
-                        printContent += '<img src="' + self.options.pages[i].src.toString() + '"/>\n';
-                    }
-                }
-            }
-
-            var printHtml = printWindowHtml(printContent);
-            pw.document.write(printHtml);
+            pw.document.write(printWindowHtml(printContent));
             pw.document.close();
         }
 
@@ -6633,7 +6737,7 @@ FLIPBOOK.Main = class {
                 'ipt>\n' +
                 '<style>img {' +
                 'display:block;' +
-                'max-width:100%;' +
+                'width:100%;' +
                 'page-break-after: always;' +
                 '}' +
                 '@media print header{' +
@@ -6647,7 +6751,35 @@ FLIPBOOK.Main = class {
             );
         }
 
-        printme();
+        if (printContent) {
+            printme();
+            return;
+        }
+
+        // Print-all with no source PDF (catalogs, image books): collect
+        // per-page images; embedded viewers hand them to the parent page.
+        // Top-level: open the window before the async collection so the
+        // user gesture still allows it (popup blockers).
+        var isTop = window.self === window.top;
+        var pw = isTop ? window.open('about:blank', '_new') : null;
+        this.collectPrintItems().then((items) => {
+            if (!items.length) {
+                if (pw) pw.close();
+                return;
+            }
+            if (!isTop) {
+                parent.postMessage({ type: 'print', items: items }, '*');
+                return;
+            }
+            printContent = items
+                .map((it) => '<img src="' + (it.blob ? URL.createObjectURL(it.blob) : it.url) + '"/>\n')
+                .join('');
+            if (pw) {
+                pw.document.open();
+                pw.document.write(printWindowHtml(printContent));
+                pw.document.close();
+            }
+        });
     }
 
     thumbsVertical() {

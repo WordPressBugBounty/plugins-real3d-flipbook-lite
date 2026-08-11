@@ -44,7 +44,7 @@
 	.r3d-upgrade .r3d-cta-bottom a { font-size: 14px; text-decoration: none; }
 	.r3d-upgrade .r3d-cta-bottom a:hover { text-decoration: underline; }
 	.r3d-upgrade .button-hero { font-size: 1.15em; }
-	.r3d-upgrade .r3d-demo-link { display: inline-block; margin-top: 10px; }
+	.r3d-upgrade .r3d-try-link { display: inline-block; margin-top: 10px; }
 	@media (max-width: 782px) { .r3d-upgrade .r3d-featured { grid-template-columns: 1fr; } }
 	</style>
 
@@ -92,8 +92,8 @@
 			<?php esc_html_e('Upgrade to PRO Now', 'real3d-flipbook'); ?>
 		</a>
 		<br>
-		<a class="r3d-demo-link" href="<?php echo esc_url('https://real3dflipbook.com/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=upgrade-page-demos'); ?>" target="_blank">
-			<?php esc_html_e('See live demos', 'real3d-flipbook'); ?>
+		<a class="r3d-try-link" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=upgrade-page-try#try'); ?>" target="_blank">
+			<?php esc_html_e('Try your PDF or images in PRO', 'real3d-flipbook'); ?>
 		</a>
 	</div>
 

@@ -124,6 +124,29 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 				</tbody>
 			</table>
 
+			<?php
+			
+			?>
+			<style>
+			#r3d-pro-hints { display: flex; align-items: flex-start; gap: 10px; max-width: 900px; background: #f7fbea; border: 1px solid #c3d698; border-left: 4px solid #84af05; border-radius: 4px; padding: 12px 16px; margin: 0 0 16px; }
+			#r3d-pro-hints .dashicons { flex: none; margin-top: 2px; color: #84af05; font-size: 20px; width: 20px; height: 20px; line-height: 1; }
+			#r3d-pro-hints p { margin: 0 0 8px; font-size: 13px; color: #3c434a; line-height: 1.6; }
+			#r3d-pro-hints strong { color: #3f5212; }
+			</style>
+			<div id="r3d-pro-hints">
+				<span class="dashicons dashicons-info-outline"></span>
+				<div>
+					<p>
+						<strong><?php esc_html_e('Get more from your flipbook with PRO', 'real3d-flipbook'); ?></strong><br>
+						<?php esc_html_e('PRO renders pages in 4K so they stay sharp at full zoom. For PDFs it also keeps links clickable and adds full-text search.', 'real3d-flipbook'); ?>
+					</p>
+					<a class="button button-secondary" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=admin&utm_campaign=upgrade&utm_content=editor-notice#try'); ?>" target="_blank"><?php esc_html_e('Try your PDF or images in PRO', 'real3d-flipbook'); ?></a>
+				</div>
+			</div>
+			<?php
+			
+			?>
+
 			<div>
 				<ul id="pages-container" tabindex="-1" class="attachments ui-sortable"></ul>
 				<span
