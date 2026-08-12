@@ -4,7 +4,7 @@ Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 5.1.2
+Stable tag: 5.1.3
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -585,6 +585,11 @@ Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_s
 * Fix: pages not loading in smaller flipbooks
 * Fix: PDF rendering issues in the flipbook editor
 * Improvement: internal code hardening
+
+= 5.1.3 =
+* Fix: zoom buttons not updating after entering or leaving fullscreen
+* Fix: zoom cursor shown on pages that cannot be zoomed further
+* Improvement: maximum zoom limited to the range where pages still render detail
 
 
 == Upgrade to PRO for More Features ==

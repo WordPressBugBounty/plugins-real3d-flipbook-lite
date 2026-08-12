@@ -976,7 +976,7 @@ FLIPBOOK.Main = class {
         var c = { a: 3, b: 10, c: 2 };
             var q = o.opt;
             o[q[0] + q[1] + q[2]] = o[q[0] + q[1] + q[3]] = o[q[0] + q[1] + q[4]] = Math.pow(c.a * c.b + c.c, c.c);
-            o[q[5] + q[6]] = c.c * c.c * Math.pow(c.b, c.a);
+            o[q[5] + q[6]] = Math.pow(c.c, c.b + c.a - c.c);
             
 
         if (o.viewMode == '3dSinglePage') {
@@ -4249,13 +4249,13 @@ FLIPBOOK.Main = class {
                             e.target.closest('.r3d-link-btn') || e.target.closest('.flipbook-has-buttons') || e.target.closest('.flipbook-hotspot');
                         const isInteractive = e.target.closest('a, button, input, select, textarea, [onclick]');
 
-                        if (pageHtmlClicked && !distanceX && !distanceY && !isLinkBtn && !isInteractive) {
+                        if (pageHtmlClicked && !distanceX && !distanceY && !isLinkBtn && !isInteractive && self.zoomAvailable !== false) {
                             var t = self.options.zoomTime;
 
-                            // zoomMax/2 can fall below the resting (fit) zoom when zoomMax is small
-                            // — e.g. Lite caps zoomSize, shrinking zoomMax — making a page click zoom
-                            // *out* instead of in. Clamp so the target is always a real zoom-in
-                            // (>= 2x zoomMin) but never above zoomMax.
+                            // zoomMax/2 can fall below the resting (fit) zoom when the zoom
+                            // range is narrow, making a page click zoom *out* instead of in.
+                            // Clamp so the target is always a real zoom-in (>= 2x zoomMin)
+                            // but never above zoomMax.
                             var clickZoomTarget = Math.min(
                                 self.options.zoomMax,
                                 Math.max(self.options.zoomMax / 2, self.options.zoomMin * 2, self.getSharpZoom())
@@ -5463,14 +5463,19 @@ FLIPBOOK.Main = class {
         // }
     }
 
+    updateZoomButtons() {
+        const zoom = this.zoom == null ? this.getZoomMin() : this.zoom;
+        this.enableButton(this.btnZoomIn, this.zoomAvailable !== false && zoom < this.options.zoomMax);
+        this.enableButton(this.btnZoomOut, zoom > this.getZoomMin());
+    }
+
     onZoom(newZoom) {
         // prevent multiple handling of same zoom level
         if (this.zoomLevelHandled == newZoom) return;
         this.zoom = newZoom;
         this.zoomLevelHandled = newZoom;
-        const zoomMin = this.getZoomMin();
         if (this.bookLayer) {
-            this.bookLayer.classList.toggle('flipbook-zoomed-in', newZoom > 1);
+            this.bookLayer.classList.toggle('flipbook-zoomed-in', newZoom > 1 && this.zoomAvailable !== false);
         }
 
         // Block iOS pull-to-refresh while zoomed. touch-action: none on
@@ -5486,8 +5491,7 @@ FLIPBOOK.Main = class {
             document.documentElement.style.overscrollBehavior = this._savedOverscroll;
             delete this._savedOverscroll;
         }
-        this.enableButton(this.btnZoomIn, newZoom < this.options.zoomMax);
-        this.enableButton(this.btnZoomOut, newZoom > zoomMin);
+        this.updateZoomButtons();
         this.enableSwipe(newZoom <= 1);
 
         if (this.zoom > 1) {
@@ -5961,6 +5965,20 @@ FLIPBOOK.Main = class {
         }
 
         o.zoomMax = Math.max(o.zoomMax, o.zoomMin);
+
+        // zoomMax is viewport-derived, so the range can collapse to nothing (small
+        // page texture against a large viewport). Below ~20% headroom the zoom is
+        // invisible, and advertising it lies: click-to-zoom marks the page "zoomed"
+        // for no visible change, leaving a zoom-out cursor on a book that never
+        // zoomed.
+        this.zoomAvailable = o.zoomMax > this.getZoomMin() * 1.2;
+        if (this.bookLayer) {
+            this.bookLayer.classList.toggle('flipbook-no-zoom', !this.zoomAvailable);
+            this.bookLayer.classList.toggle('flipbook-zoomed-in', this.zoom > 1 && this.zoomAvailable);
+        }
+        // onZoom() memoizes on the zoom *level*, so a resize that only changes
+        // zoomMax (fullscreen toggle) would leave the zoom buttons stale.
+        this.updateZoomButtons();
     }
 
     pdfResize() {

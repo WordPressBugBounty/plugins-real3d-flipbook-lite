@@ -2917,6 +2917,13 @@
   cursor: zoom-out;
 }
 
+/* Zoom range collapsed (small page texture vs large viewport): don't advertise a
+   zoom the user can't perform. Toggled by the zoomMax calculation.
+   :not(.mousedown) keeps the grab cursor while dragging. */
+.flipbook-bookLayer.flipbook-no-zoom .flipbook-page-html:not(.mousedown) {
+  cursor: default;
+}
+
 .flipbook-page-html.mousedown {
   cursor: grab;
 }
