@@ -2245,7 +2245,7 @@ FLIPBOOK.PageSwipe = class {
             }
 
             if (page && page.image) {
-                var img = page.image[size] || page.image;
+                var img = FLIPBOOK.tierSource(page.image, size);
                 img.classList.add('page-carousel-img');
 
                 if (self.index % 2 == 0 && ((p && p.side == 'left') || (p && p.side == 'right'))) {

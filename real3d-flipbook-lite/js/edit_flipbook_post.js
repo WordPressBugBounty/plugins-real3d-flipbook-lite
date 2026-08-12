@@ -1416,11 +1416,11 @@ var pluginDir = (function (scripts) {
     async function previewPDFPages() {
       document.body.classList.add("pdf-flipbook");
       pdfjsLib.GlobalWorkerOptions.workerSrc =
-        pluginDir + "js/pdf.worker.min.js";
+        pluginDir + "js/libs/pdf.worker.min.js";
 
       var params = {
         cMapPacked: true,
-        cMapUrl: pluginDir + "js/cmaps/",
+        cMapUrl: pluginDir + "assets/cmaps/",
         // disableAutoFetch: false,
         // disableCreateObjectURL: false,
         // disableFontFace: false,
@@ -1688,7 +1688,7 @@ var pluginDir = (function (scripts) {
       if (previewFlipbook) previewFlipbook.dispose();
       previewFlipbook = null;
 
-      o.cMapUrl = pluginDir + "js/cmaps/";
+      o.cMapUrl = pluginDir + "assets/cmaps/";
 
       o.doubleClickZoomDisabled = !o.doubleClickZoom;
       o.pageDragDisabled = !o.pageDrag;
@@ -2507,11 +2507,11 @@ var pluginDir = (function (scripts) {
       var oldPages = options.pages;
       if (FLIPBOOK.PDFTools && addMorePages) {
         pdfjsLib.GlobalWorkerOptions.workerSrc =
-          pluginDir + "js/pdf.worker.min.js";
+          pluginDir + "js/libs/pdf.worker.min.js";
 
         var params = {
           cMapPacked: true,
-          cMapUrl: pluginDir + "js/cmaps/",
+          cMapUrl: pluginDir + "assets/cmaps/",
           disableRange: options.disableRange,
           disableAutoFetch: true,
           disableStream: true,

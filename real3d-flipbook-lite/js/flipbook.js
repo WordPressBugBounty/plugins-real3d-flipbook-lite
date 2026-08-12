@@ -2,6 +2,17 @@
 var FLIPBOOK = FLIPBOOK || {};
 FLIPBOOK.version = '5.1.0';
 
+// page.image / page.imageBitmap are keyed by texture size, but legacy paths hand
+// back a bare Image, an ImageBitmap or a URL string. Resolve the requested tier,
+// and on a miss fall back to the largest cached tier — never to the store itself,
+// which is not a drawable source.
+FLIPBOOK.tierSource = function (store, size) {
+    if (!store || typeof store === 'string' || store.src || store.tagName || store.width) return store;
+    if (store[size]) return store[size];
+    var tiers = Object.keys(store);
+    return tiers.length ? store[tiers[tiers.length - 1]] : null;
+};
+
 // eslint-disable-next-line no-shadow-restricted-names
 (function init(window, document, undefined) {
     if (typeof jQuery != 'undefined') {
@@ -7183,7 +7194,7 @@ FLIPBOOK.ZoomLayer = class {
             // Image (highest tier).
             this.main.loadPage(index, size, (page) => {
                 if (page && page.image) {
-                    const pageImg = page.image[size] || page.image;
+                    const pageImg = FLIPBOOK.tierSource(page.image, size);
                     if (pageImg && pageImg.src) img.src = pageImg.src;
                 }
             });

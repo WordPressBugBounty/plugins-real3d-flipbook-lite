@@ -1227,7 +1227,7 @@ FLIPBOOK.Page3 = class {
 
         o.main.loadPage(index, size, function (page) {
             if (page && page.image) {
-                var img = page.image[size] || page.image;
+                var img = FLIPBOOK.tierSource(page.image, size);
                 var page = o.pages[index];
                 if (
                     (isFront && page && page.side == 'right') ||

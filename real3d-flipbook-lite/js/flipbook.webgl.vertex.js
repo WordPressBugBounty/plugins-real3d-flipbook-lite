@@ -2390,14 +2390,15 @@ FLIPBOOK.PageWebGL = class {
     createTexture(page, size, side) {
         let texture;
         if (page.imageBitmap) {
-            const bitmap = page.imageBitmap[size] || page.imageBitmap;
+            const bitmap = FLIPBOOK.tierSource(page.imageBitmap, size);
             texture = new THREE.Texture(bitmap);
             texture.offset.y = 1;
             texture.repeat.y = -1;
         } else {
             texture = new THREE.Texture();
 
-            texture.image = page.image[size] ? page.image[size].clone || page.image[size] : page.image;
+            const tier = page.image[size];
+            texture.image = tier ? tier.clone || tier : FLIPBOOK.tierSource(page.image, size);
         }
 
         if (side == 'left') {

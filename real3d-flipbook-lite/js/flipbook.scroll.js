@@ -655,7 +655,7 @@ FLIPBOOK.PageScroll = class {
             if (self.size > size) return;
             if (!page || !page.image) return;
 
-            let img = page.image[size] || page.image;
+            let img = FLIPBOOK.tierSource(page.image, size);
             img.classList.add('page-scroll-img');
 
             if (
@@ -761,7 +761,7 @@ FLIPBOOK.PageScroll = class {
             }
 
             if (page && page.image) {
-                let img = page.image[size] || page.image;
+                let img = FLIPBOOK.tierSource(page.image, size);
                 img.classList.add('page-scroll-img');
 
                 if (

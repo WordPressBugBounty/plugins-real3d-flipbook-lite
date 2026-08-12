@@ -4,15 +4,17 @@ Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 5.1.1
+Stable tag: 5.1.2
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-Embed PDF files easily anywhere on your website. Display your PDFs and images as stunning, interactive 3D flipbooks directly within WordPress.
+Upload a PDF or images, get a 3D flipbook. Embed it anywhere with a block or shortcode - a realistic page-flip PDF viewer for WordPress.
 
 == Description ==
 
-**Real 3D Flipbook** is the ultimate **3D Flipbook and PDF Viewer Plugin for WordPress** that converts your PDFs and images into interactive, realistic 3D flipbooks and viewers. Enhance your website's user experience with lifelike page-turning effects that work seamlessly on all devices and browsers.
+**Create a 3D flipbook in WordPress in three steps:** upload a PDF or a set of images, choose a viewer mode, then paste the shortcode or drop the Real3D Flipbook block into any page or post. No conversion service, no account, no per-book fees - your PDF files stay on your own server.
+
+Readers get a realistic, interactive 3D flipbook with a lifelike page-turning effect: pages bend and cast shadows as they turn, and it works on all devices and browsers - swipe to flip on a phone, tap to zoom, open it inline or in a lightbox. Prefer something plainer? The same PDF can be displayed as a scroll, slide or simple PDF viewer instead, by changing one setting.
 
 [youtube https://www.youtube.com/watch?v=2oweJfaawao]
 
@@ -578,6 +580,11 @@ Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_s
 
 = 5.1.1 =
 * Improvement: PRO feature comparison shown in the flipbook editor
+
+= 5.1.2 =
+* Fix: pages not loading in smaller flipbooks
+* Fix: PDF rendering issues in the flipbook editor
+* Improvement: internal code hardening
 
 
 == Upgrade to PRO for More Features ==

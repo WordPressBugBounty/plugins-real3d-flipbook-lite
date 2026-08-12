@@ -241,12 +241,6 @@
   display: inline-block;
 }
 
-#real3dflipbook-admin .edit-media-header > button.dashicons {
-  font-size: 100px;
-  display: inline-block;
-  height: 100px;
-}
-
 #real3dflipbook-admin .options-sidebar .field-row {
   clear: both;
   margin-bottom: 10px;

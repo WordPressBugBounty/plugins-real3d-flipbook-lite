@@ -77,6 +77,10 @@ function r3d_reset_general_callback()
 
 	check_ajax_referer('r3d_nonce', 'security');
 
+	if (!current_user_can('manage_options')) {
+		wp_die(esc_html__('You do not have permission to perform this action.', 'real3d-flipbook'), 403);
+	}
+
 	r3dfb_setDefaults();
 
 	wp_die();

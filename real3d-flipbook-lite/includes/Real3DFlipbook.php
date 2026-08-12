@@ -683,6 +683,14 @@ class Real3DFlipbook
 
 		check_ajax_referer('r3d_nonce', 'security');
 
+		if (!current_user_can(get_option('real3dflipbook_capability', 'publish_posts'))) {
+			wp_die(
+				esc_html__('You do not have permission to perform this action.', 'real3d-flipbook'),
+				esc_html__('Error', 'real3d-flipbook'),
+				['response' => 403]
+			);
+		}
+
 		if (isset($_POST['flipbooks']) && !empty($_POST['flipbooks'])) {
 			$json = wp_unslash($_POST['flipbooks']);
 			$newFlipbooks = json_decode($json, true);
@@ -748,6 +756,10 @@ class Real3DFlipbook
 	public function ajax_get_json()
 	{
 		check_ajax_referer('r3d_nonce', 'security');
+
+		if (!current_user_can(get_option('real3dflipbook_capability', 'publish_posts'))) {
+			wp_send_json_error(esc_html__('You do not have permission to perform this action.', 'real3d-flipbook'), 403);
+		}
 
 		$flipbooks = array();
 
@@ -1670,17 +1682,23 @@ a:hover .link-icon {
 	{
 		if (!$this->needs_global_options) return;
 
-		$json_global = wp_json_encode($this->flipbook_global, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+		// The JSON_HEX_* flags keep <, >, & and quotes out of the script-data context, so
+		// no option value can emit a literal </script and terminate the enclosing element.
+		// JSON.parse restores the original characters, so option values are unchanged.
+		$json_flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+			| JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+
+		$json_global = wp_json_encode($this->flipbook_global, $json_flags);
 
 		echo '<script type="application/json" id="real3dflipbook-global-options">';
-		echo $json_global;
+		echo $json_global; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Tag-safe JSON; script data must not be HTML-escaped.
 		echo '</script>';
 
 		foreach ($this->flipbook_options as $bookId => $flipbook) {
-			$json = wp_json_encode($flipbook, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+			$json = wp_json_encode($flipbook, $json_flags);
 
 			echo '<script type="application/json" class="real3dflipbook-options" data-book-id="' . esc_attr($bookId) . '">';
-			echo $json;
+			echo $json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Tag-safe JSON; script data must not be HTML-escaped.
 			echo '</script>';
 		}
 	}
