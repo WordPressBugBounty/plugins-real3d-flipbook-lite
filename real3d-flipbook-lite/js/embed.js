@@ -8,6 +8,8 @@
       );
       var o_global = globalScript ? JSON.parse(globalScript.textContent) : {};
 
+      var claimedTriggers = [];
+
       books.forEach(function (bookElement) {
         var configScript = document.querySelector(
           '.real3dflipbook-options[data-book-id="' + bookElement.id + '"]'
@@ -297,26 +299,36 @@
               text.setAttribute("style", style);
             }
 
+            // Its own thumbnail always opens this occurrence, so two shortcodes for the
+            // same book keep their own options. Elements carrying the class that no
+            // shortcode rendered (custom links, images) go to the first occurrence only.
+            var triggers = [bookElement];
+
             if (!o.lightboxCssClass || o.lightboxCssClass === "") {
               o.lightboxCssClass = bookContainer.className;
             } else {
               bookElement.classList.add(o.lightboxCssClass);
-            }
 
-            if (o.lightboxLink) {
               document
                 .querySelectorAll("." + o.lightboxCssClass)
                 .forEach(function (el) {
-                  el.addEventListener("click", function () {
-                    var target = o.lightboxLinkNewWindow ? "_blank" : "_self";
-                    window.open(o.lightboxLink, target);
-                  });
+                  if (el === bookElement) return;
+                  if (Array.prototype.indexOf.call(books, el) !== -1) return;
+                  if (claimedTriggers.indexOf(el) !== -1) return;
+                  claimedTriggers.push(el);
+                  triggers.push(el);
                 });
+            }
+
+            if (o.lightboxLink) {
+              triggers.forEach(function (el) {
+                el.addEventListener("click", function () {
+                  var target = o.lightboxLinkNewWindow ? "_blank" : "_self";
+                  window.open(o.lightboxLink, target);
+                });
+              });
             } else {
-              book = new FlipBook(
-                document.querySelectorAll("." + o.lightboxCssClass),
-                o
-              );
+              book = new FlipBook(triggers, o);
             }
             break;
 

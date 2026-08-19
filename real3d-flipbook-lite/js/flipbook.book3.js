@@ -84,6 +84,31 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         this.createShadowURL(1024).then((url) => {
             this.wrapper.style.setProperty('--flipbook-page-shadow-image', `url(${url})`);
         });
+
+        /* Hover lift previews a fold opening, so it is bound only where a fold
+           opens over time: 2d has no rotation to show, and 'simple' arrives
+           here as 3d + instantFlip, which turns with no in-between. Listeners
+           sit on the viewport rather than the book so the catch can reach off
+           the page, the way it does in webgl.
+
+           Held back for now. Everything below is intact and unreferenced while
+           this is false — to bring it back, restore:
+             options.viewMode === '3d' && !options.instantFlip && !!options.pageHoverLift */
+        this._hoverLiftOk = false;
+
+        if (this._hoverLiftOk) {
+            const self = this;
+            this._onHoverMove = function (e) {
+                self._setHoverTarget(self._hoverTargetAt(e));
+                self._setCursor(self.dragging ? 'grabbing' : self._grabbableAt(e) ? 'grab' : null);
+            };
+            this._onHoverOut = function () {
+                self._setHoverTarget(null);
+                self._setCursor(null);
+            };
+            this.viewport.addEventListener('mousemove', this._onHoverMove);
+            this.viewport.addEventListener('mouseleave', this._onHoverOut);
+        }
     }
 
     createShadowURL(width = 2048) {
@@ -664,6 +689,10 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
 
         if (phase === 'start') {
             this.dragging = true;
+            /* Carry whatever the hover already opened, so the press does not
+               snap the sheet shut before the drag's own angle takes over. */
+            this._liftCarry = this._hoverAngle || 0;
+            this.cancelHoverLift();
             this.main.dragPage();
             // Snapshot focus + start position so portrait one-page-view drag
             // (below) can keep referencing them after centerContainer moves.
@@ -724,6 +753,7 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
             }
             this._dragStartFocus = null;
             this.dragging = false;
+            this._liftCarry = 0;
             return;
         }
 
@@ -734,6 +764,7 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         if ((phase === 'end' || phase === 'cancel') && fingerCount <= 1 && distance > threshold) {
             angle > 0 ? this.nextPage() : this.prevPage();
             this.dragging = false;
+            this._liftCarry = 0;
             return;
         }
 
@@ -762,7 +793,10 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
                 this.goingToPage <= this.pagesArr.length * 2 &&
                 !this.options.instantFlip
             ) {
-                this._setPageAngle(angle);
+                /* Only while the drag pulls the same way the lift opened —
+                   dragging back the other way should close it, not add to it. */
+                const carry = this._liftCarry || 0;
+                this._setPageAngle(angle + ((carry > 0) === (angle > 0) ? carry : 0));
             }
         }
     }
@@ -878,6 +912,122 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
                 prev._setAngle(180);
             }
         }
+    }
+
+    /* ---- Hover lift (3d only) ------------------------------------------ */
+
+    /* The sheets are unrotated at rest, so their own client rects are the page
+       rectangle exactly. Sheet indexing mirrors _setPageAngle so the lift and
+       the drag always act on the same sheet. */
+    _hoverTargetAt(e) {
+        const o = this.options;
+        if (!this._hoverLiftOk || !this.enabled || this.flipping || this.dragging) return null;
+        if (this.isZoomed() || !this.visibleSheets) return null;
+        const cx = e && (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX);
+        const cy = e && (e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY);
+        if (cx == null || cy == null) return null;
+
+        const edgeIn = Math.max(0, o.pageHoverEdgeWidth);
+        const edgeOut = Math.max(0, o.pageHoverEdgeOuter == null ? edgeIn : o.pageHoverEdgeOuter);
+        const corner = Math.max(0, o.pageHoverCornerSize);
+        const ri = this.rightIndex;
+        const pairs = [
+            [this.singlePage ? this.visibleSheets[ri] : this.visibleSheets[ri / 2], this.nextEnabled, 'next', true],
+            [this.singlePage ? null : this.visibleSheets[ri / 2 - 1], this.prevEnabled, 'prev', false],
+        ];
+
+        for (let i = 0; i < pairs.length; i++) {
+            const sheet = pairs[i][0];
+            if (!sheet || !pairs[i][1] || sheet.hidden) continue;
+            const r = sheet.wrapper.getBoundingClientRect();
+            if (!r.width || !r.height) continue;
+            const edgeX = pairs[i][3] ? r.right : r.left;
+            /* positive is off the page, negative is into it */
+            const out = pairs[i][3] ? cx - edgeX : edgeX - cx;
+            if (cy >= r.top && cy <= r.bottom && (out >= 0 ? out <= edgeOut : -out <= edgeIn)) return pairs[i][2];
+            if (
+                corner &&
+                Math.abs(cx - edgeX) <= corner &&
+                (Math.abs(cy - r.top) <= corner || Math.abs(cy - r.bottom) <= corner)
+            )
+                return pairs[i][2];
+        }
+        return null;
+    }
+
+    /* A drag turns a page from anywhere over the book, but the cursor should
+       not promise a turn that side cannot make. */
+    _grabbableAt(e) {
+        if (!this._hoverLiftOk || !this.enabled || this.isZoomed() || this.flipping) return false;
+        const cx = e && (e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX);
+        const cy = e && (e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY);
+        if (cx == null || cy == null) return false;
+        const r = this.centerContainer.getBoundingClientRect();
+        if (cx < r.left || cx > r.right || cy < r.top || cy > r.bottom) return false;
+        return cx >= (r.left + r.right) / 2 ? !!this.nextEnabled : !!this.prevEnabled;
+    }
+
+    _setCursor(mode) {
+        if (this._cursorMode === mode) return;
+        this._cursorMode = mode;
+        const cl = this.bookLayer.classList;
+        cl.toggle('r3d-grab', mode === 'grab');
+        cl.toggle('r3d-grabbing', mode === 'grabbing');
+    }
+
+    _setHoverTarget(dir) {
+        if (this._hoverDir === dir) return;
+        this._hoverDir = dir;
+        this._hoverLift(dir);
+    }
+
+    /* Rise a few degrees, or settle back. Runs through _setPageAngle, so the
+       arriving sheet is shown and preloaded exactly as a drag's first move
+       does it — this is the opening of one, just not committed. */
+    _hoverLift(dir) {
+        const o = this.options;
+        const deg = Math.max(0, o.pageHoverLift || 0);
+        const to = !dir ? 0 : dir === 'next' ? deg : -deg;
+        const from = this._hoverAngle || 0;
+        if (from === to) return;
+        if (this._hoverTween) this._hoverTween.stop();
+        if (to !== 0) {
+            const increment = to > 0 ? (this.singlePage ? 1 : 2) : this.singlePage ? -1 : -2;
+            const target = this.rightIndex + increment;
+            if (target < 0 || target > this.pagesArr.length * 2) return;
+            this.goingToPage = target;
+        }
+        const self = this;
+        this._hoverTween = FLIPBOOK.animate({
+            from: from,
+            to: to,
+            duration: o.pageHoverLiftDuration,
+            easing: 'easeOutSine',
+            step: function (v) {
+                if (self.flipping || self.dragging) return;
+                self._hoverAngle = v;
+                /* _setPageAngle picks its sheets by the sign of the angle and
+                   has no branch for exactly 0, so the settle finishes below. */
+                if (v !== 0) self._setPageAngle(v);
+            },
+            complete: function () {
+                self._hoverTween = null;
+                if (to !== 0 || self.flipping || self.dragging) return;
+                self._hoverAngle = 0;
+                self.angle = 0;
+                self.goingToPage = self.rightIndex;
+                self.updateVisiblePages();
+            },
+        });
+    }
+
+    /* Drop the tween without settling — a drag is taking over from here. */
+    cancelHoverLift() {
+        if (this._hoverTween) {
+            this._hoverTween.stop();
+            this._hoverTween = null;
+        }
+        this._hoverDir = null;
     }
 
     isCover() {

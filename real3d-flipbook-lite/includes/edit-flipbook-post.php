@@ -140,7 +140,7 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 						<strong><?php esc_html_e('Get more from your flipbook with PRO', 'real3d-flipbook'); ?></strong><br>
 						<?php esc_html_e('PRO renders pages in 4K so they stay sharp at full zoom. For PDFs it also keeps links clickable and adds full-text search.', 'real3d-flipbook'); ?>
 					</p>
-					<a class="button button-secondary" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=admin&utm_campaign=upgrade&utm_content=editor-notice#try'); ?>" target="_blank"><?php esc_html_e('Try your PDF or images in PRO', 'real3d-flipbook'); ?></a>
+					<a class="button button-secondary" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=editor-notice#try'); ?>" target="_blank"><?php esc_html_e('Try your PDF or images in PRO', 'real3d-flipbook'); ?></a>
 				</div>
 			</div>
 			<?php

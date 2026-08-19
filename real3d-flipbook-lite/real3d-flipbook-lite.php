@@ -2,11 +2,11 @@
 
 /*
 	Plugin Name: Real3D Flipbook Lite
-	Plugin URI: https://wordpress.org/plugins/real3d-flipbook-lite/
+	Plugin URI: https://real3dflipbook.com/wordpress/
 	Description: Realistic 3D FlipBook, PDF Viewer, PDF Embedder - create realistic 3D flipbook from PDF or images. 
-	Version: 5.1.3
+	Version: 5.3
 	Author: creativeinteractivemedia
-	Author URI: http://codecanyon.net/user/creativeinteractivemedia
+	Author URI: https://real3dflipbook.com/
 	License: GPLv2 or later
 	License URI: https://www.gnu.org/licenses/gpl-2.0.html
 	Text Domain: real3d-flipbook
@@ -73,7 +73,7 @@ if (!function_exists('r3d_fs')) {
 	do_action('r3d_fs_loaded');
 }
 
-define('REAL3D_FLIPBOOK_VERSION', '5.1.3');
+define('REAL3D_FLIPBOOK_VERSION', '5.3');
 define('REAL3D_FLIPBOOK_FILE', __FILE__);
 
 include_once(plugin_dir_path(__FILE__) . '/includes/Real3DFlipbook.php');

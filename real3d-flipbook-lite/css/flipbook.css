@@ -209,6 +209,37 @@
   overflow: hidden;
 }
 
+/* .flipbook-bookLayer paints grab across the whole book, which says a page can
+   be taken hold of even where none can — past the last page, or on a side with
+   nothing left to turn. In WebGL the book itself decides, per pointer position,
+   and hands the answer down as a class. */
+.flipbook-book-webgl {
+  cursor: default;
+}
+
+/* The descendant selectors are needed to beat .pageClickArea's own pointer
+   cursor, which covers the same edge the hover lift arms on. */
+.flipbook-book-webgl.r3d-grab,
+.flipbook-book-webgl.r3d-grab * {
+  cursor: grab;
+}
+
+.flipbook-book-webgl.r3d-grabbing,
+.flipbook-book-webgl.r3d-grabbing * {
+  cursor: grabbing;
+}
+
+/* Same answer in 3d mode, where the class lands on the book layer. */
+.flipbook-bookLayer.flipbook-mode-3d.r3d-grab,
+.flipbook-bookLayer.flipbook-mode-3d.r3d-grab * {
+  cursor: grab;
+}
+
+.flipbook-bookLayer.flipbook-mode-3d.r3d-grabbing,
+.flipbook-bookLayer.flipbook-mode-3d.r3d-grabbing * {
+  cursor: grabbing;
+}
+
 .flipbook-book-shadow {
   box-shadow:
     0 2px 6px rgba(0, 0, 0, 0.08),
@@ -810,11 +841,35 @@
   margin-left: 0;
 }
 
+/* Clipping layer for the side menus (TOC, thumbnails). The wrapper itself goes
+   overflow:visible for the length of a page flip (turnPageStart), so a closed
+   panel — slid off-canvas, not display:none — gets painted outside the book
+   while flipping. This layer always clips, so the slide animation is clipped
+   correctly regardless of the wrapper's overflow. */
+.flipbook-side-menu-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 9;
+  pointer-events: none;
+}
+
 .flipbook-side-menu {
   transform: translateX(-100%);
-  transition: transform 0.25s ease;
+  /* Hidden while parked off-canvas: the panel still paints its box-shadow
+     through the clip-path's -20px right inset, which lands inside the book.
+     visibility switches on immediately when opening and only after the
+     slide-out finishes when closing, so both animations still run in full. */
+  visibility: hidden;
+  transition:
+    transform 0.25s ease,
+    visibility 0s linear 0.25s;
   box-shadow: 4px 0 12px rgba(0, 0, 0, 0.12);
   clip-path: inset(0 -20px 0 0);
+  pointer-events: auto;
 }
 
 .flipbook-side-menu.flipbook-side-menu-right {
@@ -827,6 +882,10 @@
 
 .flipbook-side-menu.flipbook-side-menu-visible {
   transform: translateX(0);
+  visibility: visible;
+  transition:
+    transform 0.25s ease,
+    visibility 0s;
 }
 
 .flipbook-side-menu.flipbook-thumbs-grid {
@@ -834,11 +893,16 @@
   clip-path: none;
   box-shadow: none;
   opacity: 0;
-  transition: opacity 0.25s ease !important;
+  transition:
+    opacity 0.25s ease,
+    visibility 0s linear 0.25s !important;
 }
 
 .flipbook-side-menu.flipbook-thumbs-grid.flipbook-side-menu-visible {
   opacity: 1;
+  transition:
+    opacity 0.25s ease,
+    visibility 0s !important;
 }
 
 .flipbook-thumbHolder {
@@ -894,6 +958,29 @@
 @media (max-width: 450px) {
   .flipbook-thumbs-grid .flipbook-thumbsWrapper {
     padding: 0.5rem;
+  }
+}
+
+/* Phones: a side panel that takes part of the width leaves too little room
+   for itself and for the book. Search, thumbnails and contents cover the
+   whole viewer instead, and close on a result (see showSearchResults). */
+@media (max-width: 767px) {
+  .flipbook-side-menu {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* The 220px cap and the centred grid are sized for the desktop sidebar —
+     in a full-width panel they leave the results in a narrow column with
+     wide empty margins. */
+  .flipbook-side-menu .flipbook-thumbsScroller {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .flipbook-side-menu .flipbook-search-match {
+    max-width: none;
+    padding: 10px 14px;
   }
 }
 

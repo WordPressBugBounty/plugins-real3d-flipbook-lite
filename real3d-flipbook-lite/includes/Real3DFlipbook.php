@@ -1191,6 +1191,9 @@ class Real3DFlipbook
 		<a class="button button-primary" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=metabox'); ?>" target="_blank">
 			<?php esc_html_e('Upgrade to PRO', 'real3d-flipbook'); ?>
 		</a>
+		<a class="button button-secondary" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=metabox-try#try'); ?>" target="_blank">
+			<?php esc_html_e('Try your PDF or images in PRO', 'real3d-flipbook'); ?>
+		</a>
 		<a href="<?php echo esc_url(admin_url('admin.php?page=real3d_flipbook_upgrade')); ?>">
 			<?php esc_html_e('View all PRO features', 'real3d-flipbook'); ?>
 		</a>

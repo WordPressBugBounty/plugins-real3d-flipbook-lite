@@ -4,7 +4,7 @@ Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.0
-Stable tag: 5.1.3
+Stable tag: 5.3
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -59,8 +59,8 @@ Readers get a realistic, interactive 3D flipbook with a lifelike page-turning ef
 
 ### **Live Demo & Documentation**
 
-- **[Live Demo](https://real3dflipbook.com)**
-- **[Try Your PDF](https://real3dflipbook.com#try)**
+- **[Live Demo](https://real3dflipbook.com/wordpress/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-links)**
+- **[Try Your PDF](https://real3dflipbook.com/wordpress/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-links#try)**
 - **[Lite vs PRO comparison](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-links)**
 - **[User Manual](https://real3dflipbook.gitbook.io/wp-lite/)**
 
@@ -590,6 +590,20 @@ Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_s
 * Fix: zoom buttons not updating after entering or leaving fullscreen
 * Fix: zoom cursor shown on pages that cannot be zoomed further
 * Improvement: maximum zoom limited to the range where pages still render detail
+
+= 5.3 =
+* New: flip several pages by dragging - grab a page while another one is still flipping
+* New: realistic page flip - the bend follows flip speed and paper hardness
+* New: page corners lift on hover, click flips the page
+* New: pan with two fingers while pinch zooming
+* Improvement: much lower memory use - pages render at the size they are shown at, and pages you flip past load small
+* Improvement: faster flipping - the page you land on renders first, and more pages stay loaded
+* Improvement: search on phones - full width panel, wider results, closes when you pick a result
+* Improvement: maximum zoom now matches the page render resolution, so zoomed pages stay sharp
+* Fix: crash on iOS after flipping many pages
+* Fix: search, bookmarks and thumbnails panels closed right after opening on Android
+* Fix: pages could pass through each other when several were bent at once
+* Fix: book jumped left and right when flipping fast in single page view
 
 
 == Upgrade to PRO for More Features ==

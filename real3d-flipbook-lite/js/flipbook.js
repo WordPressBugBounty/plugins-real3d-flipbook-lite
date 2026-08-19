@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.1.0';
+FLIPBOOK.version = '5.3';
 
 // page.image / page.imageBitmap are keyed by texture size, but legacy paths hand
 // back a bare Image, an ImageBitmap or a URL string. Resolve the requested tier,
@@ -330,13 +330,40 @@ FLIPBOOK.Main = class {
             annotationLayer: false,
         },
         pageTextureLarge: 4000,
-        pageTextureMedium: 2500,
-        pageTextureSmall: 1500,
+        pageTextureMedium: 2000,
+        pageTextureSmall: 1200,
+        pageTextureAdaptive: true, // render the visible spread at the size the
+        // display actually needs (1.12x, in 250px steps, capped by
+        // pageTextureLarge) instead of snapping up to the next fixed tier.
+        // false restores the small/medium/large ladder.
+        pageRenderReach: 8, // pdf pages either side of the spread whose
+        // renders are worth finishing. Anything further is cancelled when the
+        // window moves. Generous, because a neighbour render is small and only
+        // two run at a time: letting one finish is cheaper than cancelling it
+        // and rendering it again when the reader flips back.
+        pageRenderConcurrency: 2, // neighbour pages rendering at once.
+        // pdf.js renders on the main thread, so a flood of them does not
+        // finish sooner — it just delays the page being looked at.
+        pageLoadThrottle: 120, // ms between spread loads while turns overlap.
+        // Skimming asks for two renders per click; without this they queue up
+        // and starve the spread being landed on. 0 restores per-click loading.
+        pageTextureNeighbour: null, // tier for the spreads a flip uncovers.
+        // null = pageTextureMedium. Lower it to shrink the memory window
+        // without touching the read page: the display ladder still picks
+        // small/medium/large for the visible spread, and loadPages upgrades
+        // it as soon as the book settles.
         thumbTextureSize: 300,
-        pageTextureMobileLarge: 3500,
-        pageTextureMobileMedium: 2200,
-        pageTextureMobileSmall: 1500,
-        pagesInMemory: 20,
+        pageTextureMobileLarge: 3000, // phones read at a smaller physical page
+        pageTextureMobileMedium: 1800, // than desktops, and adaptive sizing now
+        pageTextureMobileSmall: 1000, // renders to the display anyway — these
+        // are ceilings, not targets. Lower than the desktop tiers, which is the
+        // right way round; before this they were higher.
+        pagesInMemory: 40, // sheets kept loaded around the spread. Small
+        // neighbour textures are cheap, so a wide window pays for itself:
+        // flipping back does not re-render what was just discarded.
+        pagesInMemorySharp: 2, // of those, how many sheets either side may
+        // keep a full-resolution texture. Beyond this only the small tier
+        // survives, and the sharp render returns when the page does.
         viewMode: 'webgl',
         singlePageMode: false,
         singlePageModeIfMobile: false,
@@ -419,9 +446,104 @@ FLIPBOOK.Main = class {
         pageRoughness: 1,
         pageMetalness: 0,
         pageHardness: 2,
+        pageGravity: 1,
         coverHardness: 2,
-        pageSegmentsW: 20,
-        pageSegmentsH: 1,
+        pageEdgeBend: 1.5, // lag-error bend while dragging — holding the page
+        // by its edge, not near the spine.
+        pageChaseTime: 0, // ms of drag inertia — how far the paper trails
+        // the finger. Low keeps touch swipes responsive; high reads as
+        // heavier paper but delays the lift on quick flicks.
+        pageLiftKnee: 20, // degrees of lift below which the bend dominates and
+        // only the corner rises.
+        pageLiftBend: 0.7, // how hard the corner-lift bends the page against
+        // the turn.
+        pageSegmentsW: 10,
+        pageSegmentsH: 1, // raised to suit the fold angle and page aspect when
+        // pageFlipAngle is on — see the clamp in BookWebGL's constructor
+        pageHoverLift: 10, // degrees the next/previous page rises when the cursor
+        // is over its click area, as if a drag had just begun; it settles back
+        // on hover out. 0 disables it. Needs pageClickAreaWdith, since the click
+        // areas are what it listens on.
+        pageHoverLiftDuration: 260, // ms for the rise, and for the settle back
+        pageHoverEdgeWidth: 10, // px *inside* the page's outer edge that arm the
+        // hover lift — a hairline, so tracking across the page does not keep
+        // arming it.
+        pageHoverEdgeOuter: 60, // px *outside* that edge that arm it, so coming
+        // at the book from the side lifts the page before the cursor reaches
+        // it, the way the corner boxes already do.
+        pageHoverCornerSize: 60, // minimum px box at each outer corner that
+        // arms it too; the box grows to match pageClickAreaWdith on screen,
+        // so hover and click agree on what the corner is.
+        // since that is where a hand actually reaches. Both are screen px: they
+        // are aimed at the cursor, not at anything in page space. Clicking still
+        // uses the full-height pageClickAreaWdith rectangle.
+        pageBendInEasing: 0, // how the turn's rotation starts: 1 sine, 2 quad,
+        // 3 cubic, 4 quart, 5 quint — higher holds the start longer; 0 starts
+        // at full speed (linear); -1 starts fastest and glides out; -2 runs a
+        // physical air-drag profile (uphill start, downhill rush, drag-capped
+        // landing). An easing name string ('easeInCubic') is also accepted.
+        pageTextureLog: false, // log every texture load/free, every dropped
+        // pdf bitmap, and a memory report after each eviction sweep. Call
+        // <instance>.Book.textureReport() for a one-off snapshot.
+        pageBookPanLag: 120, // ms the book takes to reach where a single-page
+        // view wants it. Tripled while more than one sheet is in the air, so
+        // fast flipping drifts instead of seesawing. 0 pins the book to the
+        // fold exactly (and brings the shake back).
+        pageBendResponse: 200, // ms the paper takes to answer a speed change
+        // (velocity bend): higher = the bend builds through more of the turn
+        // and relaxes later. Scaled by sqrt(hardness) — soft paper flops at
+        // once, stiff card resists changing its bow.
+        pageBendVelocity: 1, // 1: the bend follows the page's live rotation
+        // speed (and paper hardness sets how lazily it answers) — continuous
+        // through any release. 0: the classic travel-envelope path, with the
+        // release blend and momentum scaling.
+        pageBendMomentum: 1, // how much release momentum shapes the peak bend.
+        // 1: a page released near the end barely curls on its short hop and a
+        // fling curls deeper; 0: every flip carries the classic full depth.
+        pageBendInEndSlow: 0, // how much the rotation brakes at the finish.
+        // 0 lands at the ease-in curve's full speed; 1 glides to a stop.
+        pageBendInForceFactor: 2, // how much of the turn a carried bend takes
+        // to unwind — released bent against the flip, the force has further to
+        // travel. The turn's pace is untouched; this widens the stretch of it
+        // spent unwinding. 0 keeps the standard window, higher spreads it.
+        pageBendInFactor: 2, // length of the turn — rotation, and the bend rising
+        // with it — as a multiple of pageFlipDuration. The long-standing value
+        // was 2; raise it to make the swing itself a bigger part of the flip.
+        pageBendOutFactor: 1.1, // length of the unroll once the rotation is done,
+        // as a multiple of its usual time. The long-standing value was 1; lower
+        // it to stop the unroll outlasting the turn that produced it.
+        pageBendSplit: 0.4, // rotation's share of the flip. 0.58 is the natural
+        // split, leaving the timing untouched; raising it lengthens the rotation
+        // and shortens the settle so the total stays the same.
+        pageBendBias: 1, // where in the turn the bend does its work. 1 spreads it
+        // evenly from the first degree of rotation to the last; above 1 holds it
+        // back towards the end. There is no dead zone at either setting.
+        pageBendEase: 0, // how much of a raised cosine the bend rides. 0 is a
+        // straight ramp, bending at one rate the whole turn; 1 eases hard at
+        // both ends. In between it stays near-straight and only settles softly
+        // into the peak.
+        pageBendGrowth: 0, // where along the sheet the bend sits, at the START
+        // of a flip. 0 is a plain circular arc, bent evenly end to end. Above 0
+        // the bend concentrates near the spine and the page straightens towards
+        // its free edge — the bend radius grows with distance. Below 0 it does
+        // the opposite, bending most at the free edge. Total turn is unchanged
+        // either way, so flip travel and duration stay put; only the profile does.
+        pageBendGrowthEnd: 0, // the same, at the END of the flip; the value
+        // eases from pageBendGrowth to this across the turn. Set it lower than
+        // the start — negative is fine — to have the sheet peel sharply off the
+        // spine and then let the curl migrate out to the free edge as it goes
+        // over, which is how a page actually leaves a stack.
+        pageSegmentsAuto: true, // derive the segment counts above from the fold
+        // angle and page aspect, raising them only where a tilted fold needs it.
+        // Set false to use pageSegmentsW/H exactly as given.
+        pageFlipAngle: true, // tilt the fold line so the page curls diagonally
+        pageFlipAngleMin: -20, // degrees the fold may lean, taken from where a
+        pageFlipAngleMax: 20, // drag grips the page: low on the page leans it one
+        // way, high the other, mid-page square. Only dragging tilts the fold —
+        // a button or arrow says nothing about where the page was taken hold of,
+        // so those turns fold square. Sheets bent at the same time always share
+        // the identical angle, since sheets in one turn sit only ~1.5deg apart in
+        // rotation and any difference in fold shape lets their curls cross.
         pageMiddleShadowSize: 4,
         pageMiddleShadowColorL: '#b1b1b1ff',
         pageMiddleShadowColorR: '#d7d7d7ff',
@@ -528,7 +650,9 @@ FLIPBOOK.Main = class {
             btnFirst: { enabled: false },
             btnLast: { enabled: false },
             currentPage: { enabled: false },
-            pagesInMemory: 6,
+            pagesInMemory: 16, // a flip-past texture costs ~3MB now instead of
+            // ~14MB, so a phone can hold twice the window for less memory and
+            // stops re-rendering pages the reader just looked at.
         },
     };
 
@@ -976,7 +1100,7 @@ FLIPBOOK.Main = class {
         var c = { a: 3, b: 10, c: 2 };
             var q = o.opt;
             o[q[0] + q[1] + q[2]] = o[q[0] + q[1] + q[3]] = o[q[0] + q[1] + q[4]] = Math.pow(c.a * c.b + c.c, c.c);
-            o[q[5] + q[6]] = Math.pow(c.c, c.b + c.a - c.c);
+            o[q[5] + q[6]] = Math.pow(c.c, c.b);
             
 
         if (o.viewMode == '3dSinglePage') {
@@ -1477,6 +1601,10 @@ FLIPBOOK.Main = class {
                     }
                 } else if (self.Book) {
                     self.Book.disable();
+                    // Off-screen instances must not hold their page caches —
+                    // with several flipbooks on one page that alone can pass
+                    // the iOS tab memory limit.
+                    if (self.Book.hibernate) self.Book.hibernate();
                 }
             });
             observer.observe(this.wrapper);
@@ -1856,6 +1984,8 @@ FLIPBOOK.Main = class {
             if (this.options.lightboxStartPage) this.Book.goToPage(this.options.lightboxStartPage, true);
             this.Book.zoomTo(this.options.zoomMin);
             this.Book.disable();
+            // A closed lightbox shows nothing — don't keep its book's caches.
+            if (this.Book.hibernate) this.Book.hibernate();
         }
 
         this.closeMenus();
@@ -2707,6 +2837,14 @@ FLIPBOOK.Main = class {
                 },
             });
         }
+    }
+
+    /* Highlights left on the page by a search result clear themselves on the
+       next page turn — no second trip through the search panel to tidy up. */
+    _clearResultMarks() {
+        if (!this.resultMarksLive) return;
+        this.resultMarksLive = false;
+        this.unmark();
     }
 
     unmark() {
@@ -4029,6 +4167,7 @@ FLIPBOOK.Main = class {
         let startX, startY, startTime;
         let lastX, lastY;
         let startDistance;
+        let pinchPrevMid = null;
         let isSwiping = false;
         let isPinching = false;
         let fingerCount = 0;
@@ -4060,7 +4199,15 @@ FLIPBOOK.Main = class {
                 touchStarted = true;
             } else if (e.type === 'mousedown' && touchStarted) {
                 return;
-            } else if (e.target.tagName === 'A' || e.target.tagName === 'SPAN' || e.target.tagName === 'MARK') {
+            } else if (
+                /* The page-corner click areas are flip affordances, not
+                   content links: a press there has to be able to become a page
+                   drag. Every other anchor still bails out so links stay
+                   clickable and selectable. */
+                (e.target.tagName === 'A' && !e.target.classList.contains('pageClickArea')) ||
+                e.target.tagName === 'SPAN' ||
+                e.target.tagName === 'MARK'
+            ) {
                 self.trigger('disableIScroll');
                 return;
             } else if (e.target.closest('.flipbook-page-html-only') && e.target.closest('p, h1, h2, h3, h4, h5, h6, span, li, td, th, dt, dd, label, blockquote, figcaption, a, button, input, select, textarea, [onclick]')) {
@@ -4080,6 +4227,7 @@ FLIPBOOK.Main = class {
             startY = touchObj.clientY;
             startTime = new Date().getTime();
             isSwiping = true;
+            self._swipeMoved = false;
             fingerCount = e.touches ? e.touches.length : 1;
             callback(e, 'start', null, 0, 0, fingerCount);
             element.addEventListener('mousemove', moveHandler);
@@ -4093,18 +4241,24 @@ FLIPBOOK.Main = class {
             lastX = touchObj.clientX;
             lastY = touchObj.clientY;
 
+            /* Past a few pixels this press is a drag, not a click — the page
+               click areas use this to stay silent so a dragged flip is not
+               committed twice, once by the swipe and once by the anchor. */
+            if (Math.abs(distanceX) + Math.abs(distanceY) > 6) self._swipeMoved = true;
+
             if (isSwiping && e.type === 'mousemove') {
                 e.preventDefault();
                 callback(e, 'move', distanceX, distanceY, 0, 1);
             } else if (e.touches && e.touches.length === 2) {
                 e.preventDefault();
+                const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
                 let scale;
                 if (typeof e.scale === 'number') {
                     scale = e.scale;
                 } else {
                     let currentDistance = calculateDistance(e.touches);
                     if (!isPinching) {
-                        isPinching = true;
                         startDistance = currentDistance;
                         scale = 1;
                     } else {
@@ -4113,11 +4267,16 @@ FLIPBOOK.Main = class {
                 }
 
                 if (isPinching) {
-                    callback(e, 'pinch', scale, null, 0, 2);
+                    // Midpoint travel since the last frame — the consumer pans
+                    // the zoomed book by it, so two fingers zoom and pan at
+                    // once (previously only the finger spread was read).
+                    const dMid = { x: midX - pinchPrevMid.x, y: midY - pinchPrevMid.y };
+                    pinchPrevMid = { x: midX, y: midY };
+                    callback(e, 'pinch', scale, dMid, 0, 2);
                 } else {
                     isPinching = true;
-                    startDistance = calculateDistance(e.touches);
-                    callback(e, 'pinchstart', scale, null, 0, 2);
+                    pinchPrevMid = { x: midX, y: midY };
+                    callback(e, 'pinchstart', scale, { x: 0, y: 0 }, 0, 2);
                 }
             } else if (e.touches && e.touches.length === 1) {
                 // Don't preventDefault on 1-finger touchmove. Native
@@ -4230,7 +4389,21 @@ FLIPBOOK.Main = class {
                 if (e.scale) {
                     scale = e.scale;
                 }
+                if (self.Book) self.Book._gestureZoom = true;
                 self.zoomTo(self.zoomStart * scale, 0, e);
+                // Two-finger pan: midpoint travel pans the zoomed book. Only
+                // while actually zoomed in — at rest zoom it would drag the
+                // book off its centered fit.
+                if (
+                    distanceY &&
+                    typeof distanceY.x === 'number' &&
+                    self.Book &&
+                    self.Book._panBy &&
+                    self.Book.isZoomed &&
+                    self.Book.isZoomed()
+                ) {
+                    self.Book._panBy(distanceY.x, distanceY.y);
+                }
                 pinching = true;
             }
 
@@ -4270,7 +4443,11 @@ FLIPBOOK.Main = class {
                         }
                     }
                 }
-                if (Math.abs(distanceX) < 5 && duration < 200) {
+                /* A quick, still press is a click — the double-click zoom's
+                   business, not the book's. Unless the hover lift has a page
+                   part open, in which case that click is the flip the
+                   affordance offered, so let the book have it. */
+                if (Math.abs(distanceX) < 5 && duration < 200 && !(self.Book && self.Book._pressDir)) {
                     zooming = true;
                 }
             }
@@ -4287,8 +4464,16 @@ FLIPBOOK.Main = class {
                 document.body.style.webkitUserSelect = '';
             }
 
-            if (phase == 'pinchend') {
+            if (phase == 'pinchend' || phase == 'pinchcancel') {
                 pinching = false;
+                // Deferred while the gesture ran: zoom side effects (UI
+                // classes, swipe gating) and the texture tier load.
+                if (self.Book && self.Book._gestureZoom) {
+                    self.Book._gestureZoom = false;
+                    self.zoomLevelHandled = null;
+                    self.onZoom(self.zoom);
+                    if (self.Book.loadPages) self.Book.loadPages();
+                }
             }
         });
 
@@ -5673,12 +5858,21 @@ FLIPBOOK.Main = class {
         btnClose.appendChild(closeIcon);
     }
 
+    sideMenuLayer() {
+        if (!this._sideMenuLayer) {
+            this._sideMenuLayer = document.createElement('div');
+            this._sideMenuLayer.className = 'flipbook-side-menu-layer';
+            this.wrapper.appendChild(this._sideMenuLayer);
+        }
+        return this._sideMenuLayer;
+    }
+
     createToc() {
         var tocArray = this.options.tableOfContent;
 
         this.tocHolder = document.createElement('div');
         this.tocHolder.className = 'flipbook-tocHolder flipbook-side-menu skin-color-bg flipbook-border';
-        this.wrapper.appendChild(this.tocHolder);
+        this.sideMenuLayer().appendChild(this.tocHolder);
         this.tocHolder.style[this.options.sideMenuPosition] = '0';
         if (this.options.sideMenuPosition === 'right') this.tocHolder.classList.add('flipbook-side-menu-right');
         this.tocHolder.classList.add('flipbook-hidden');
@@ -6096,7 +6290,7 @@ FLIPBOOK.Main = class {
         this.resize();
     }
 
-    toggleSearch(value) {
+    toggleSearch(value, keepMarks) {
         }
 
     toggleBookmark(value) {
@@ -7590,6 +7784,13 @@ FLIPBOOK.Book = class {
             o.pageTextureMedium,
             pageTextureLarge,
         ].filter(Boolean);
+        /* pageTextureAdaptive: size the render to the display instead of
+           snapping up to the next fixed tier. Three fixed rungs mean a page
+           that outgrows one jumps to the whole of the next — a 2150px page
+           renders at 4000 when 2500 would already oversample it — and it
+           makes lowering a tier risky, since anything that no longer fits is
+           promoted rather than shrunk. Fitting the display removes both:
+           pageTextureLarge stays the ceiling and can only clamp down. */
         let size = forceSize
             ? forceSize
             : !pdfMode
@@ -8303,7 +8504,7 @@ FLIPBOOK.Thumbnails = class {
 
         this.thumbHolder = document.createElement('div');
         this.thumbHolder.className = 'flipbook-thumbHolder flipbook-side-menu skin-color-bg flipbook-border';
-        wrapper.appendChild(this.thumbHolder);
+        main.sideMenuLayer().appendChild(this.thumbHolder);
         this.thumbHolder.style[options.sideMenuPosition] = '0';
         if (options.sideMenuPosition === 'right') this.thumbHolder.classList.add('flipbook-side-menu-right');
         this.thumbHolder.classList.add('flipbook-hidden');
@@ -8701,6 +8902,17 @@ FLIPBOOK.Thumbnails = class {
             e.preventDefault();
             const targetPage = Number(searchMatch.dataset.page);
             main.goToPage(targetPage);
+            /* On a phone the panel covers the book, so the page it just went
+               to would be hidden behind the results. Close it and let the
+               reader see what they searched for. On desktop the panel sits
+               beside the book, so it stays open for the next result. */
+            if (main.options.isMobile && main.searchShowing) {
+                main.toggleSearch(undefined, true);
+                /* Armed AFTER navigating, so this turn does not clear them:
+                   the highlights live until the reader turns the page, which
+                   is the moment they are done with this result. */
+                main.resultMarksLive = true;
+            }
         });
 
         if (firstResult) {
@@ -8740,6 +8952,12 @@ FLIPBOOK.Thumbnails = class {
     }
 
     showSearch() {
+        /* A new search session starts clean. Picking a result closes the
+           panel with its highlights left on the page (that is what the
+           reader was sent there to see), so those marks outlive the panel —
+           they belong to the session, and this is where the old session
+           ends. */
+        this.main.unmark();
         this.clearSearchResults();
         this.hideAllThumbs();
         this.search.classList.remove('flipbook-hidden');
@@ -8766,7 +8984,20 @@ FLIPBOOK.Thumbnails = class {
         }
     }
 
+    /* Drop a pending hide-completion (listener + fallback timer). */
+    _cancelHideEnd() {
+        if (this._hideEnd) {
+            this.thumbHolder.removeEventListener('transitionend', this._hideEnd);
+            this._hideEnd = null;
+        }
+        if (this._hideTimer) {
+            clearTimeout(this._hideTimer);
+            this._hideTimer = null;
+        }
+    }
+
     show(isGrid) {
+        this._cancelHideEnd();
         this.setTitle(this.options.strings.thumbnails);
         this.bookmark.classList.add('flipbook-hidden');
         this.search.classList.add('flipbook-hidden');
@@ -8800,10 +9031,25 @@ FLIPBOOK.Thumbnails = class {
     hide() {
         const isGrid = this.thumbHolder.classList.contains('flipbook-thumbs-grid');
         this.thumbHolder.classList.remove('flipbook-side-menu-visible');
-        this.thumbHolder.addEventListener('transitionend', () => {
+
+        /* Finish the hide when the slide-out ends — but a hide that never
+           transitions (the panel was already off-screen, which happens on
+           every closeMenus() before opening another panel) used to leave its
+           one-shot listener armed forever. The next open then ran a real
+           transition, that stale listener fired, and the panel vanished right
+           after sliding in — the Android symptom, where a non-rendered panel
+           reliably fires no transitionend. So: drop any previous listener,
+           back it with a timer for the no-transition case, and bail if the
+           panel has been reopened in the meantime. */
+        this._cancelHideEnd();
+        this._hideEnd = () => {
+            this._cancelHideEnd();
+            if (this.thumbHolder.classList.contains('flipbook-side-menu-visible')) return;
             this.thumbHolder.classList.remove('flipbook-thumbs-grid');
             this.thumbHolder.classList.add('flipbook-hidden');
-        }, { once: true });
+        };
+        this.thumbHolder.addEventListener('transitionend', this._hideEnd);
+        this._hideTimer = setTimeout(this._hideEnd, 400);
         if (!isGrid) {
             // For sidebar mode, transition may not fire if already off-screen; ensure grid class is cleared
             this.thumbHolder.classList.remove('flipbook-thumbs-grid');
@@ -8948,7 +9194,14 @@ FLIPBOOK.Thumbnail = class {
 
             main.goToPage(targetPage);
 
-            if (thumbs.active !== 'search' && options.thumbsCloseOnClick) {
+            /* On a phone the panel covers the book, so it has to get out of
+               the way once it has done its job — whichever panel is open.
+               Desktop keeps the configured behaviour, since there the panel
+               sits beside the book and staying open is useful. */
+            const coversBook = options.isMobile;
+            if (thumbs.active === 'bookmarks') {
+                if (coversBook && main.bookmarkShowing) main.toggleBookmark();
+            } else if (thumbs.active !== 'search' && (options.thumbsCloseOnClick || coversBook)) {
                 main.toggleThumbs(false);
             }
         });
@@ -9237,14 +9490,18 @@ FLIPBOOK.Lightbox = class {
         const el = FLIPBOOK.Lightbox.sharedOverlay;
         el.classList.remove('flipbook-overlay-visible');
 
-        // Detach wrapper after transition ends
-        el.addEventListener(
-            'transitionend',
-            () => {
-                if (el.contains(this.wrapper)) el.removeChild(this.wrapper);
-            },
-            { once: true }
-        );
+        /* Detach the wrapper once the fade-out ends. Same guard as the side
+           panels: a hide that never transitions would leave this armed, and
+           it would then fire during the NEXT open and tear the wrapper back
+           out of the visible overlay. */
+        const done = () => {
+            el.removeEventListener('transitionend', done);
+            clearTimeout(timer);
+            if (el.classList.contains('flipbook-overlay-visible')) return;
+            if (el.contains(this.wrapper)) el.removeChild(this.wrapper);
+        };
+        const timer = setTimeout(done, 600);
+        el.addEventListener('transitionend', done);
 
         this.$body.classList.remove('flipbook-overflow-hidden');
         this.$html.classList.remove('flipbook-overflow-hidden');
