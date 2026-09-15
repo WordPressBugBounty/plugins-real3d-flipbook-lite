@@ -1,4 +1,15 @@
 "use strict";
+
+function r3d_escAttr(value) {
+  if (value === null || typeof value === "undefined") return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 (function ($) {
   $(document).ready(function () {
     $("#real3dflipbook-admin").show();
@@ -873,12 +884,18 @@
     function createShareHtml(prefix, id, name, icon, url, target) {
       if (typeof target == "undefined" || target != "_self") target = "_blank";
 
+      var escPrefix = r3d_escAttr(prefix);
+      var escId = r3d_escAttr(id);
+      var escName = r3d_escAttr(name);
+      var escIcon = r3d_escAttr(icon);
+      var escUrl = r3d_escAttr(url);
+
       var markup = $(
         '<div id="' +
-          id +
+          escId +
           '"class="share">' +
           "<h4>Share button " +
-          id +
+          escId +
           "</h4>" +
           '<div class="tabs settings-area">' +
           '<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all" role="tablist">' +
@@ -890,34 +907,34 @@
           '<div id="tabs-1" class="ui-tabs-panel ui-widget-content ui-corner-bottom">' +
           '<div class="field-row">' +
           '<input id="page-title" name="' +
-          prefix +
+          escPrefix +
           '[name]" type="text" placeholder="Enter icon name" value="' +
-          name +
+          escName +
           '" />' +
           "</div>" +
           "</div>" +
           '<div id="tabs-2" class="ui-tabs-panel ui-widget-content ui-corner-bottom">' +
           '<div class="field-row">' +
           '<input id="image-path" name="' +
-          prefix +
+          escPrefix +
           '[icon]" type="text" placeholder="Enter icon CSS class" value="' +
-          icon +
+          escIcon +
           '" />' +
           "</div>" +
           "</div>" +
           '<div id="tabs-3" class="ui-tabs-panel ui-widget-content ui-corner-bottom">' +
           '<div class="field-row">' +
           '<input id="image-path" name="' +
-          prefix +
+          escPrefix +
           '[url]" type="text" placeholder="Enter link" value="' +
-          url +
+          escUrl +
           '" />' +
           "</div>" +
           "</div>" +
           '<div id="tabs-4" class="ui-tabs-panel ui-widget-content ui-corner-bottom">' +
           '<div class="field-row">' + // + '<input id="image-path" name="'+prefix+'[target]" type="text" placeholder="Enter link" value="'+target+'" />'
           '<select id="social-share" name="' +
-          prefix +
+          escPrefix +
           '[target]">' + // + '<option name="'+prefix+'[target]" value="_self">_self</option>'
           // + '<option name="'+prefix+'[target]" value="_blank">_blank</option>'
           "</select>" +
@@ -935,7 +952,7 @@
       for (var i = 0; i < values.length; i++) {
         var option = $(
           '<option name="' +
-            prefix +
+            escPrefix +
             '[target]" value="' +
             values[i] +
             '">' +

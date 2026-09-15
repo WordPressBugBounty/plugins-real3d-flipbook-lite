@@ -9,6 +9,16 @@ var pluginDir = (function (scripts) {
   return script.getAttribute("src", -1).split("js/edit_flipbook")[0];
 })();
 
+function r3d_escAttr(value) {
+  if (value === null || typeof value === "undefined") return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 (function ($) {
   $(document).ready(function () {
     postboxes.save_state = function () {
@@ -2658,9 +2668,9 @@ var pluginDir = (function (scripts) {
       // var $toggle = $('<span>+</span>').appendTo($itemWrapper)
       var $item = $(
         '<div class="toc-item"><input type="text" class="toc-title flipbook-option-field" placeholder="Title" value="' +
-          title +
+          r3d_escAttr(title) +
           '"></input><span> : </span><input type="number" placeholder="Page number" class="toc-page flipbook-option-field" value="' +
-          page +
+          r3d_escAttr(page) +
           '"></input></div>'
       ).appendTo($itemWrapper);
 
@@ -2729,31 +2739,34 @@ var pluginDir = (function (scripts) {
       const pageNumber = id + 1;
 
       // Escaping and stripping slashes from the title
-      const escapedHtmlContent = escape(unescape(htmlContent));
-      const strippedTitle = r3d_stripslashes(title);
-      const strippedCaption = r3d_stripslashes(caption);
+      const escapedHtmlContent = r3d_escAttr(escape(unescape(htmlContent)));
+      const strippedTitle = r3d_escAttr(r3d_stripslashes(title));
+      const strippedCaption = r3d_escAttr(r3d_stripslashes(caption));
+      const escapedSrc = r3d_escAttr(src);
+      const escapedThumb = r3d_escAttr(thumb);
+      const escapedJson = r3d_escAttr(json);
 
       let sendPagesAsJson = false;
       let pageHtml;
 
       if (sendPagesAsJson) {
         pageHtml = `
-		<li id="${id}" class="page" data-index="${id}" data-src="${src}" data-thumb="${thumb}" data-json="${json}" data-htmlContent="${escapedHtmlContent}">
-		  <div class="page-img"><img src="${thumb}" style="display:none;"></div>
+		<li id="${id}" class="page" data-index="${id}" data-src="${escapedSrc}" data-thumb="${escapedThumb}" data-json="${escapedJson}" data-htmlContent="${escapedHtmlContent}">
+		  <div class="page-img"><img src="${escapedThumb}" style="display:none;"></div>
 		  <span class="page-number">${pageNumber}</span>
 		</li>
 	  `;
       } else {
         pageHtml = `
 		  	  <li id="${id}" class="page" data-index="${id}">
-		  		<div class="page-img"><img src="${thumb}" style="display:none;"></div>
+		  		<div class="page-img"><img src="${escapedThumb}" style="display:none;"></div>
 		  		<span class="page-number">${pageNumber}</span>
 		  		<div style="display:block;">
 		  		  <input class="page-title flipbook-option-field" type="hidden" placeholder="title" value="${strippedTitle}" readonly/>
 		  		  <input class="page-caption flipbook-option-field" type="hidden" placeholder="caption" value="${strippedCaption}" readonly/>
-		  		  <input class="page-src flipbook-option-field" type="hidden" placeholder="src" value="${src}" readonly/>
-		  		  <input class="page-thumb flipbook-option-field" type="hidden" placeholder="thumb" value="${thumb}" readonly/>
-		  		  <input class="page-json flipbook-option-field" type="hidden" placeholder="json" value="${json}" readonly/>
+		  		  <input class="page-src flipbook-option-field" type="hidden" placeholder="src" value="${escapedSrc}" readonly/>
+		  		  <input class="page-thumb flipbook-option-field" type="hidden" placeholder="thumb" value="${escapedThumb}" readonly/>
+		  		  <input class="page-json flipbook-option-field" type="hidden" placeholder="json" value="${escapedJson}" readonly/>
 		  		  <input class="page-html-content flipbook-option-field" type="hidden" placeholder="htmlContent" value="${escapedHtmlContent}" readonly/>
 		  		</div>
 		  	  </li>
@@ -2848,12 +2861,18 @@ var pluginDir = (function (scripts) {
     function createShareHtml(prefix, id, name, icon, url, target) {
       if (typeof target == "undefined" || target != "_self") target = "_blank";
 
+      var escPrefix = r3d_escAttr(prefix);
+      var escId = r3d_escAttr(id);
+      var escName = r3d_escAttr(name);
+      var escIcon = r3d_escAttr(icon);
+      var escUrl = r3d_escAttr(url);
+
       var markup = $(
         '<div id="' +
-          id +
+          escId +
           '"class="share">' +
           "<h4>Share button " +
-          id +
+          escId +
           "</h4>" +
           '<div class="tabs settings-area">' +
           '<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all" role="tablist">' +
@@ -2865,34 +2884,34 @@ var pluginDir = (function (scripts) {
           '<div id="tabs-1" class="ui-tabs-panel ui-widget-content ui-corner-bottom">' +
           '<div class="field-row">' +
           '<input id="page-title" name="' +
-          prefix +
+          escPrefix +
           '[name]" type="text" placeholder="Enter icon name" value="' +
-          name +
+          escName +
           '" />' +
           "</div>" +
           "</div>" +
           '<div id="tabs-2" class="ui-tabs-panel ui-widget-content ui-corner-bottom">' +
           '<div class="field-row">' +
           '<input id="image-path" name="' +
-          prefix +
+          escPrefix +
           '[icon]" type="text" placeholder="Enter icon CSS class" value="' +
-          icon +
+          escIcon +
           '" />' +
           "</div>" +
           "</div>" +
           '<div id="tabs-3" class="ui-tabs-panel ui-widget-content ui-corner-bottom">' +
           '<div class="field-row">' +
           '<input id="image-path" name="' +
-          prefix +
+          escPrefix +
           '[url]" type="text" placeholder="Enter link" value="' +
-          url +
+          escUrl +
           '" />' +
           "</div>" +
           "</div>" +
           '<div id="tabs-4" class="ui-tabs-panel ui-widget-content ui-corner-bottom">' +
           '<div class="field-row">' + // + '<input id="image-path" name="'+prefix+'[target]" type="text" placeholder="Enter link" value="'+target+'" />'
           '<select id="social-share" name="' +
-          prefix +
+          escPrefix +
           '[target]">' + // + '<option name="'+prefix+'[target]" value="_self">_self</option>'
           // + '<option name="'+prefix+'[target]" value="_blank">_blank</option>'
           "</select>" +
@@ -2910,7 +2929,7 @@ var pluginDir = (function (scripts) {
       for (var i = 0; i < values.length; i++) {
         var option = $(
           '<option name="' +
-            prefix +
+            escPrefix +
             '[target]" value="' +
             values[i] +
             '">' +

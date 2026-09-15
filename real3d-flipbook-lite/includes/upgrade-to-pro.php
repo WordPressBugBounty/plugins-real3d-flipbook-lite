@@ -67,7 +67,7 @@
 		<div class="r3d-featured-card">
 			<span class="dashicons dashicons-admin-customizer"></span>
 			<h3><?php esc_html_e('Full UI customization', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('7 layouts, 3 skins, toolbar layout, colors and icons — match the flipbook to your brand.', 'real3d-flipbook'); ?></p>
+			<p><?php esc_html_e('8 layouts, 3 skins, toolbar layout, colors and icons — match the flipbook to your brand.', 'real3d-flipbook'); ?></p>
 		</div>
 		<div class="r3d-featured-card">
 			<span class="dashicons dashicons-chart-line"></span>
@@ -133,7 +133,7 @@
 			<tr>
 				<td><?php esc_html_e('UI layouts and appearance', 'real3d-flipbook'); ?></td>
 				<td><?php esc_html_e('Default layout', 'real3d-flipbook'); ?></td>
-				<td><?php esc_html_e('7 layouts, 3 skins, FontAwesome or Lucide icons, progress bar', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('8 layouts, 3 skins, FontAwesome or Lucide icons, progress bar', 'real3d-flipbook'); ?></td>
 			</tr>
 			<tr>
 				<td><?php esc_html_e('Links inside PDF', 'real3d-flipbook'); ?></td>

@@ -150,8 +150,8 @@ if (!function_exists("r3dfb_getDefaults")) {
 			'responsiveView' => 'true',
 			'responsiveViewTreshold' => '768',
 			'responsiveViewRatio' => '1',
-			'minimalView' => 'true',
-			'minimalViewBreakpoint' => '600',
+			'minimalView' => 'false',
+			'minimalViewBreakpoint' => '280',
 			'cover' => 'true',
 			'backCover' => 'true',
 			'scaleCover' => 'false',
@@ -199,7 +199,7 @@ if (!function_exists("r3dfb_getDefaults")) {
 					'enabled' => 'false'
 				),
 				'pdfUrl' => '',
-				'minimalViewBreakpoint' => '360',
+				'minimalViewBreakpoint' => '280',
 				'zoomMin' => '',
 				'autoplayInterval' => ''
 
@@ -434,8 +434,8 @@ if (!function_exists("r3dfb_getDefaults")) {
 			'arrowColorHover' => '#fff',
 			'arrowBackground' => 'rgba(0,0,0,0)',
 			'arrowBackgroundHover' => 'rgba(0, 0, 0, .15)',
-			'arrowRadius' => '4',
-			'arrowMargin' => '4',
+			'arrowRadius' => '999',
+			'arrowMargin' => '12',
 			'arrowSize' => '40',
 			'arrowPadding' => '10',
 			'arrowTextShadow' => '0px 0px 1px rgba(0, 0, 0, 1)',
@@ -516,7 +516,7 @@ if (!function_exists("r3dfb_getDefaults")) {
 				'autoConvert' => 'true'
 			),
 			'slug' => '',
-			'convertPDFLinks' => 'true',
+			'convertPDFLinks' => 'false',
 			'convertPDFLinksWithClass' => '',
 			'convertPDFLinksWithoutClass' => '',
 			'overridePDFEmbedder' => 'true',

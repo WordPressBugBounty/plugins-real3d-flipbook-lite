@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.3';
+FLIPBOOK.version = '5.4';
 
 // page.image / page.imageBitmap are keyed by texture size, but legacy paths hand
 // back a bare Image, an ImageBitmap or a URL string. Resolve the requested tier,
@@ -385,10 +385,13 @@ FLIPBOOK.Main = class {
         responsiveView: true,
         responsiveViewRatio: 1,
         responsiveViewTreshold: 768,
-        minimalView: true,
+        // Off by default: compact mode (compactBreakpoint) already adapts the
+        // toolbar for narrow viewports and keeps the hidden buttons reachable under
+        // More, which covers nearly every small embed. Minimal view is the harsher
+        // fallback — no toolbar at all, just a centre expand button — worth turning
+        // on only for embeds too small to show a usable toolbar.
+        minimalView: false,
         responsiveViewRatio: 1,
-        // Compact mode (compactBreakpoint: 768) already adapts the toolbar for
-        // narrow viewports, so minimalView only kicks in for very tiny embeds.
         minimalViewBreakpoint: 280,
         responsiveContainer: true,
         minPixelRatio: 1,
@@ -556,6 +559,11 @@ FLIPBOOK.Main = class {
             imgEmpty: 'images/logo_light.png',
             imgFull: 'images/logo_dark.png',
         },
+        // Show page 1 as a flat image, where the book will draw it, from the moment
+        // it has loaded until the book has rendered its first frame. webgl only —
+        // the other engines draw page 1 as soon as they have it, so there's no gap.
+        // Off by default: opt in per book while it is being evaluated live.
+        firstPagePreloader: false,
         logoImg: '',
         logoUrl: '',
         opt: ['page', 'Texture', 'Large', 'Small', 'Medium', 'zoom', 'Size'],
@@ -848,186 +856,15 @@ FLIPBOOK.Main = class {
         this.menuShowing = true;
         this.fullscreenActive = false;
 
+        // Layout presets are Pro-only — Lite always uses the default layout.
+        // Stripped in Lite builds, leaving an empty map so the lookup below
+        // simply misses and no preset is applied.
         const layouts = {
-            2: {
-                menuTransparent: true,
-                menu2Transparent: true,
-                currentPage: { vAlign: 'bottom', hAlign: 'center' },
-                btnThumbs: { hAlign: 'left', vAlign: 'top' },
-                btnToc: { hAlign: 'left', vAlign: 'top' },
-                btnSearch: { hAlign: 'left', vAlign: 'top' },
-                btnBookmark: { hAlign: 'left', vAlign: 'top' },
-                btnZoomIn: { hAlign: 'right', vAlign: 'top' },
-                btnZoomOut: { hAlign: 'right', vAlign: 'top' },
-                btnAutoplay: { hAlign: 'right', vAlign: 'top' },
-                btnSound: { hAlign: 'right', vAlign: 'top' },
-                btnSingle: { hAlign: 'right', vAlign: 'top' },
-                btnExpand: { hAlign: 'right', vAlign: 'top' },
-                btnShare: { hAlign: 'right', vAlign: 'top' },
-                btnPrint: { hAlign: 'right', vAlign: 'top' },
-                btnDownloadPages: { hAlign: 'right', vAlign: 'top' },
-                btnDownloadPdf: { hAlign: 'right', vAlign: 'top' },
-                btnTools: { hAlign: 'right', vAlign: 'top' },
-            },
-            3: {
-                menuTransparent: true,
-                menuPadding: 5,
-                menu2Transparent: false,
-                menu2OverBook: false,
-                menu2Padding: 5,
-                btnMargin: 5,
-                currentPage: { vAlign: 'top', hAlign: 'center' },
-                btnPrint: { vAlign: 'top', hAlign: 'right' },
-                btnDownloadPdf: { vAlign: 'top', hAlign: 'right' },
-                btnDownloadPages: { vAlign: 'top', hAlign: 'right' },
-                btnThumbs: { vAlign: 'top', hAlign: 'left' },
-                btnToc: { vAlign: 'top', hAlign: 'left' },
-                btnBookmark: { vAlign: 'top', hAlign: 'left' },
-                btnSearch: { vAlign: 'top', hAlign: 'left' },
-                btnShare: { vAlign: 'top', hAlign: 'right' },
-                btnAutoplay: { vAlign: 'top', hAlign: 'right' },
-                btnSingle: { vAlign: 'top', hAlign: 'right' },
-                btnExpand: { vAlign: 'top', hAlign: 'right' },
-                btnZoomIn: { vAlign: 'top', hAlign: 'right' },
-                btnZoomOut: { vAlign: 'top', hAlign: 'right' },
-                btnSound: { vAlign: 'top', hAlign: 'right' },
-                btnTools: { vAlign: 'top', hAlign: 'right' },
-            },
-            4: {
-                menu2Transparent: false,
-                menu2OverBook: false,
-                sideMenuOverMenu2: false,
-                currentPage: { vAlign: 'top', hAlign: 'center' },
-                btnThumbs: { vAlign: 'top', hAlign: 'left' },
-                btnToc: { vAlign: 'top', hAlign: 'left' },
-                btnSearch: { vAlign: 'top', hAlign: 'left' },
-                btnBookmark: { vAlign: 'top', hAlign: 'left' },
-                btnZoomIn: { vAlign: 'top', hAlign: 'right' },
-                btnZoomOut: { vAlign: 'top', hAlign: 'right' },
-                btnAutoplay: { vAlign: 'top', hAlign: 'right' },
-                btnSound: { vAlign: 'top', hAlign: 'right' },
-                btnSingle: { vAlign: 'top', hAlign: 'right' },
-                btnExpand: { vAlign: 'top', hAlign: 'right' },
-                btnShare: { vAlign: 'top', hAlign: 'right' },
-                btnPrint: { vAlign: 'top', hAlign: 'right' },
-                btnDownloadPages: { vAlign: 'top', hAlign: 'right' },
-                btnDownloadPdf: { vAlign: 'top', hAlign: 'right' },
-                btnTools: { vAlign: 'top', hAlign: 'right' },
-            },
-            5: {
-                // Bottom bar — video player style, clean top, all controls at bottom
-                menuTransparent: true,
-                menu2Transparent: true,
-                menu2OverBook: true,
-                btnThumbs: { hAlign: 'left' },
-                btnToc: { hAlign: 'left' },
-                btnSearch: { hAlign: 'left' },
-                btnBookmark: { hAlign: 'left' },
-                btnZoomIn: { hAlign: 'right' },
-                btnZoomOut: { hAlign: 'right' },
-                btnAutoplay: { hAlign: 'right' },
-                btnSound: { hAlign: 'right' },
-                btnSingle: { hAlign: 'right' },
-                btnExpand: { hAlign: 'right' },
-                btnShare: { hAlign: 'right' },
-                btnPrint: { hAlign: 'right' },
-                btnDownloadPages: { hAlign: 'right' },
-                btnDownloadPdf: { hAlign: 'right' },
-                btnTools: { hAlign: 'right' },
-            },
-            6: {
-                // Minimal — immersive, most buttons hidden in tools menu
-                menuTransparent: true,
-                menu2Transparent: true,
-                menu2OverBook: true,
-                currentPage: { enabled: false },
-                btnThumbs: { enabled: false },
-                btnToc: { enabled: false },
-                btnSearch: { enabled: false },
-                btnBookmark: { enabled: false },
-                btnAutoplay: { enabled: false },
-                btnSound: { enabled: false },
-                btnPrint: { enabled: false },
-                btnDownloadPages: { enabled: false },
-                btnDownloadPdf: { enabled: false },
-                btnShare: { enabled: false },
-                btnSingle: { enabled: false },
-                btnExpand: { hAlign: 'right', vAlign: 'top' },
-                btnZoomIn: { hAlign: 'right', vAlign: 'top' },
-                btnZoomOut: { hAlign: 'right', vAlign: 'top' },
-                btnTools: { hAlign: 'right', vAlign: 'top' },
-            },
-            7: {
-                // Player — YouTube-style dark gradient bottom bar
-                skinColor: '#EEE',
-                btnColor: '#EEE',
-                btnColorHover: '#FFF',
-                skinBackground: 'rgba(0,0,0,.7)',
-                sideMenuOverMenu: true,
-                sideMenuOverMenu2: true,
-                menuBackground: 'linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, transparent 100%)',
-                menu2Background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 0%, transparent 100%)',
-                btnOrder: [
-                    'btnAutoplay',
-                    'currentPage',
-                    'progressBar',
-                    'btnFirst',
-                    'btnPrev',
-                    'btnNext',
-                    'btnLast',
-                    'btnSound',
-                    'btnZoomOut',
-                    'btnZoomIn',
-                    'btnThumbs',
-                    'btnToc',
-                    'btnSearch',
-                    'btnBookmark',
-                    'btnDownloadPages',
-                    'btnShare',
-                    'btnPrint',
-                    'btnDownloadPdf',
-                    'btnTools',
-                    'btnSingle',
-                    'btnExpand',
-                    'btnClose',
-                ],
-                progressBar: { enabled: true },
-                currentPage: { vAlign: 'top', hAlign: 'left' },
-                btnAutoplay: { hAlign: 'left' },
-                btnSound: { hAlign: 'left' },
-                btnZoomIn: { hAlign: 'right' },
-                btnZoomOut: { hAlign: 'right' },
-                btnThumbs: { hAlign: 'right' },
-                btnToc: { hAlign: 'right' },
-                btnSearch: { hAlign: 'right' },
-                btnBookmark: { hAlign: 'right' },
-                btnShare: { hAlign: 'right' },
-                btnPrint: { hAlign: 'right' },
-                btnDownloadPages: { hAlign: 'right' },
-                btnDownloadPdf: { hAlign: 'right' },
-                btnSingle: { hAlign: 'right' },
-                btnTools: { hAlign: 'right' },
-                btnExpand: { hAlign: 'right' },
-            },
-        };
+            };
 
+        // Skins are Pro-only too — same pattern as layouts above.
         const skins = {
-            dark: {
-                skinColor: '#EEE',
-                btnColorHover: '#FFF',
-                skinBackground: '#313538',
-            },
-            gradient: {
-                skinColor: '#EEE',
-                btnColor: '#EEE',
-                btnColorHover: '#FFF',
-                skinBackground: 'rgba(0,0,0,.7)',
-                sideMenuOverMenu: true,
-                sideMenuOverMenu2: true,
-                menuBackground: 'linear-gradient(to top, rgba(0, 0, 0, 0.65) 0%, transparent 100%)',
-                menu2Background: 'linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 0%, transparent 100%)',
-            },
-        };
+            };
 
         if (options.skin && skins[options.skin]) {
             options = FLIPBOOK.extend(true, {}, options, skins[options.skin]);
@@ -1757,6 +1594,7 @@ FLIPBOOK.Main = class {
         }
 
         await this.createBook();
+        this.hideFirstPagePreloader();
         this.createTooltip();
         if (this.options.btnNotes.enabled) {
             this.initNotes();
@@ -1810,6 +1648,8 @@ FLIPBOOK.Main = class {
         }
         this.initStarted = true;
         const o = this.options;
+
+        this.preloadViewEngine();
 
         const loadImage = (src) => {
             return new Promise((resolve, reject) => {
@@ -2076,6 +1916,10 @@ FLIPBOOK.Main = class {
     turnPageComplete() {
         this.animating = false;
 
+        // Same as updateCurrentPage: reachable from an engine constructor, where
+        // main.Book does not exist yet and no page has actually turned.
+        if (!this.Book) return;
+
         this.updateCurrentPage();
 
         var rightIndex = this.Book.rightIndex || 0;
@@ -2100,6 +1944,10 @@ FLIPBOOK.Main = class {
     }
 
     updateCurrentPage() {
+        // Engines call this from their own constructor by way of onResize, before
+        // main.Book has been assigned — there is no page state to report yet.
+        if (!this.Book) return;
+
         var rtl = this.options.rightToLeft;
         var total = this.options.numPages;
         var totalDisplay = total - this.options.pageNumberOffset;
@@ -2307,18 +2155,32 @@ FLIPBOOK.Main = class {
         o.pages = pages;
         const count = pages.length;
 
-        const loadPage = (idx) => new Promise((resolve) => this.loadPage(idx, o.pageTextureLarge, resolve));
+        const loadPage = (idx, size) =>
+            new Promise((resolve) => this.loadPage(idx, size || o.pageTextureLarge, resolve));
 
         if (!o.pdfUrl && !o.hasHtmlContent && !pages.some((p) => p.json)) o.btnSearch.enabled = false;
         if (!o.tableOfContent.length && !pages.some((p) => p.title)) o.btnToc.enabled = false;
 
-        const getDims = ({ width, height, img }) => [width || img.width, height || img.height];
+        // thumbImg is the fallback source: a page loaded at thumb size populates
+        // that rather than img. Only aspect ratio is read from those pages, and a
+        // thumbnail preserves it.
+        const getDims = ({ width, height, img, thumbImg }) => {
+            const src = img || thumbImg;
+            return [width || (src && src.width), height || (src && src.height)];
+        };
+
+        // Pages whose size the integration already supplied need no load at all —
+        // getDims prefers the explicit values over the loaded image.
+        const knownDims = (p) => !!(p && p.width && p.height);
+        const loadForDims = (idx) =>
+            knownDims(pages[idx]) ? Promise.resolve() : loadPage(idx, o.thumbTextureSize);
 
         this.setLoadingProgress(0.5);
-        // Load first two pages in parallel
-        var pageLoads = [loadPage(0)];
-        if (count > 1) pageLoads.push(loadPage(1));
-        await Promise.all(pageLoads);
+
+        // Page 1 alone and at full size: its dimensions become the book's layout,
+        // and it is the page the reader is waiting to see, so it doesn't share
+        // bandwidth with pages that are only being measured.
+        await loadPage(0);
 
         const [pw, ph] = getDims(pages[0]);
         Object.assign(o, {
@@ -2328,16 +2190,23 @@ FLIPBOOK.Main = class {
             pageHeight: ph,
             zoomSize: o.zoomSize || ph,
         });
+
         if (count === 1) return this.start();
 
+        // Page 2 and the last page are read for aspect ratio only, to decide
+        // doublePage / backCover. Load both small and together — the last page is
+        // started alongside page 2 rather than after it resolves, trading a thumb
+        // sized request in the single-page case for one less round trip otherwise.
+        const dimLoads = [loadForDims(1)];
+        if (count > 2) dimLoads.push(loadForDims(count - 1));
+        await Promise.all(dimLoads);
+
         const [pw2, ph2] = getDims(pages[1]);
-        Object.assign(o, { pageWidth2: pw2, pageHeight2: ph2 });
         const ratio = pw / ph;
         o.doublePage = o.scaleCover || pw2 / ph2 / ratio > 1.5;
         if (!o.doublePage) o.backCover = count % 2 === 0;
 
         if (count > 2 && o.doublePage) {
-            await loadPage(count - 1);
             const [pwL, phL] = getDims(pages[count - 1]);
             o.backCover = pw2 / ph2 / (pwL / phL) > 1.5;
         }
@@ -2354,8 +2223,12 @@ FLIPBOOK.Main = class {
 
         this.setLoadingProgress(0.2);
 
-        await this.loadScript(FLIPBOOK.pdfjsSrc, 'pdfjsLib');
-        await this.loadScript(FLIPBOOK.pdfServiceSrc, 'FLIPBOOK.PdfService');
+        // Both are needed before the PdfService is constructed and neither
+        // references the other at load time, so fetch them concurrently.
+        await Promise.all([
+            this.loadScript(FLIPBOOK.pdfjsSrc, 'pdfjsLib'),
+            this.loadScript(FLIPBOOK.pdfServiceSrc, 'FLIPBOOK.PdfService'),
+        ]);
 
         if (window.CanvasPixelArray) {
             window.CanvasPixelArray.prototype.set = function (arr) {
@@ -2911,7 +2784,102 @@ FLIPBOOK.Main = class {
         this.goToPage(targetPage);
     }
 
-    loadScript(src, globalVariable) {
+    // Page 1 is available well before the webgl scene is, so show it flat in the
+    // meantime — same place the book will draw it, with the spinner still on top.
+    // Skipped unless the book is at rest and untilted: the flat image can't match
+    // a page drawn under perspective, and a mismatch reads worse than the wait.
+    showFirstPagePreloader() {
+        const o = this.options;
+        if (!o.firstPagePreloader || o.viewMode !== 'webgl') return;
+        if (this.$firstPagePreloader || !this.bookLayer) return;
+        if (o.tilt || o.pan) return;
+
+        // page.img is an ImageBitmap in webgl mode, so go back to the URL the page
+        // was loaded from — it is already in cache, so this decodes immediately.
+        const page = o.pages && o.pages[0];
+        const src = page && (page.src || page.thumb);
+        if (!src) return;
+
+        const el = document.createElement('img');
+        el.className = 'flipbook-first-page-preloader';
+        el.src = src;
+        el.alt = '';
+        this.$firstPagePreloader = el;
+        this.bookLayer.appendChild(el);
+        this.positionFirstPagePreloader();
+
+        // Nothing under the image is ready to be flipped, zoomed or dragged yet.
+        // The element itself swallows pointer input over the book; uiLocked covers
+        // the button and keyboard paths.
+        this.uiLocked = true;
+    }
+
+    // Mirrors the engines' own fit: centered, scaled to whichever of width or
+    // height runs out first, then by the current zoom.
+    positionFirstPagePreloader() {
+        const el = this.$firstPagePreloader;
+        if (!el) return;
+
+        const o = this.options;
+        const pw = o.pageWidth;
+        const ph = o.pageHeight;
+        const w = this.bookLayer.clientWidth;
+        const h = this.bookLayer.clientHeight - 2 * (this.bookVerticalPadding || 0);
+        if (!pw || !ph || w <= 0 || h <= 0) return;
+
+        // zoom isn't applied until onZoom(zoomMin) runs at the end of createBook, so
+        // fall back to zoomMin — otherwise the image is sized at 1 and then shrinks.
+        const zoom = this.zoom || Number(o.zoomMin) || 1;
+        const ratio = Math.min(w / pw, h / ph) * zoom;
+        el.style.width = pw * ratio + 'px';
+        el.style.height = ph * ratio + 'px';
+    }
+
+    hideFirstPagePreloader() {
+        const el = this.$firstPagePreloader;
+        this.$firstPagePreloader = null;
+        if (!el) {
+            this.uiLocked = false;
+            return;
+        }
+
+        // Two frames: the first lets the engine submit its draw, the second lets it
+        // land. Fading on "texture uploaded" alone flashes an empty scene.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                this.uiLocked = false;
+                el.classList.add('flipbook-first-page-preloader-hidden');
+                setTimeout(() => el.parentNode && el.parentNode.removeChild(el), 400);
+            });
+        });
+    }
+
+    // Start the view-engine scripts as early as possible so they download alongside
+    // the pages instead of as a serial tail in createBook(). loadScript caches by
+    // src and returns the pending promise, so createBook()'s await costs nothing
+    // once this has resolved — and still works normally if it hasn't.
+    // webgl only: three.js + the webgl module are ~167KB gzipped, while book3 /
+    // swipe / scroll are 7 / 5 / 4KB and have no tail worth removing.
+    preloadViewEngine() {
+        if (this.options.viewMode !== 'webgl') return;
+        var low = { priority: 'low' };
+        var self = this;
+        // The webgl module references THREE when it defines itself, so it has to
+        // wait for three.js rather than load beside it.
+        this.loadScript(FLIPBOOK.threejsSrc, 'THREE', low)
+            .then(function () {
+                return self.loadScript(FLIPBOOK.flipbookWebGlSrc, 'FLIPBOOK.BookWebGL', low);
+            })
+            // Failures are swallowed here on purpose — createBook() loads the same
+            // scripts and is where a real failure should surface.
+            .catch(function () {});
+    }
+
+    // opts.priority sets fetchPriority on the <script>. Used to preload the view
+    // engine without competing with the PDF's range requests — pdf.js fetches byte
+    // ranges on demand while rendering, so there is no reliable idle window to aim
+    // for; the browser scheduler arbitrates better than we can.
+    loadScript(src, globalVariable, opts) {
         if (src.indexOf('?ver') === -1) src += `?ver=${FLIPBOOK.version}`;
 
         FLIPBOOK.scripts = FLIPBOOK.scripts || {};
@@ -2937,6 +2905,8 @@ FLIPBOOK.Main = class {
 
             let script = document.createElement('script');
             script.async = true;
+            // Set before src so the hint applies to the fetch itself.
+            if (opts && opts.priority) script.fetchPriority = opts.priority;
             script.src = src;
 
             script.onload = script.onreadystatechange = function (_, isAbort) {
@@ -2999,6 +2969,15 @@ FLIPBOOK.Main = class {
         }
 
         this.setLoadingProgress(0.9);
+
+        // Settle the book layer first so bookVerticalPadding is computed before the
+        // preloader measures against it. The toolbar is built later (end of
+        // createBook), so the layer has not reserved its strip yet and the image is
+        // sized a little tall — it is corrected by positionFirstPagePreloader once
+        // the menu lands. Shown here, ahead of the engine download, which is the
+        // wait it exists to cover.
+        this.updateBookLayerSize();
+        this.showFirstPagePreloader();
 
         if (this.options.viewMode === 'webgl') {
             await this.loadScript(FLIPBOOK.threejsSrc, 'THREE');
@@ -3103,6 +3082,7 @@ FLIPBOOK.Main = class {
         }
 
         this.options.numPages = this.options.pages.length;
+
         if (this.options.numPages % 2 != 0 && !this.options.singlePageMode) {
             this.options.backCover = false;
         }
@@ -3148,6 +3128,22 @@ FLIPBOOK.Main = class {
 
             page.htmlContent = container;
         });
+
+        // Settle the zoom limits before the engine is built. BookWebGL copies
+        // this.zoom = o.zoomMin at construction and its onResize divides by that
+        // copy while multiplying by the live o.zoomMin — so if the limits move
+        // afterwards, the book renders inflated by zoomMin/zoom until something
+        // resizes it. Page dimensions are already final here: initJpg/initPdf load
+        // page 1 and set pageWidth/pageHeight before start() runs, and that is what
+        // sizes the wrapper. Measure the layer directly rather than trusting cached
+        // wrapperW/H, which resize() leaves stale when the rect hasn't changed.
+        this.updateBookLayerSize();
+        const layerRect = this.bookLayer.getBoundingClientRect();
+        if (layerRect.height > 0) {
+            this.wrapperW = layerRect.width;
+            this.wrapperH = layerRect.height;
+            this.adjustZoomLimits();
+        }
 
         if (this.options.viewMode == 'webgl') {
             var bookOptions = this.options;
@@ -3198,6 +3194,20 @@ FLIPBOOK.Main = class {
         if (!this.options.sound) this.toggleSound(false);
 
         this.resize();
+
+        // The toolbar was built after the last resize measured the layer, and
+        // resize() skips its recompute when the layer rect is unchanged — which it
+        // usually is here. Without this the zoom limits keep the values worked out
+        // with no toolbar in place, so the book fills the whole height and only a
+        // real size change (entering fullscreen) ever corrects it.
+        this.adjustZoomLimits();
+
+        // The engine copied zoomMin at construction, before the toolbar existed and
+        // changed it. Its onResize divides by that copy, so a stale one inflates the
+        // book — and onZoom() memoizes on the main zoom level, so it won't
+        // necessarily push the new value down. The reader hasn't zoomed yet, so
+        // setting it outright is safe here.
+        if (this.Book && this.Book.zoom != null) this.Book.zoom = this.options.zoomMin;
 
         this.onZoom(this.options.zoomMin);
 
@@ -3314,6 +3324,9 @@ FLIPBOOK.Main = class {
         this.wrapper.appendChild(tooltip);
         this.hotspotTooltip = tooltip;
         this.hotspotTooltipTarget = null;
+        // Click-pinned cards ignore mouseout entirely — only a click off the
+        // region or the card closes them.
+        this.hotspotTooltipPinned = false;
 
         const buildContent = (data, target, tooltipWidth) => {
             tooltip.style.width = tooltipWidth + 'px';
@@ -3411,8 +3424,15 @@ FLIPBOOK.Main = class {
                     const cartId = data.variantId || '';
                     const cartBase = data.cartUrl || '/cart/add?id=' + cartId;
                     const isAddToCart = cartBase.indexOf('addtocart:') === 0;
-                    const cartHref = isAddToCart ? cartBase : cartBase + '&quantity=' + qty;
-                    actionsHtml += `<a href="${cartHref}" target="${target}" class="flipbook-hotspot-tooltip-btn flipbook-hotspot-tooltip-btn-primary" data-cart-base="${cartBase}" data-variant-id="${cartId}">${addToCartLabel}</a>`;
+                    // Shopify links keep the bare "addtocart:handle" href; the
+                    // quantity travels in data-quantity and the host reads it
+                    // from there. Appending "&quantity=N" to that href turned
+                    // the handle into "handle&quantity=N", which every host
+                    // rejected — the click became a silent no-op.
+                    const cartHref = isAddToCart
+                        ? cartBase
+                        : cartBase + (cartBase.includes('?') ? '&' : '?') + 'quantity=' + qty;
+                    actionsHtml += `<a href="${cartHref}" target="${target}" class="flipbook-hotspot-tooltip-btn flipbook-hotspot-tooltip-btn-primary" data-cart-base="${cartBase}" data-variant-id="${cartId}" data-quantity="${qty}">${addToCartLabel}</a>`;
                 }
                 if (showView) {
                     actionsHtml += `<a href="${data.url}" target="${target}" class="flipbook-hotspot-tooltip-btn flipbook-hotspot-tooltip-btn-secondary">${viewProductLabel}</a>`;
@@ -3443,12 +3463,15 @@ FLIPBOOK.Main = class {
                     if (cartBtn) {
                         cartBtn.setAttribute('data-variant-id', newId);
                         const cartBase = cartBtn.getAttribute('data-cart-base') || '';
+                        // Keep the stepper's current quantity across a variant
+                        // change instead of resetting it to the initial one.
+                        const curQty = parseInt(cartBtn.getAttribute('data-quantity'), 10) || (data.quantity || 1);
                         if (cartBase.indexOf('addtocart:') === 0) {
                             cartBtn.setAttribute('href', cartBase);
                         } else {
                             const replaced = cartBase.replace(/(\bid=)\d+/, `$1${newId}`);
                             const sep = replaced.includes('?') ? '&' : '?';
-                            cartBtn.setAttribute('href', `${replaced}${sep}quantity=${data.quantity || 1}`);
+                            cartBtn.setAttribute('href', `${replaced}${sep}quantity=${curQty}`);
                         }
                     }
                     const priceEl = tooltip.querySelector('.flipbook-hotspot-tooltip-price');
@@ -3480,8 +3503,11 @@ FLIPBOOK.Main = class {
 
             let posX, posY, posClass;
 
-            const spaceAbove = dotCenterY;
-            const spaceBelow = wrapperH - dotCenterY;
+            // Measure from the region's edges, not its centre — the card is
+            // placed edge-to-edge, so centre-based space would over-report by
+            // half the region and the clamp would drag the card back over it.
+            const spaceAbove = dotCenterY - dotRect.height / 2;
+            const spaceBelow = wrapperH - (dotCenterY + dotRect.height / 2);
             const preferAbove = dotCenterY > wrapperH / 2;
 
             if (preferAbove && spaceAbove > tooltipH + gap) {
@@ -3547,7 +3573,13 @@ FLIPBOOK.Main = class {
                     tooltip.classList.add('visible');
                 }
 
-                if (isLink && mouseEvent) {
+                // A rich card is interactive (variants, quantity, add to cart),
+                // so it has to be reachable with the cursor: anchor it to the
+                // region instead of letting it follow the mouse away from it.
+                // Plain text tooltips keep the classic follow-the-cursor feel.
+                const isCard = tooltip.classList.contains('flipbook-hotspot-tooltip-card');
+
+                if (isLink && mouseEvent && !isCard) {
                     positionTooltipAtMouse(mouseEvent);
                 } else if (isNewTarget) {
                     if (tooltipMouseMode) {
@@ -3556,12 +3588,24 @@ FLIPBOOK.Main = class {
                         tooltipMouseMode = false;
                     }
                     positionTooltip(hotspot);
+                    // Card images are lazy; a late load changes the height and
+                    // would leave the card parked where the pre-load size put it.
+                    const img = tooltip.querySelector('.flipbook-hotspot-tooltip-image');
+                    if (img && !img.complete) {
+                        img.addEventListener('load', () => {
+                            if (self.hotspotTooltipTarget === hotspot && !tooltipMouseMode)
+                                positionTooltip(hotspot);
+                        }, { once: true });
+                    }
                 }
 
                 if (isNewTarget) {
                     tooltip.style.visibility = '';
                     tooltip.style.opacity = '';
                 }
+                // Idempotent: re-showing the current target (hover, then click
+                // to pin) must put the card back up, not rely on isNewTarget.
+                tooltip.classList.add('visible');
             } catch (e) {}
         };
 
@@ -3602,42 +3646,86 @@ FLIPBOOK.Main = class {
         };
 
         const hideTooltip = () => {
+            cancelHide();
+            self.hotspotTooltipPinned = false;
             tooltip.classList.remove('visible');
             if (self.hotspotTooltipTarget?.hasAttribute('aria-expanded'))
                 self.hotspotTooltipTarget.setAttribute('aria-expanded', 'false');
             self.hotspotTooltipTarget = null;
         };
 
+        // Leaving a region does not close the card straight away: the cursor
+        // needs a moment to cross from the region onto the card, which the
+        // clamped placement can leave a small gap to.
+        let hideTimer = null;
+        function cancelHide() {
+            if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        }
+        const scheduleHide = () => {
+            cancelHide();
+            hideTimer = setTimeout(() => { hideTimer = null; hideTooltip(); }, 260);
+        };
+
+        // Opens the card and keeps it open until the next click off it.
+        // Returns false when the item has no rich card, so plain-text and
+        // no-tooltip regions keep their original click behaviour.
+        this.pinHotspotCard = (hotspot) => {
+            const dataStr = hotspot.getAttribute('data-tooltip-data');
+            if (!dataStr) return false;
+            let data;
+            try { data = JSON.parse(dataStr); } catch (e) { return false; }
+            if (!data || typeof data !== 'object') return false;
+
+            cancelHide();
+            if (self.hotspotTooltipTarget === hotspot && self.hotspotTooltipPinned) {
+                hideTooltip();
+            } else {
+                showTooltip(hotspot);
+                self.hotspotTooltipPinned = true;
+            }
+            return true;
+        };
+
         // Mouse hover
         this.wrapper.addEventListener('mouseover', (e) => {
             const hotspot = e.target.closest('.flipbook-hotspot');
             if (hotspot) {
+                // Hovering a different region takes over from a pinned card.
+                if (hotspot !== self.hotspotTooltipTarget) self.hotspotTooltipPinned = false;
+                cancelHide();
                 showTooltip(hotspot, e);
                 return;
             }
             // Allow hovering over the tooltip itself
-            if (e.target.closest('.flipbook-hotspot-tooltip')) return;
+            if (e.target.closest('.flipbook-hotspot-tooltip')) {
+                cancelHide();
+                return;
+            }
         });
 
         this.wrapper.addEventListener('mouseout', (e) => {
             const hotspot = e.target.closest('.flipbook-hotspot');
             const isTooltip = e.target.closest('.flipbook-hotspot-tooltip');
             if (!hotspot && !isTooltip) return;
+            if (self.hotspotTooltipPinned) return;
 
             // Check if moving to the tooltip or to the hotspot
             const relTarget = e.relatedTarget;
             if (relTarget) {
-                if (relTarget.closest('.flipbook-hotspot-tooltip') === tooltip) return;
-                if (relTarget.closest('.flipbook-hotspot') === self.hotspotTooltipTarget) return;
+                if (relTarget.closest('.flipbook-hotspot-tooltip') === tooltip) { cancelHide(); return; }
+                if (relTarget.closest('.flipbook-hotspot') === self.hotspotTooltipTarget) { cancelHide(); return; }
             }
 
-            hideTooltip();
+            scheduleHide();
         });
 
-        // Follow mouse on link-type items
+        // Follow mouse on link-type items — text tooltips only; cards stay
+        // anchored to their region so the cursor can reach them.
         this.wrapper.addEventListener('mousemove', (e) => {
             const hotspot = e.target.closest('.flipbook-hotspot');
-            if (hotspot && hotspot === self.hotspotTooltipTarget && hotspot.classList.contains('flipbook-page-item-link')) {
+            if (hotspot && hotspot === self.hotspotTooltipTarget &&
+                hotspot.classList.contains('flipbook-page-item-link') &&
+                !tooltip.classList.contains('flipbook-hotspot-tooltip-card')) {
                 positionTooltipAtMouse(e);
             }
         });
@@ -3656,11 +3744,21 @@ FLIPBOOK.Main = class {
             let qty = Math.max(1, parseInt(valueEl.textContent) + delta);
             valueEl.textContent = qty;
 
-            // Update cart link quantity
+            // Update cart link quantity. Shopify links ("addtocart:handle")
+            // keep their href untouched and carry the quantity in
+            // data-quantity — see the tooltip render for why. Other links get
+            // the quantity as a query parameter on the currently selected
+            // variant, not on the variant the tooltip opened with.
             const cartBtn = tooltip.querySelector('[data-cart-base]');
             if (cartBtn) {
-                const base = cartBtn.dataset.cartBase;
-                cartBtn.href = base + '&quantity=' + qty;
+                const base = cartBtn.dataset.cartBase || '';
+                cartBtn.dataset.quantity = String(qty);
+                if (base.indexOf('addtocart:') !== 0) {
+                    const vid = cartBtn.getAttribute('data-variant-id') || '';
+                    const withVariant = vid ? base.replace(/(\bid=)\d+/, `$1${vid}`) : base;
+                    const sep = withVariant.includes('?') ? '&' : '?';
+                    cartBtn.href = `${withVariant}${sep}quantity=${qty}`;
+                }
             }
         });
 
@@ -3693,6 +3791,16 @@ FLIPBOOK.Main = class {
                 // Links navigate normally — don't intercept their click
                 const isLink = hotspot.classList.contains('flipbook-page-item-link');
                 if (isLink) {
+                    // …unless the region carries a product card: then the click
+                    // pins the card open until the next click off it, and the
+                    // card's own View product / Add to cart do the navigating.
+                    // (Spotlight regions with a url pin from their own listener,
+                    // which stops propagation before reaching here.)
+                    if (self.pinHotspotCard(hotspot)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
                     hideTooltip();
                     return;
                 }
@@ -3890,6 +3998,13 @@ FLIPBOOK.Main = class {
 
             var newHeight = width / (this.options.containerRatio || ratio);
 
+            // Never taller than the viewport. The height comes purely from the page
+            // ratio, which on a wide-but-short window asks for far more than there
+            // is — a 736px-wide phone in landscape wants ~1040px against a ~414px
+            // window, leaving a book that has to be scrolled to be read. Runs again
+            // on every window resize, so rotating re-fits.
+            if (window.innerHeight > 0) newHeight = Math.min(newHeight, window.innerHeight);
+
             // newHeight += this.wrapper.clientHeight - this.bookLayer.clientHeight /* - 2 * this.bookVerticalPadding */;
             // newHeight += this.bottomMenuH;
             // newHeight += this.topMenuH;
@@ -3903,7 +4018,10 @@ FLIPBOOK.Main = class {
     }
 
     addEventListeners() {
-        this.handleResize = () => this.resizeContainer();
+        this.handleResize = () => {
+            this.resizeContainer();
+            this.scheduleRefit();
+        };
         this.handleKeydown = (e) => {
             if (!this.Book.enabled) {
                 return;
@@ -3955,8 +4073,15 @@ FLIPBOOK.Main = class {
             return false;
         };
         this.handleFs = () => this.handleFsChange();
+        this.handleOrientation = () => {
+            // iOS reports the pre-rotation viewport for a beat and then fires nothing
+            // once it settles, so a single pass reads stale metrics and sticks.
+            this.refitViewport();
+            this.scheduleRefit();
+        };
 
         window.addEventListener('resize', this.handleResize);
+        window.addEventListener('orientationchange', this.handleOrientation);
         document.addEventListener('keydown', this.handleKeydown);
 
         document.addEventListener('MSFullscreenChange', this.handleFs);
@@ -3967,6 +4092,7 @@ FLIPBOOK.Main = class {
 
     removeEventListeners() {
         window.removeEventListener('resize', this.handleResize);
+        window.removeEventListener('orientationchange', this.handleOrientation);
         document.removeEventListener('keydown', this.handleKeydown);
 
         document.removeEventListener('MSFullscreenChange', this.handleFs);
@@ -4006,6 +4132,13 @@ FLIPBOOK.Main = class {
         });
 
         this.resizeObserver2.observe(this.bookLayer);
+
+        // The zoom limits computed during createBook() can predate the menu being laid
+        // out — overlayMenuReach() then measures nothing and the book is sized as if no
+        // menu were there, too big and overlapping the pill, until the next resize
+        // corrects it. Re-fit on the next frame, and again once things have settled.
+        requestAnimationFrame(() => this.refitViewport());
+        this.scheduleRefit();
 
         this.playBgMusic();
 
@@ -4122,13 +4255,39 @@ FLIPBOOK.Main = class {
                         .then((decoded) => { this._flipBuffer = decoded; })
                         .catch(() => {});
 
+                    // Mobile browsers start the context suspended and only honour
+                    // resume() from inside a user gesture. One attempt is not enough: if
+                    // it is refused there is no second chance, and every later resume()
+                    // comes from a flip callback rather than a gesture, so it is ignored
+                    // — the book then flips silently until something else unlocks it.
+                    // touchstart matters most: Safari does not treat a drag's touchend as
+                    // user activation, so flipping by dragging never unlocked the context
+                    // — every flip queued a source at time 0 and they all fired together
+                    // on the next tap.
+                    const events = ['touchstart', 'touchend', 'pointerdown', 'pointerup', 'click'];
+                    const done = () => events.forEach((t) => document.removeEventListener(t, unlock, true));
                     const unlock = () => {
-                        if (this._audioCtx.state === 'suspended') {
-                            this._audioCtx.resume().catch(() => {});
-                        }
+                        if (!this._audioCtx) return done();
+                        // Do NOT tear these down once running: iOS re-suspends the
+                        // context between gestures, so every gesture has to be able to
+                        // resume it again. resume() is only honoured at a gesture —
+                        // issued from a flip callback it stays pending until the next
+                        // tap, which is what fired every queued flip at once.
+                        if (this._audioCtx.state === 'running') return;
+                        this._audioCtx.resume().catch(() => {});
+                        // Starting a source inside the gesture is what actually unlocks
+                        // WebAudio on iOS; a 1-sample silent buffer makes no noise.
+                        try {
+                            const s = this._audioCtx.createBufferSource();
+                            s.buffer =
+                                this._silentBuffer ||
+                                (this._silentBuffer = this._audioCtx.createBuffer(1, 1, 22050));
+                            s.connect(this._audioCtx.destination);
+                            s.start(0);
+                        } catch (e) {}
                     };
-                    document.addEventListener('touchend', unlock, { once: true, capture: true });
-                    document.addEventListener('click', unlock, { once: true, capture: true });
+                    events.forEach((t) => document.addEventListener(t, unlock, { capture: true }));
+                    this._releaseFlipSoundUnlock = done;
                 } catch (e) {}
             }
         }
@@ -4172,6 +4331,12 @@ FLIPBOOK.Main = class {
         let isPinching = false;
         let fingerCount = 0;
         let touchStarted = false;
+        // Axis a one-finger touch has committed to: null until it moves far enough
+        // to tell, then 'x' (drag the page) or 'y' (leave it to the browser to
+        // scroll). Without this a mostly-vertical swipe with a few pixels of sideways
+        // travel starts a page drag and the reader can't scroll past the book.
+        let dragAxis = null;
+        const AXIS_LOCK_PX = 10;
 
         function calculateDistance(touches) {
             if (touches.length < 2) {
@@ -4227,6 +4392,7 @@ FLIPBOOK.Main = class {
             startY = touchObj.clientY;
             startTime = new Date().getTime();
             isSwiping = true;
+            dragAxis = null;
             self._swipeMoved = false;
             fingerCount = e.touches ? e.touches.length : 1;
             callback(e, 'start', null, 0, 0, fingerCount);
@@ -4287,6 +4453,24 @@ FLIPBOOK.Main = class {
                 // the corresponding pointermove events on iOS Safari,
                 // which breaks PanZoom (book3 / 2d) and any other JS
                 // pointer-event-based pan logic.
+
+                // Scroll mode is driven by vertical dragging, and a zoomed-in page
+                // pans in both axes — in those two cases every direction belongs to
+                // the book, so no lock.
+                const axisLockable = self.options.viewMode !== 'scroll' && !(self.zoom > 1);
+                if (axisLockable) {
+                    if (dragAxis === null) {
+                        const adx = Math.abs(distanceX);
+                        const ady = Math.abs(distanceY);
+                        // Too early to tell — stay out of the way rather than guess.
+                        if (adx + ady < AXIS_LOCK_PX) return;
+                        dragAxis = adx > ady ? 'x' : 'y';
+                    }
+                    // Committed to scrolling: ignore the rest of this touch so
+                    // touch-action: pan-y can do its job.
+                    if (dragAxis === 'y') return;
+                }
+
                 callback(e, 'move', distanceX, distanceY, 0, 1);
             }
         }
@@ -4305,7 +4489,11 @@ FLIPBOOK.Main = class {
 
             if (isSwiping) {
                 isSwiping = false;
-                callback(e, 'end', distanceX, distanceY, duration, e.changedTouches ? e.changedTouches.length : 1);
+                // A touch that committed to scrolling reports no travel, so its
+                // release can't be read as a flip.
+                const endX = dragAxis === 'y' ? 0 : distanceX;
+                const endY = dragAxis === 'y' ? 0 : distanceY;
+                callback(e, 'end', endX, endY, duration, e.changedTouches ? e.changedTouches.length : 1);
             }
 
             if (isPinching) {
@@ -4526,6 +4714,28 @@ FLIPBOOK.Main = class {
         return svg;
     }
 
+    // Floating buttons and the page counter share one pill per menu container.
+    // The wrapper is created lazily so the outer menu keeps its L/C/R flex behavior.
+    getFloatingPill(menu) {
+        if (!menu._floatingPill) {
+            var o = this.options;
+            var pill = document.createElement('div');
+            pill.className = 'flipbook-menu-grouped';
+            pill.style.background = o.floatingBtnBackground;
+            pill.style.borderRadius = o.floatingBtnRadius + 'px';
+            pill.style.boxShadow = o.floatingBtnShadow;
+            pill.style.margin = o.floatingBtnMargin + 'px';
+            pill.style.padding = '2px';
+            pill.style.pointerEvents = 'auto';
+            pill.style.display = 'flex';
+            pill.style.alignItems = 'center';
+            pill.style.gap = '2px';
+            menu._floatingPill = pill;
+            menu.appendChild(pill);
+        }
+        return menu._floatingPill;
+    }
+
     createButton(btn) {
         var o = this.options;
         var isLucide = (o.iconSet || 'fontawesome') === 'lucide';
@@ -4686,26 +4896,8 @@ FLIPBOOK.Main = class {
         $btn.classList.add('flipbook-menu-btn-wrapper', 'flipbook-menu-btn', 'skin-color');
         $btn.style.order = btn.order;
 
-        // Floating buttons group into a single pill on their menu container.
-        // Create an inner pill wrapper once per menu — keeps the outer menu
-        // container's existing flex behavior intact (so L/C/R layouts still work).
         if (floating) {
-            if (!menu._floatingPill) {
-                var pill = document.createElement('div');
-                pill.className = 'flipbook-menu-grouped';
-                pill.style.background = o.floatingBtnBackground;
-                pill.style.borderRadius = o.floatingBtnRadius + 'px';
-                pill.style.boxShadow = o.floatingBtnShadow;
-                pill.style.margin = o.floatingBtnMargin + 'px';
-                pill.style.padding = '2px';
-                pill.style.pointerEvents = 'auto';
-                pill.style.display = 'flex';
-                pill.style.alignItems = 'center';
-                pill.style.gap = '2px';
-                menu._floatingPill = pill;
-                menu.appendChild(pill);
-            }
-            menu._floatingPill.appendChild($btn);
+            this.getFloatingPill(menu).appendChild($btn);
         } else {
             menu.appendChild($btn);
         }
@@ -4880,6 +5072,8 @@ FLIPBOOK.Main = class {
 
         this.menuBottom = document.createElement('div');
         this.menuBottom.classList.add('flipbook-menuBottom', menuBottomClass);
+        // The grouped pill draws its own capsule — stop the floating bar drawing a second one.
+        if (o.menuFloating && o.menuTransparent) this.menuBottom.classList.add('flipbook-menu-bare');
         if (!o.menuTransparent && o.skin !== 'gradient' && !(o.menuBackground && o.menuBackground.includes('gradient'))) this.menuBottom.classList.add('flipbook-border');
         this.menuBottom.style.background = o.menuBackground;
         this.menuBottom.style.boxShadow = o.menuShadow;
@@ -4897,6 +5091,7 @@ FLIPBOOK.Main = class {
 
         this.menuTop = document.createElement('div');
         this.menuTop.classList.add('flipbook-menuTop', menuTopClass);
+        if (o.menu2Floating && o.menu2Transparent) this.menuTop.classList.add('flipbook-menu-bare');
         if (!o.menu2Transparent && o.skin !== 'gradient') this.menuTop.classList.add('flipbook-border');
         this.menuTop.style.background = o.menu2Background;
         this.menuTop.style.boxShadow = o.menu2Shadow;
@@ -5235,6 +5430,12 @@ FLIPBOOK.Main = class {
         }
 
         this.toggleIcon(this.btnExpand, !this.fullscreenActive);
+
+        // bookVerticalPadding and the zoom limits both key off fullscreenActive, and
+        // the layer rect often doesn't change on the way out — so resize() skips its
+        // recompute and they keep the fullscreen values.
+        this.refitViewport();
+        this.scheduleRefit();
     }
 
     createLogo() {
@@ -5329,9 +5530,28 @@ FLIPBOOK.Main = class {
 
         this._lastFlipSoundTime = now;
 
-        if (this._audioCtx.state === 'suspended') {
-            this._audioCtx.resume().catch(() => {});
+        // iOS drops the context back to 'suspended' between gestures, so by the time a
+        // flip finishes it is usually suspended again. resume() is async: starting the
+        // source straight away queues it at time 0, where it stays inaudible until the
+        // context next runs — which is why a later tap fired off every pending flip at
+        // once. Start it only once the context is actually running.
+        if (this._audioCtx.state === 'running') {
+            this._startFlipSource();
+        } else {
+            this._audioCtx
+                .resume()
+                .then(() => this._startFlipSource(now))
+                .catch(() => {});
         }
+    }
+
+    _startFlipSource(scheduledAt) {
+        if (!this._audioCtx || this._audioCtx.state !== 'running' || !this._flipBuffer) return;
+
+        // A resume() issued outside a gesture stays pending until the next tap, which
+        // can be many flips later. Those flips are long over — playing them now fires
+        // the whole backlog at once, so drop anything stale.
+        if (scheduledAt !== undefined && performance.now() - scheduledAt > 250) return;
 
         const src = this._audioCtx.createBufferSource();
         src.buffer = this._flipBuffer;
@@ -5464,6 +5684,7 @@ FLIPBOOK.Main = class {
     }
 
     zoomOut(e) {
+        if (this.uiLocked) return;
         var newZoom = this.zoom / this.options.zoomStep;
         // Snap to exact fit when crossing 1 from above — the sharp-zoom jump
         // is not a power of zoomStep, so stepped descent would otherwise never
@@ -5478,6 +5699,7 @@ FLIPBOOK.Main = class {
     }
 
     zoomIn(e) {
+        if (this.uiLocked) return;
         var newZoom = this.zoom * this.options.zoomStep;
 
         if (newZoom > this.options.zoomMax) {
@@ -5514,7 +5736,7 @@ FLIPBOOK.Main = class {
     }
 
     nextPage() {
-        if (!this.Book) {
+        if (!this.Book || this.uiLocked) {
             return;
         }
         this.flippingPage = true;
@@ -5525,7 +5747,7 @@ FLIPBOOK.Main = class {
     }
 
     prevPage() {
-        if (!this.Book) {
+        if (!this.Book || this.uiLocked) {
             return;
         }
         this.flippingPage = true;
@@ -5536,17 +5758,28 @@ FLIPBOOK.Main = class {
     }
 
     firstPage() {
+        if (this.uiLocked) return;
         const last = this.options.pages.length;
         this.goToPage(this.options.rightToLeft ? last : 1);
     }
 
     lastPage() {
+        if (this.uiLocked) return;
         const last = this.options.pages.length;
         this.goToPage(this.options.rightToLeft ? 1 : last);
     }
 
     _isSingleView() {
-        return this.options.singlePageMode || (this.Book && (this.Book.singlePage || this.Book.view == 1));
+        if (this.options.singlePageMode) return true;
+        if (this.Book) return !!(this.Book.singlePage || this.Book.view == 1);
+        // Before the engine exists (zoom limits are computed ahead of it, so the
+        // engine captures a final zoomMin) mirror BookWebGL.onResize's own test.
+        const o = this.options;
+        if (!o.responsiveView || !this.pageW || !this.pageH || !this.wrapperH) return false;
+        const visibleH = Math.max(0, this.wrapperH - 2 * (this.bookVerticalPadding || 0)) || this.wrapperH;
+        const r1 = this.wrapperW / visibleH;
+        const r2 = this.pageW / this.pageH;
+        return this.wrapperW <= o.responsiveViewTreshold && r1 < 2 * r2 && r1 < o.responsiveViewRatio;
     }
 
     _getProgressStops() {
@@ -5601,6 +5834,43 @@ FLIPBOOK.Main = class {
         }
     }
 
+    // How far each overlaying menu's centred controls reach in from its edge.
+    // Only centred content counts — items parked in the corners leave the middle
+    // of the book clear. Measured from the rendered pill rather than the menu
+    // strip, so it follows icon size, padding and custom styling, and ignores the
+    // margin outside the pill that the book is free to occupy.
+    overlayMenuReach() {
+        const o = this.options;
+        const none = { top: 0, bottom: 0 };
+        if (this.minimalViewActive || !this.menuShowing || !this.wrapper) return none;
+
+        const centerItems = (menu) => {
+            if (!menu) return null;
+            // A progress bar spans the full width, so it counts wherever it sits.
+            const bar = menu.querySelector('.flipbook-progress-bar');
+            if (bar) return bar;
+            const center = menu.querySelector('.flipbook-menu-center');
+            if (!center) return null;
+            const pill = center.querySelector('.flipbook-menu-grouped');
+            if (pill) return pill;
+            return center.querySelector('.flipbook-menu-btn, .flipbook-currentPageHolder') ? center : null;
+        };
+
+        const wrap = this.wrapper.getBoundingClientRect();
+        const reach = (menu, fromBottom) => {
+            const items = centerItems(menu);
+            if (!items) return 0;
+            const rect = items.getBoundingClientRect();
+            if (!rect.height) return 0;
+            return Math.max(0, fromBottom ? wrap.bottom - rect.top : rect.bottom - wrap.top);
+        };
+
+        return {
+            top: o.menu2OverBook ? reach(this.menuTop, false) : 0,
+            bottom: o.menuOverBook ? reach(this.menuBottom, true) : 0,
+        };
+    }
+
     updateBookLayerSize() {
         const o = this.options;
         const topMenuH =
@@ -5617,18 +5887,39 @@ FLIPBOOK.Main = class {
         // const is3dBookZoomed = false;
         // const hasPadding = o.viewMode != 'swipe' && o.viewMode != 'scroll';
         const hasPadding = o.viewMode == 'webgl';
+        const overlay = this.overlayMenuReach();
+        // In lightbox/fullscreen the flip headroom comes from the menu heights, but
+        // topMenuH/bottomMenuH are 0 for a menu that overlays the book — so a layout
+        // where both overlay would leave no headroom at all and pages would clip
+        // mid-flip. Count the overlaying menus' measured reach as well.
         const bookVerticalPadding = hasPadding
             ? this.options.lightBox || this.fullscreenActive
-                ? Math.max(topMenuH, bottomMenuH)
+                ? Math.max(topMenuH, bottomMenuH, overlay.top, overlay.bottom)
                 : o.bookVerticalPadding
             : 0;
 
         this.bookVerticalPadding = bookVerticalPadding;
 
         const stripH = this.thumbStripShowing && this.thumbStrip ? this.thumbStrip.el.offsetHeight : 0;
+
+        // A menu that overlays the book doesn't shrink the layer, so the book stays
+        // centered in the full height and the menu sits on top of its edge. Shift the
+        // layer by half the difference between the two overlaying menus: the height
+        // is unchanged, so the book keeps its size, but it re-centers in the space
+        // they leave free. With controls on both edges the two cancel out and nothing
+        // moves; with everything on one edge the book moves clear of it.
+        // Only centred content counts as covering the book. Items parked in the left
+        // and right corners leave the middle clear, so shifting the whole book to
+        // clear them would give up height across the full width for nothing. An
+        // empty menu is skipped too — it still reports a height, which would
+        // otherwise cancel the shift. A progress bar spans the full width, so it counts.
+        const overlayShift = (overlay.bottom - overlay.top) / 2;
+
         const bookBottom =
-            !o.menuOverBook && this.menuBottom ? -bookVerticalPadding + bottomMenuH + stripH : -bookVerticalPadding + stripH;
-        const bookTop = !o.menu2OverBook && this.menuTop ? -bookVerticalPadding + topMenuH : -bookVerticalPadding;
+            (!o.menuOverBook && this.menuBottom ? -bookVerticalPadding + bottomMenuH + stripH : -bookVerticalPadding + stripH) +
+            overlayShift;
+        const bookTop =
+            (!o.menu2OverBook && this.menuTop ? -bookVerticalPadding + topMenuH : -bookVerticalPadding) - overlayShift;
 
         const bottomValue = bookBottom + 'px';
         const topValue = bookTop + 'px';
@@ -5642,6 +5933,8 @@ FLIPBOOK.Main = class {
         if (style.top !== topValue) {
             style.top = topValue;
         }
+
+        this.positionFirstPagePreloader();
 
         // if (is3dBook) {
         //     this.Book.onResize(true);
@@ -5726,16 +6019,20 @@ FLIPBOOK.Main = class {
         var floating =
             (o.currentPage.vAlign == 'top' && o.menu2Transparent) ||
             (o.currentPage.vAlign != 'top' && o.menuTransparent);
-        var bgColor = floating ? o.floatingBtnBackground : '';
+        // Merge into whichever pill the counter's own menu container holds, so it
+        // reads as one capsule with the buttons beside it rather than a second one.
+        // Solid-bar layouts (menu not transparent) are unaffected — no pill exists.
+        var joinPill = floating;
+        var bgColor = joinPill ? 'none' : floating ? o.floatingBtnBackground : '';
         var color = floating ? o.floatingBtnColor : o.btnColor;
         var textShadiw = floating ? o.floatingBtnTextShadow : '';
         var radius = floating ? o.floatingBtnRadius : o.btnRadius;
-        var shadow = floating ? o.floatingBtnShadow : o.btnShadow;
+        var shadow = joinPill ? 'none' : floating ? o.floatingBtnShadow : o.btnShadow;
         // When floating, use floatingBtnMargin so the pill doesn't stick to the edge
-        var marginV = o.currentPage.marginV || (floating ? o.floatingBtnMargin : 0);
-        var marginH = o.currentPage.marginH || (floating ? o.floatingBtnMargin : 0);
+        var marginV = o.currentPage.marginV || (joinPill ? 0 : floating ? o.floatingBtnMargin : 0);
+        var marginH = o.currentPage.marginH || (joinPill ? 0 : floating ? o.floatingBtnMargin : 0);
         var currentPageHolder = document.createElement('div');
-        menu.appendChild(currentPageHolder);
+        (joinPill ? this.getFloatingPill(menu) : menu).appendChild(currentPageHolder);
 
         currentPageHolder.addEventListener('click', function () {
             self.currentPageInput.focus();
@@ -6045,7 +6342,7 @@ FLIPBOOK.Main = class {
 
         const sidebarVisible = this.tocShowing || this.thumbsShowing || this.searchShowing || this.bookmarkShowing;
         let rect = this.bookLayer.getBoundingClientRect();
-        if (this.wrapperW === rect.width && this.wrapperH === rect.height && this.sidebarVisible === sidebarVisible) {
+        if (!force && this.wrapperW === rect.width && this.wrapperH === rect.height && this.sidebarVisible === sidebarVisible) {
             return;
         }
 
@@ -6090,19 +6387,70 @@ FLIPBOOK.Main = class {
         this.Book.zoomTo(this.options.zoomMin);
     }
 
+    // Re-measure and re-fit after something changed the space available to the book.
+    // resize() on its own is not enough: it early-returns on an unchanged layer rect,
+    // and bookVerticalPadding, the zoom limits and the single/double view test all key
+    // off state rather than off that rect — so a pass computed a moment too early (iOS
+    // reports pre-rotation metrics; the view flips as the width crosses
+    // responsiveViewTreshold) sticks, with nothing able to correct it afterwards.
+    //
+    // Resets zoom to the new fit, like every other resize path does. Carrying the old
+    // zoom across would be worse than useless: a reader at the default sits at the old
+    // zoomMin, so preserving it keeps the book at the previous fit size.
+    refitViewport() {
+        if (!this.Book) return;
+        this.resizeContainer();
+        this.resize(true);
+    }
+
+    // The pass we do now can be computed against a state that is about to change, and
+    // resize()'s unchanged-rect guard blocks any later correction — so re-fit once more
+    // after things settle. Debounced, so dragging a window edge only re-fits at the end.
+    scheduleRefit() {
+        clearTimeout(this._refitTimer);
+        this._refitTimer = setTimeout(() => this.refitViewport(), 250);
+    }
+
     adjustZoomLimits() {
         var o = this.options;
         var wrapperRatio = this.wrapperW / this.wrapperH;
         var pageRatio = this.pageW / this.pageH;
         var bookRatio = 2 * pageRatio;
 
-        var menuTopHeight = this.menuTop.offsetHeight;
-        var menuBottomHeight = this.menuBottom.offsetHeight;
-        var manuHeight = Math.max(menuTopHeight, menuBottomHeight);
-        var bookMargin = o.bookMargin || 20;
+        // zoomMin is the share of the space left free by overlaying menus that the
+        // book fills — 1 means right up against them. Clamped to 0.95–1: anything
+        // lower only wastes room, which is what the old estimate here did (it
+        // subtracted twice the taller menu plus a margin, so a single 60px pill
+        // shrank the book by 140px).
+        //
+        // The configured value is captured once. This runs on every resize and
+        // writes back to the same option, so reading it each time would compound.
+        if (this._zoomMinOption === undefined) {
+            const configured = Number(o.zoomMin);
+            this._zoomMinOption = isFinite(configured) ? configured : 1;
+        }
+        const fill = Math.min(1, Math.max(0.95, isFinite(this._zoomMinOption) ? this._zoomMinOption : 1));
+        const overlay = this.overlayMenuReach();
+        // Measure against the visible container, not the padded layer. wrapperH
+        // includes bookVerticalPadding on both sides, which is headroom for pages to
+        // lift mid-flip — not space the book may fill. Using it as the base made the
+        // book grow whenever the padding grew, which is backwards, and made the size
+        // change whenever the padding did (normal vs fullscreen).
+        const visibleH = Math.max(0, this.wrapperH - 2 * (this.bookVerticalPadding || 0)) || this.wrapperH;
+        const visibleW = this.wrapperW;
 
-        if (o.menuOverBook && o.menu2OverBook)
-            o.zoomMin = (this.wrapperH - 2 * manuHeight - bookMargin) / this.wrapperH;
+        // Work from the height the book actually takes at zoom 1, which is the
+        // smaller of the two fits. A book constrained by width is already shorter
+        // than the space available, so an overlaying menu costs it nothing — the
+        // earlier height-only formula shrank it anyway and it never filled the width.
+        // bookRatio above is always the two-page spread; in single/cover view the
+        // book is one page wide, which is what makes a narrow container width-bound.
+        const viewRatio = this._isSingleView() ? pageRatio : bookRatio;
+        const fitH = viewRatio > 0 ? Math.min(visibleH, visibleW / viewRatio) : visibleH;
+
+        // Only give up height where the menus would actually cover the book.
+        const target = Math.max(0, Math.min(fitH, visibleH - overlay.top - overlay.bottom));
+        o.zoomMin = fitH > 0 ? (target / fitH) * fill : fill;
 
         // For html-only flipbooks the zoomed-in view is live DOM (the
         // html2canvas bitmap is only shown briefly during page flips), so the
@@ -7143,6 +7491,13 @@ FLIPBOOK.Main = class {
         }
 
         this.toggleIcon(this.btnExpand, !this.fullscreenActive);
+
+        // This is the faked fullscreen (iOS, where the Fullscreen API is missing): no
+        // fullscreenchange event fires, so handleFsChange() never runs and nothing else
+        // re-measures. Deferred — the element was just moved and reclassed, and has to
+        // be laid out before it can be measured.
+        requestAnimationFrame(() => this.refitViewport());
+        this.scheduleRefit();
     }
 
     saveScrollPosition() {
@@ -8167,7 +8522,13 @@ FLIPBOOK.ProgressBar = class {
         bar.tabIndex = 0;
 
         // Theming via CSS variables
-        if (this.colors.bg) bar.style.setProperty('--progress-bg', this.colors.bg);
+        if (this.colors.bg) {
+            bar.style.setProperty('--progress-bg', this.colors.bg);
+            // The default track is a dimmed tint of the skin colour. An explicitly
+            // chosen colour is meant as-is, so drop the dimming (base and hover).
+            bar.style.setProperty('--progress-bg-opacity', '1');
+            bar.style.setProperty('--progress-bg-opacity-hover', '1');
+        }
         if (this.colors.fill) bar.style.setProperty('--progress-fill', this.colors.fill);
         if (this.colors.thumb) bar.style.setProperty('--progress-thumb', this.colors.thumb);
         if (this.colors.thumbBorder) bar.style.setProperty('--progress-thumb-border', this.colors.thumbBorder);

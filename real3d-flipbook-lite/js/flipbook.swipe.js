@@ -334,6 +334,17 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
     }
 
     setRightIndex(value) {
+        // rightIndex must address a real page. RTL page maths can overshoot by one:
+        // main.goToPage() maps page 0 to pages.length + 1 and deliberately skips its
+        // upper clamp when rightToLeft is set, and goToPage()'s numSheets * 2 cap then
+        // lands one past the last page on an odd page count. That left no `right`
+        // page, so the book was written into a different carousel slide from the one
+        // parked in view — rendering it a full page width off-screen — and next/prev
+        // could not move off it. Guarded on pagesArr being populated: the constructor
+        // sets rightIndex before the pages are built.
+        if (this.singlePage && this.pagesArr.length && value >= this.pagesArr.length) {
+            value = this.pagesArr.length - 1;
+        }
         this.rightIndex = value;
         // Free far-away page bitmaps. Each loaded page holds a
         // pageTextureLarge IMG (~16MB), so without GC, flipping

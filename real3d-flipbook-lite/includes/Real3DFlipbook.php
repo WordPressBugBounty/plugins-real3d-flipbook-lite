@@ -596,6 +596,8 @@ class Real3DFlipbook
 					}
 				}
 
+				$flipbook = $this->sanitize_flipbook_fields($flipbook);
+
 				$oldFlipbook = get_option('real3dflipbook_' . $flipbook_id);
 
 				if ($oldFlipbook && isset($oldFlipbook['notes'])) {
@@ -637,6 +639,110 @@ class Real3DFlipbook
 				update_option('real3dflipbooks_ids', $real3dflipbooks_ids);
 			}
 		}
+	}
+
+	private function sanitize_flipbook_fields($flipbook)
+	{
+		if (!is_array($flipbook)) {
+			return $flipbook;
+		}
+
+		if (isset($flipbook['tableOfContent']) && is_array($flipbook['tableOfContent'])) {
+			$flipbook['tableOfContent'] = $this->sanitize_toc_items($flipbook['tableOfContent']);
+		}
+
+		if (isset($flipbook['pages']) && is_array($flipbook['pages'])) {
+			foreach ($flipbook['pages'] as $pageIndex => $page) {
+				if (!is_array($page)) {
+					continue;
+				}
+
+				if (isset($page['title']) && is_string($page['title'])) {
+					$flipbook['pages'][$pageIndex]['title'] = sanitize_text_field($page['title']);
+				}
+
+				foreach (array('src', 'thumb', 'json') as $urlField) {
+					if (isset($page[$urlField]) && is_string($page[$urlField])) {
+						$flipbook['pages'][$pageIndex][$urlField] = $this->sanitize_asset_url($page[$urlField]);
+					}
+				}
+			}
+		}
+
+		if (isset($flipbook['socialShare']) && is_array($flipbook['socialShare'])) {
+			foreach ($flipbook['socialShare'] as $shareIndex => $share) {
+				if (!is_array($share)) {
+					continue;
+				}
+
+				foreach (array('name', 'icon') as $textField) {
+					if (isset($share[$textField]) && is_string($share[$textField])) {
+						$flipbook['socialShare'][$shareIndex][$textField] = sanitize_text_field($share[$textField]);
+					}
+				}
+
+				if (isset($share['url']) && is_string($share['url'])) {
+					$flipbook['socialShare'][$shareIndex]['url'] = $this->sanitize_asset_url($share['url']);
+				}
+
+				if (isset($share['target'])) {
+					$flipbook['socialShare'][$shareIndex]['target'] = ('_self' === $share['target']) ? '_self' : '_blank';
+				}
+			}
+		}
+
+		return $flipbook;
+	}
+
+	private function sanitize_toc_items($items)
+	{
+		if (!is_array($items)) {
+			return array();
+		}
+
+		foreach ($items as $index => $item) {
+			if (!is_array($item)) {
+				continue;
+			}
+
+			if (isset($item['title']) && is_string($item['title'])) {
+				$items[$index]['title'] = sanitize_text_field($item['title']);
+			}
+
+			if (isset($item['page']) && is_string($item['page'])) {
+				$items[$index]['page'] = sanitize_text_field($item['page']);
+			}
+
+			if (isset($item['items']) && is_array($item['items'])) {
+				$items[$index]['items'] = $this->sanitize_toc_items($item['items']);
+			}
+		}
+
+		return $items;
+	}
+
+	private function sanitize_asset_url($url)
+	{
+		if (!is_string($url) || '' === $url) {
+			return '';
+		}
+
+		$url = preg_replace('#[\x00-\x1f\x7f<>"\'`]#', '', $url);
+		$url = str_replace(' ', '%20', trim($url));
+
+		if ('' === $url) {
+			return '';
+		}
+
+		if (preg_match('#^data:image/[a-z0-9.+\-]+;base64,#i', $url)) {
+			return preg_replace('#[^a-z0-9:;,/+=.\-]#i', '', $url);
+		}
+
+		if (preg_match('#^[a-z][a-z0-9+.\-]*:#i', $url)) {
+			return '' === esc_url_raw($url) ? '' : $url;
+		}
+
+		return $url;
 	}
 
 	public function load_r3d_template($template)
@@ -683,7 +789,7 @@ class Real3DFlipbook
 
 		check_ajax_referer('r3d_nonce', 'security');
 
-		if (!current_user_can(get_option('real3dflipbook_capability', 'publish_posts'))) {
+		if (!current_user_can('manage_options')) {
 			wp_die(
 				esc_html__('You do not have permission to perform this action.', 'real3d-flipbook'),
 				esc_html__('Error', 'real3d-flipbook'),
@@ -757,7 +863,7 @@ class Real3DFlipbook
 	{
 		check_ajax_referer('r3d_nonce', 'security');
 
-		if (!current_user_can(get_option('real3dflipbook_capability', 'publish_posts'))) {
+		if (!current_user_can('manage_options')) {
 			wp_send_json_error(esc_html__('You do not have permission to perform this action.', 'real3d-flipbook'), 403);
 		}
 
@@ -851,7 +957,7 @@ class Real3DFlipbook
 			'real3d_flipbook_admin',
 			esc_html__('Import / Export', 'real3d-flipbook'),
 			esc_html__('Import / Export', 'real3d-flipbook'),
-			$capability,
+			'manage_options',
 			'real3d_flipbook_import',
 			array($this, "import")
 		);
@@ -1090,6 +1196,13 @@ class Real3DFlipbook
 
 	public function import()
 	{
+		if (!current_user_can('manage_options')) {
+			wp_die(
+				esc_html__('You do not have permission to access this page.', 'real3d-flipbook'),
+				esc_html__('Error', 'real3d-flipbook'),
+				['response' => 403]
+			);
+		}
 
 		include_once(plugin_dir_path(__FILE__) . 'import.php');
 	}
@@ -1685,23 +1798,20 @@ a:hover .link-icon {
 	{
 		if (!$this->needs_global_options) return;
 
-		// The JSON_HEX_* flags keep <, >, & and quotes out of the script-data context, so
-		// no option value can emit a literal </script and terminate the enclosing element.
-		// JSON.parse restores the original characters, so option values are unchanged.
 		$json_flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
 			| JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
 
 		$json_global = wp_json_encode($this->flipbook_global, $json_flags);
 
 		echo '<script type="application/json" id="real3dflipbook-global-options">';
-		echo $json_global; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Tag-safe JSON; script data must not be HTML-escaped.
+		echo $json_global; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- script data must not be HTML-escaped.
 		echo '</script>';
 
 		foreach ($this->flipbook_options as $bookId => $flipbook) {
 			$json = wp_json_encode($flipbook, $json_flags);
 
 			echo '<script type="application/json" class="real3dflipbook-options" data-book-id="' . esc_attr($bookId) . '">';
-			echo $json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Tag-safe JSON; script data must not be HTML-escaped.
+			echo $json; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- script data must not be HTML-escaped.
 			echo '</script>';
 		}
 	}

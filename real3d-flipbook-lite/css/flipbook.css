@@ -350,6 +350,30 @@
   background-clip: padding-box;
 }
 
+/* Page 1 shown flat while the webgl scene is still being built. Sized and
+   centered from JS to match where the book will draw it; fades out once the
+   first real frame has landed. */
+.flipbook-first-page-preloader {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  /* Swallows pointer input: there is nothing behind it worth flipping or
+     dragging until the book has drawn its first frame. */
+  pointer-events: auto;
+  user-select: none;
+  opacity: 1;
+  /* Approximates the book's own drop shadow so the handover isn't a bare
+     rectangle appearing and vanishing. */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  transition: opacity 0.35s ease;
+}
+
+.flipbook-first-page-preloader-hidden {
+  opacity: 0;
+}
+
 .flipbook-currentPageHolder {
   position: relative;
   z-index: 3;
@@ -421,6 +445,21 @@
   z-index: 999999 !important;
   margin: 0 !important;
   padding: 0 !important;
+}
+
+/* Fake fullscreen (iOS) covers the whole page, so a transparent or semi-transparent
+   book background would show the website through it. This paints underneath: an
+   opaque book background hides it, a semi-transparent one blends against it instead
+   of against the site. */
+.flipbook-browser-fullscreen::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgb(81, 85, 88);
+  pointer-events: none;
 }
 
 .flipbook-browser-fullscreen .flipbook-bookLayer {
@@ -658,6 +697,18 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   border-radius: 999px;
   padding: 0 8px;
+}
+
+/* When the grouped pill supplies the capsule, the floating bar behind it
+   must not draw a second one. The bar's own margin is dropped too so the pill
+   tucks close to the bottom edge instead of sitting on the book — clearance
+   then comes from floatingBtnMargin alone. */
+.flipbook-menu-floating.flipbook-menu-bare {
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }
 
 /* Grouped floating pill — multiple floating buttons share one pill container */
@@ -2619,14 +2670,17 @@
   z-index: 4;
 }
 
+/* Colours come from the --progress-* variables the ProgressBar sets from
+   options.progressBar (color / background); they fall back to the skin colour
+   so books that don't set them look exactly as before. */
 .flipbook-progress-bar .progress-track {
   position: absolute;
   top: 4px;
   left: 0;
   right: 0;
   height: var(--pb-height, 4px);
-  background: var(--flipbook-color);
-  opacity: 0.15;
+  background: var(--progress-bg, var(--flipbook-color));
+  opacity: var(--progress-bg-opacity, 0.15);
   border-radius: calc(var(--pb-height, 4px) / 2);
   z-index: 1;
 }
@@ -2635,7 +2689,7 @@
   top: 4px;
   left: 0;
   height: var(--pb-height, 4px);
-  background: var(--flipbook-color);
+  background: var(--progress-fill, var(--flipbook-color));
   opacity: 1;
   border-radius: calc(var(--pb-height, 4px) / 2);
   z-index: 2;
@@ -2647,8 +2701,8 @@
   left: 0%;
   width: 12px;
   height: 12px;
-  background: var(--flipbook-color);
-  border: none;
+  background: var(--progress-thumb, var(--progress-fill, var(--flipbook-color)));
+  border: var(--progress-thumb-border, none);
   border-radius: 50%;
   opacity: 1;
   transform: translate(-50%, -50%);
@@ -2663,7 +2717,7 @@
 }
 .flipbook-progress-bar:hover .progress-track {
   transform: scaleY(1.8);
-  opacity: 0.25;
+  opacity: var(--progress-bg-opacity-hover, 0.25);
 }
 .flipbook-progress-bar:hover .progress-filled {
   transform: scaleY(1.8);

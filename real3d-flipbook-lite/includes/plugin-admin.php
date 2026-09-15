@@ -171,3 +171,65 @@ function r3dfb_save_thumbnail_callback()
 
 	wp_send_json_success(['thumbnail_url' => $thumbnail_url]);
 }
+
+add_action('admin_init', 'r3dfb_dismiss_pdf_links_notice');
+
+function r3dfb_dismiss_pdf_links_notice()
+{
+	if (!isset($_GET['r3d_dismiss_pdf_links'])) {
+		return;
+	}
+
+	if (!current_user_can('manage_options')) {
+		return;
+	}
+
+	check_admin_referer('r3d_dismiss_pdf_links');
+
+	update_option('r3dfb_pdf_links_notice_dismissed', '1', false);
+
+	wp_safe_redirect(remove_query_arg(array('r3d_dismiss_pdf_links', '_wpnonce')));
+	exit;
+}
+
+add_action('admin_notices', 'r3dfb_pdf_links_notice');
+
+// Shown only while real3dflipbook_global has no stored convertPDFLinks value, which
+// is the case for sites that upgraded from a version predating the option. Saving
+// the settings page writes a value and clears the notice, as does Dismiss.
+function r3dfb_pdf_links_notice()
+{
+	global $pagenow, $post_type;
+
+	if (!current_user_can('manage_options')) {
+		return;
+	}
+
+	if (get_option('r3dfb_pdf_links_notice_dismissed')) {
+		return;
+	}
+
+	$page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+	$on_r3d_screen = ('plugins.php' === $pagenow)
+		|| (in_array($pagenow, array('edit.php', 'post.php', 'post-new.php'), true) && 'r3d' === $post_type)
+		|| (0 === strpos($page, 'real3d_flipbook'));
+
+	if (!$on_r3d_screen) {
+		return;
+	}
+
+	$globals = get_option('real3dflipbook_global');
+	if (!is_array($globals) || array_key_exists('convertPDFLinks', $globals)) {
+		return;
+	}
+
+	printf(
+		'<div class="notice notice-warning"><p><strong>%1$s</strong> %2$s</p><p><a href="%3$s" class="button button-secondary">%4$s</a> &nbsp; <a href="%5$s">%6$s</a></p></div>',
+		esc_html__('Real3D Flipbook:', 'real3d-flipbook'),
+		esc_html__('Opening PDF links as flipbooks is now off by default. This site was using the previous default, so links to PDF files now open the file instead of a flipbook. You can switch it back on under Settings > Overrides.', 'real3d-flipbook'),
+		esc_url(admin_url('admin.php?page=real3d_flipbook_settings')),
+		esc_html__('Open settings', 'real3d-flipbook'),
+		esc_url(wp_nonce_url(add_query_arg('r3d_dismiss_pdf_links', '1'), 'r3d_dismiss_pdf_links')),
+		esc_html__('Dismiss', 'real3d-flipbook')
+	);
+}

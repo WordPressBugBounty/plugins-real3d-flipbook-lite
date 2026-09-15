@@ -10,8 +10,6 @@ if (!defined('ABSPATH')) {
 	.r3d-help .r3d-help-hero { text-align: center; padding: 48px 20px 10px; }
 	.r3d-help .r3d-help-hero h1 { font-size: 2.4em; margin: 0 0 12px; }
 	.r3d-help .r3d-help-hero p { font-size: 1.15em; color: #50575e; margin: 0 auto 22px; max-width: 640px; }
-	.r3d_wrap.r3d-help .button-primary { background: #84af05; border-color: #719504; }
-	.r3d_wrap.r3d-help .button-primary:hover, .r3d_wrap.r3d-help .button-primary:focus { background: #719504; border-color: #5e7c03; }
 	.r3d-help .r3d-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 36px 0 16px; }
 	.r3d-help .r3d-step { background: #fff; border: 1px solid #dcdcde; border-radius: 8px; padding: 24px; position: relative; }
 	.r3d-help .r3d-step-num { display: inline-block; width: 28px; height: 28px; line-height: 28px; text-align: center; background: #84af05; color: #fff; border-radius: 50%; font-weight: 600; margin-bottom: 12px; }
@@ -30,12 +28,30 @@ if (!defined('ABSPATH')) {
 	@media (max-width: 782px) { .r3d-help .r3d-steps { grid-template-columns: 1fr; } }
 	</style>
 
+	<?php
+	// Sites that already have flipbooks shouldn't be greeted as new installs.
+	$r3d_counts = wp_count_posts('r3d');
+	$r3d_has_flipbooks = $r3d_counts && (
+		(int) ($r3d_counts->publish ?? 0)
+		+ (int) ($r3d_counts->draft ?? 0)
+		+ (int) ($r3d_counts->private ?? 0)
+	) > 0;
+	?>
 	<div class="r3d-help-hero">
-		<h1><?php esc_html_e('Welcome to Real3D Flipbook', 'real3d-flipbook'); ?></h1>
+		<h1><?php echo $r3d_has_flipbooks
+			? esc_html__('Real3D Flipbook', 'real3d-flipbook')
+			: esc_html__('Welcome to Real3D Flipbook', 'real3d-flipbook'); ?></h1>
 		<p><?php esc_html_e('Transform your PDFs and images into engaging flipbooks — portfolios, magazines, brochures and product catalogs with a realistic 3D page flip.', 'real3d-flipbook'); ?></p>
 		<a href="<?php echo esc_url(admin_url('post-new.php?post_type=r3d')); ?>" class="button button-primary button-hero">
-			<?php esc_html_e('Create your first flipbook', 'real3d-flipbook'); ?>
+			<?php echo $r3d_has_flipbooks
+				? esc_html__('Add new flipbook', 'real3d-flipbook')
+				: esc_html__('Create your first flipbook', 'real3d-flipbook'); ?>
 		</a>
+		<?php if ($r3d_has_flipbooks) { ?>
+		<a href="<?php echo esc_url(admin_url('edit.php?post_type=r3d')); ?>" class="button button-hero">
+			<?php esc_html_e('View your flipbooks', 'real3d-flipbook'); ?>
+		</a>
+		<?php } ?>
 	</div>
 
 	<div class="r3d-steps">
