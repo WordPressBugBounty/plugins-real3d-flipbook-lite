@@ -1,4 +1,7 @@
 <?php
+if (!defined('ABSPATH')) {
+	exit;
+}
 // Shared core helpers — defined only in Lite (Pro requires Lite and uses these).
 
 if (!function_exists('trace')) {
@@ -258,101 +261,101 @@ if (!function_exists("r3dfb_getDefaults")) {
 			'tiltMin' => '0',
 			'currentPage' => array(
 				'enabled' => 'true',
-				'title' => __('Current page', 'real3d-flipbook'),
+				'title' => __('Current page', 'real3d-flipbook-lite'),
 				'hAlign' => 'left',
 				'vAlign' => 'top'
 			),
 			'btnAutoplay' => array(
 				'enabled' => 'true',
-				'title' => __('Auto flip', 'real3d-flipbook')
+				'title' => __('Auto flip', 'real3d-flipbook-lite')
 			),
 			'btnNext' => array(
 				'enabled' => 'true',
-				'title' => __('Next Page', 'real3d-flipbook')
+				'title' => __('Next Page', 'real3d-flipbook-lite')
 			),
 			'btnLast' => array(
 				'enabled' => 'false',
-				'title' => __('Last Page', 'real3d-flipbook')
+				'title' => __('Last Page', 'real3d-flipbook-lite')
 			),
 			'btnPrev' => array(
 				'enabled' => 'true',
-				'title' => __('Previous Page', 'real3d-flipbook')
+				'title' => __('Previous Page', 'real3d-flipbook-lite')
 			),
 			'btnFirst' => array(
 				'enabled' => 'false',
-				'title' => __('First Page', 'real3d-flipbook')
+				'title' => __('First Page', 'real3d-flipbook-lite')
 			),
 			'btnZoomIn' => array(
 				'enabled' => 'true',
-				'title' => __('Zoom in', 'real3d-flipbook')
+				'title' => __('Zoom in', 'real3d-flipbook-lite')
 			),
 			'btnZoomOut' => array(
 				'enabled' => 'true',
-				'title' => __('Zoom out', 'real3d-flipbook')
+				'title' => __('Zoom out', 'real3d-flipbook-lite')
 			),
 			'btnToc' => array(
 				'enabled' => 'true',
-				'title' => __('Table of Contents', 'real3d-flipbook')
+				'title' => __('Table of Contents', 'real3d-flipbook-lite')
 			),
 			'btnThumbs' => array(
 				'enabled' => 'true',
-				'title' => __('Pages', 'real3d-flipbook')
+				'title' => __('Pages', 'real3d-flipbook-lite')
 			),
 			'btnShare' => array(
 				'enabled' => 'true',
-				'title' => __('Share', 'real3d-flipbook')
+				'title' => __('Share', 'real3d-flipbook-lite')
 			),
 			'btnNotes' => array(
 				'enabled' => 'false',
-				'title' => __('Notes', 'real3d-flipbook')
+				'title' => __('Notes', 'real3d-flipbook-lite')
 			),
 			'btnDownloadPages' => array(
 				'enabled' => 'false',
 				'url' => '',
-				'title' => __('Download pages', 'real3d-flipbook')
+				'title' => __('Download pages', 'real3d-flipbook-lite')
 			),
 			'btnDownloadPdf' => array(
 				'enabled' => 'true',
 				'url' => '',
-				'title' => __('Download PDF', 'real3d-flipbook'),
+				'title' => __('Download PDF', 'real3d-flipbook-lite'),
 				'forceDownload' => 'true',
 				'openInNewWindow' => 'true'
 			),
 			'btnSound' => array(
 				'enabled' => 'true',
-				'title' => __('Sound', 'real3d-flipbook')
+				'title' => __('Sound', 'real3d-flipbook-lite')
 			),
 			'btnExpand' => array(
 				'enabled' => 'true',
-				'title' => __('Toggle fullscreen', 'real3d-flipbook')
+				'title' => __('Toggle fullscreen', 'real3d-flipbook-lite')
 			),
 			'btnSingle' => array(
 				'enabled' => 'true',
-				'title' => __('Toggle single page', 'real3d-flipbook')
+				'title' => __('Toggle single page', 'real3d-flipbook-lite')
 			),
 			'btnSearch' => array(
 				'enabled' => 'false',
-				'title' => __('Search', 'real3d-flipbook')
+				'title' => __('Search', 'real3d-flipbook-lite')
 			),
 			'search' => array(
 				'enabled' => 'false',
-				'title' => __('Search', 'real3d-flipbook')
+				'title' => __('Search', 'real3d-flipbook-lite')
 			),
 			'btnBookmark' => array(
 				'enabled' => 'false',
-				'title' => __('Bookmark', 'real3d-flipbook')
+				'title' => __('Bookmark', 'real3d-flipbook-lite')
 			),
 			'btnPrint' => array(
 				'enabled' => 'true',
-				'title' => __('Print', 'real3d-flipbook')
+				'title' => __('Print', 'real3d-flipbook-lite')
 			),
 			'btnTools' => array(
 				'enabled' => 'true',
-				'title' => __('More', 'real3d-flipbook')
+				'title' => __('More', 'real3d-flipbook-lite')
 			),
 			'btnClose' => array(
 				'enabled' => 'true',
-				'title' => __('Close', 'real3d-flipbook')
+				'title' => __('Close', 'real3d-flipbook-lite')
 			),
 
 			'whatsapp' => array(
@@ -474,34 +477,34 @@ if (!function_exists("r3dfb_getDefaults")) {
 			'disableRange' => 'false',
 
 			'strings' => array(
-				'print' => __('Print', 'real3d-flipbook'),
-				'printLeftPage' => __('Print left page', 'real3d-flipbook'),
-				'printRightPage' => __('Print right page', 'real3d-flipbook'),
-				'printCurrentPage' => __('Print current page', 'real3d-flipbook'),
-				'printAllPages' => __('Print all pages', 'real3d-flipbook'),
-				'download' => __('Download', 'real3d-flipbook'),
-				'downloadLeftPage' => __('Download left page', 'real3d-flipbook'),
-				'downloadRightPage' => __('Download right page', 'real3d-flipbook'),
-				'downloadCurrentPage' => __('Download current page', 'real3d-flipbook'),
-				'downloadAllPages' => __('Download all pages', 'real3d-flipbook'),
-				'bookmarks' => __('Bookmarks', 'real3d-flipbook'),
-				'bookmarkLeftPage' => __('Bookmark left page', 'real3d-flipbook'),
-				'bookmarkRightPage' => __('Bookmark right page', 'real3d-flipbook'),
-				'bookmarkCurrentPage' => __('Bookmark current page', 'real3d-flipbook'),
-				'search' => __('Search', 'real3d-flipbook'),
-				'findInDocument' => __('Find in document', 'real3d-flipbook'),
-				'pagesFoundContaining' => __('pages found containing', 'real3d-flipbook'),
-				'noMatches' => __('No matches', 'real3d-flipbook'),
-				'matchesFound' => __('matches found', 'real3d-flipbook'),
-				'page' => __('Page', 'real3d-flipbook'),
-				'matches' => __('matches', 'real3d-flipbook'),
-				'thumbnails' => __('Thumbnails', 'real3d-flipbook'),
-				'tableOfContent' => __('Table of Contents', 'real3d-flipbook'),
-				'share' => __('Share', 'real3d-flipbook'),
-				'pressEscToClose' => __('Press ESC to close', 'real3d-flipbook'),
-				'password' => __('Password', 'real3d-flipbook'),
-				'addNote' => __('Add note', 'real3d-flipbook'),
-				'typeInYourNote' => __('Type in your note...', 'real3d-flipbook'),
+				'print' => __('Print', 'real3d-flipbook-lite'),
+				'printLeftPage' => __('Print left page', 'real3d-flipbook-lite'),
+				'printRightPage' => __('Print right page', 'real3d-flipbook-lite'),
+				'printCurrentPage' => __('Print current page', 'real3d-flipbook-lite'),
+				'printAllPages' => __('Print all pages', 'real3d-flipbook-lite'),
+				'download' => __('Download', 'real3d-flipbook-lite'),
+				'downloadLeftPage' => __('Download left page', 'real3d-flipbook-lite'),
+				'downloadRightPage' => __('Download right page', 'real3d-flipbook-lite'),
+				'downloadCurrentPage' => __('Download current page', 'real3d-flipbook-lite'),
+				'downloadAllPages' => __('Download all pages', 'real3d-flipbook-lite'),
+				'bookmarks' => __('Bookmarks', 'real3d-flipbook-lite'),
+				'bookmarkLeftPage' => __('Bookmark left page', 'real3d-flipbook-lite'),
+				'bookmarkRightPage' => __('Bookmark right page', 'real3d-flipbook-lite'),
+				'bookmarkCurrentPage' => __('Bookmark current page', 'real3d-flipbook-lite'),
+				'search' => __('Search', 'real3d-flipbook-lite'),
+				'findInDocument' => __('Find in document', 'real3d-flipbook-lite'),
+				'pagesFoundContaining' => __('pages found containing', 'real3d-flipbook-lite'),
+				'noMatches' => __('No matches', 'real3d-flipbook-lite'),
+				'matchesFound' => __('matches found', 'real3d-flipbook-lite'),
+				'page' => __('Page', 'real3d-flipbook-lite'),
+				'matches' => __('matches', 'real3d-flipbook-lite'),
+				'thumbnails' => __('Thumbnails', 'real3d-flipbook-lite'),
+				'tableOfContent' => __('Table of Contents', 'real3d-flipbook-lite'),
+				'share' => __('Share', 'real3d-flipbook-lite'),
+				'pressEscToClose' => __('Press ESC to close', 'real3d-flipbook-lite'),
+				'password' => __('Password', 'real3d-flipbook-lite'),
+				'addNote' => __('Add note', 'real3d-flipbook-lite'),
+				'typeInYourNote' => __('Type in your note...', 'real3d-flipbook-lite'),
 			),
 
 			'access' => 'free', //free, woo_subscription, ...

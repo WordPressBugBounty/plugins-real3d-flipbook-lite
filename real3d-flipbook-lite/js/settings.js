@@ -28,15 +28,17 @@ function r3d_escAttr(value) {
           '<h2 style="margin:12px 0 4px;font-size:20px;font-weight:600;color:#1d2327;">This is a PRO feature</h2>' +
           '<p style="margin:0 0 16px;color:#50575e;font-size:13px;">Upgrade to Real3D Flipbook PRO to unlock:</p>' +
           '<ul style="list-style:none;display:inline-block;text-align:left;margin:0 0 16px;padding:0;color:#1d2327;font-size:13.5px;line-height:2.1;">' +
-          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>4K resolution zoom</li>' +
-          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Optimized page loading</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Deeper zoom</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Sharper pages</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>PDF links and text search</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Bookmarks, autoplay and page downloads</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Toolbar and UI customization</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Lightbox customization</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Analytics and deep linking</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Mobile and global settings</li>' +
           '</ul>' +
           '<div style="background:#f6f7f7;border-radius:8px;padding:9px 12px;margin:0 0 10px;font-size:12px;color:#50575e;">Plans from $49/year &middot; 30-day money-back guarantee &middot; Your flipbooks carry over</div>' +
-          '<a style="font-size:12px;color:#2271b1;" href="https://real3dflipbook.com/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=popup-settings" target="_blank">See live demos</a>' +
+          '<a style="font-size:12px;color:var(--wp-admin-theme-color,#2271b1);" href="https://real3dflipbook.com/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=popup-settings" target="_blank">See live demos</a>' +
           '</div>',
         showCancelButton: true,
         showCloseButton: true,
@@ -108,31 +110,31 @@ function r3d_escAttr(value) {
           "overridePDFEmbedder",
           "checkbox",
           "PDF Embedder",
-          "Render shortcode <code>[pdf-embedder url='...']</code> with Real3D Flipook",
+          "Render shortcode <code>[pdf-embedder url='...']</code> with Real3D Flipbook",
         ],
         [
           "overrideDflip",
           "checkbox",
           "DearFlip",
-          "Render shortcode <code>[dflip source='...']</code> or <code>[dflip id='...']</code> with Real3D Flipook",
+          "Render shortcode <code>[dflip source='...']</code> or <code>[dflip id='...']</code> with Real3D Flipbook",
         ],
         [
           "overrideWonderPDFEmbed",
           "checkbox",
           "Wonder PDF Embed",
-          "Render shortcode <code>[wonderplugin_pdf src='...']</code> with Real3D Flipook",
+          "Render shortcode <code>[wonderplugin_pdf src='...']</code> with Real3D Flipbook",
         ],
         [
           "override3DFlipBook",
           "checkbox",
           "3D Flipbook",
-          "Render shortcode <code>[3d-flip-book pdf='...']</code> or <code>[3d-flip-book id='...']</code> with Real3D Flipook",
+          "Render shortcode <code>[3d-flip-book pdf='...']</code> or <code>[3d-flip-book id='...']</code> with Real3D Flipbook",
         ],
         [
           "overridePDFjsViewer",
           "checkbox",
           "PDF.js Viewer",
-          "Render shortcode <code>[pdfjs-viewer url='...']</code> with Real3D Flipook",
+          "Render shortcode <code>[pdfjs-viewer url='...']</code> with Real3D Flipbook",
         ],
       ],
       advanced: [
@@ -279,7 +281,7 @@ function r3d_escAttr(value) {
           break;
       }
 
-      if (typeof help != "undefined")
+      if (help)
         var p = $('<p class="description">' + help + "</p>").appendTo(td);
     }
 
@@ -308,6 +310,13 @@ function r3d_escAttr(value) {
       ]);
 
       addOption(name, name + "[order]", "text", "Order");
+
+      if (
+        ["currentPage", "btnPrev", "btnNext", "btnTools", "btnClose", "search"].indexOf(
+          name
+        ) === -1
+      )
+        addOption(name, name + "[toolsMenu]", "checkbox", "In Tools menu");
     }
 
     var menuButtonNames = [
@@ -482,6 +491,14 @@ function r3d_escAttr(value) {
         });
         $tdPos.prepend($pos);
 
+        var $tdTools = $('<td class="r3d-mb-tools"></td>').appendTo($tr);
+        var $toolsMenu = $src.find('[name="' + btn.name + '[toolsMenu]"]');
+        if ($toolsMenu.length) {
+          var $rowTools = $toolsMenu.closest("tr");
+          $tdTools.append($toolsMenu);
+          $rowTools.remove();
+        }
+
         var $tdMore = $('<td class="r3d-mb-more"></td>').appendTo($tr);
         var $rest = $src.find("tbody tr");
         if (btn.name === "btnShare") {
@@ -490,7 +507,7 @@ function r3d_escAttr(value) {
         var $extras = null;
         if ($rest.length) {
           $extras = $(
-            '<tr class="r3d-mb-extras" style="display:none;"><td></td><td colspan="5"></td></tr>'
+            '<tr class="r3d-mb-extras" style="display:none;"><td></td><td colspan="6"></td></tr>'
           );
           var $extraTable = $('<table class="form-table"><tbody></tbody></table>');
           $extraTable.find("tbody").append($rest);
@@ -539,7 +556,7 @@ function r3d_escAttr(value) {
         if (mbLockedIcon) $tdLockedName.append(mbLockedIcon);
         $tdLockedName.append($("<span></span>").text(btn.title));
         $tdLockedName.append('<span class="r3d-mb-pro-badge">PRO</span>');
-        $('<td colspan="4"></td>').appendTo($tr);
+        $('<td colspan="5"></td>').appendTo($tr);
         $tbody.append($tr);
       });
       
@@ -560,123 +577,100 @@ function r3d_escAttr(value) {
 
     r3dBuildMenuButtonsTable();
 
+    function r3dLayoutNote(shown) {
+      var preset = !!shown && shown !== "1";
+      $(".r3d-mb-table").toggleClass("is-preset", preset);
+      $("#r3d-pick-layout-note")
+        .text(
+          shown === "6"
+            ? "Minimal hides most toolbar buttons, whatever the Enabled column says. Button positions only apply to the Bottom bar style."
+            : "This style places the toolbar buttons itself, so the Position column only applies to the Bottom bar style."
+        )
+        .toggle(preset);
+    }
+
+    function r3dPicker($box, name, items, onPaint) {
+      var $select = $box
+        .closest("form")
+        .find('select[name="' + name + '"]');
+      if (!$box.length || !$select.length) return;
+
+      function paint() {
+        var shown = $select.val() || items[0].value;
+        $box.find(".r3d-pick-item").each(function () {
+          var on = this.getAttribute("data-value") === shown;
+          this.classList.toggle("is-selected", on);
+          this.setAttribute("aria-pressed", String(on));
+        });
+        if (onPaint) onPaint(shown);
+      }
+
+      items.forEach(function (item) {
+        $('<button type="button" class="r3d-pick-item"></button>')
+          .attr("data-value", item.value)
+          .append($("<img>", { src: item.img, alt: "", loading: "lazy" }))
+          .append($('<span class="r3d-pick-label"></span>').text(item.label))
+          .on("click", function () {
+            $select.val(item.value).trigger("change");
+          })
+          .appendTo($box);
+      });
+      $select.on("change", paint);
+      paint();
+    }
+
+    (function r3dStylePickers() {
+      var script = document.querySelector('script[src*="js/settings"]');
+      if (!script) return;
+      var base = script.src.split("js/settings")[0] + "assets/images/toolbar/";
+      r3dPicker(
+        $("#r3d-pick-layout"),
+        "layout",
+        [
+          ["1", "Bottom bar"],
+          ["2", "Top corners"],
+          ["3", "Top bar"],
+          ["4", "Top pill"],
+          ["5", "Bottom corners"],
+          ["6", "Minimal"],
+          ["7", "Player"],
+          ["8", "Pill"],
+        ].map(function (layout) {
+          return {
+            value: layout[0],
+            label: layout[1],
+            img: base + "layout-" + layout[0] + ".webp",
+          };
+        }),
+        r3dLayoutNote
+      );
+      r3dPicker($("#r3d-pick-icons"), "iconSet", [
+        {
+          value: "fontawesome",
+          label: "FontAwesome",
+          img: base + "icons-fontawesome.webp",
+        },
+        { value: "lucide", label: "Lucide", img: base + "icons-lucide.webp" },
+      ]);
+
+      var $mbBox = $("#r3d-mb-box");
+      try {
+        if (window.localStorage.getItem("r3dToolbarButtonsOpen") === "1")
+          $mbBox.removeClass("closed");
+      } catch (e) {}
+      $mbBox.on("click", ".hndle, .handlediv", function () {
+        setTimeout(function () {
+          try {
+            window.localStorage.setItem(
+              "r3dToolbarButtonsOpen",
+              $mbBox.hasClass("closed") ? "0" : "1"
+            );
+          } catch (e) {}
+        });
+      });
+    })();
+
     $("input.alpha-color-picker").alphaColorPicker();
-
-    var ui_layouts = {
-      default: {
-        menuOverBook: false,
-        menuFloating: false,
-        menuBackground: "",
-        menuShadow: "",
-        menuMargin: 0,
-        menuPadding: 0,
-        menuTransparent: false,
-
-        menu2OverBook: true,
-        menu2Floating: false,
-        menu2Background: "",
-        menu2Shadow: "",
-        menu2Margin: 0,
-        menu2Padding: 0,
-        menu2Transparent: true,
-
-        btnMargin: 2,
-        sideMenuOverMenu: false,
-        sideMenuOverMenu2: true,
-
-        currentPage: { hAlign: "left", vAlign: "top" },
-        btnAutoplay: { hAlign: "center", vAlign: "bottom" },
-        btnSound: { hAlign: "center", vAlign: "bottom" },
-        btnExpand: { hAlign: "center", vAlign: "bottom" },
-        btnZoomIn: { hAlign: "center", vAlign: "bottom" },
-        btnZoomOut: { hAlign: "center", vAlign: "bottom" },
-        btnSearch: { hAlign: "center", vAlign: "bottom" },
-        btnBookmark: { hAlign: "center", vAlign: "bottom" },
-        btnToc: { hAlign: "center", vAlign: "bottom" },
-        btnThumbs: { hAlign: "center", vAlign: "bottom" },
-        btnShare: { hAlign: "center", vAlign: "bottom" },
-        btnPrint: { hAlign: "center", vAlign: "bottom" },
-        btnDownloadPages: { hAlign: "center", vAlign: "bottom" },
-        btnDownloadPdf: { hAlign: "center", vAlign: "bottom" },
-      },
-      1: {},
-      2: {
-        // bottom 2
-        currentPage: { vAlign: "bottom", hAlign: "center" },
-        btnAutoplay: { hAlign: "left" },
-        btnSound: { hAlign: "left" },
-        btnExpand: { hAlign: "right" },
-        btnZoomIn: { hAlign: "right" },
-        btnZoomOut: { hAlign: "right" },
-        btnSearch: { hAlign: "left" },
-        btnBookmark: { hAlign: "left" },
-        btnToc: { hAlign: "left" },
-        btnThumbs: { hAlign: "left" },
-        btnShare: { hAlign: "right" },
-        btnPrint: { hAlign: "right" },
-        btnDownloadPages: { hAlign: "right" },
-        btnDownloadPdf: { hAlign: "right" },
-      },
-      3: {
-        // top
-        menuTransparent: true,
-        menu2Transparent: false,
-        menu2OverBook: false,
-        menu2Padding: 5,
-        btnMargin: 5,
-        currentPage: { vAlign: "top", hAlign: "center" },
-        btnPrint: { vAlign: "top", hAlign: "right" },
-        btnDownloadPdf: { vAlign: "top", hAlign: "right" },
-        btnDownloadPages: { vAlign: "top", hAlign: "right" },
-        btnThumbs: { vAlign: "top", hAlign: "left" },
-        btnToc: { vAlign: "top", hAlign: "left" },
-        btnBookmark: { vAlign: "top", hAlign: "left" },
-        btnSearch: { vAlign: "top", hAlign: "left" },
-        btnShare: { vAlign: "top", hAlign: "right" },
-        btnAutoplay: { hAlign: "right" },
-        btnExpand: { hAlign: "right" },
-        btnZoomIn: { hAlign: "right" },
-        btnZoomOut: { hAlign: "right" },
-        btnSound: { hAlign: "right" },
-        menuPadding: 5,
-      },
-      4: {
-        // top 2
-        menu2Transparent: false,
-        menu2OverBook: false,
-        sideMenuOverMenu2: false,
-        currentPage: { vAlign: "top", hAlign: "center" },
-        btnAutoplay: { vAlign: "top", hAlign: "left" },
-        btnSound: { vAlign: "top", hAlign: "left" },
-        btnExpand: { vAlign: "top", hAlign: "right" },
-        btnZoomIn: { vAlign: "top", hAlign: "right" },
-        btnZoomOut: { vAlign: "top", hAlign: "right" },
-        btnSearch: { vAlign: "top", hAlign: "left" },
-        btnBookmark: { vAlign: "top", hAlign: "left" },
-        btnToc: { vAlign: "top", hAlign: "left" },
-        btnThumbs: { vAlign: "top", hAlign: "left" },
-        btnShare: { vAlign: "top", hAlign: "right" },
-        btnPrint: { vAlign: "top", hAlign: "right" },
-        btnDownloadPages: { vAlign: "top", hAlign: "right" },
-        btnDownloadPdf: { vAlign: "top", hAlign: "right" },
-      },
-    };
-
-    $('select[name="layout"]').change(function () {
-      var name = this.value;
-
-      var defaults = ui_layouts["default"];
-      for (var key in defaults) {
-        setOptionValue(key, defaults[key]);
-      }
-
-      var obj = ui_layouts[name];
-      for (var key in obj) {
-        setOptionValue(key, obj[key]);
-      }
-
-      setOptionValue("layout", name);
-    });
 
     function updateSaveBar() {
       if (

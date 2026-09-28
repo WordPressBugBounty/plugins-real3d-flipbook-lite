@@ -1,4 +1,7 @@
 <?php
+if (!defined('ABSPATH')) {
+	exit;
+}
 
 class Real3DFlipbook
 {
@@ -85,7 +88,7 @@ class Real3DFlipbook
 			);
 
 			if (!wp_script_is('real3d-flipbook-global', 'registered')) {
-				wp_register_script('real3d-flipbook-global', false); // No source, as it's localized data only
+				wp_register_script('real3d-flipbook-global', false, array(), $this->PLUGIN_VERSION, false); // No source, as it's localized data only
 				wp_enqueue_script('real3d-flipbook-global');
 				wp_localize_script('real3d-flipbook-global', 'flipbookOptions_global', $this->flipbook_global);
 			}
@@ -424,7 +427,7 @@ class Real3DFlipbook
 
 	public function plugins_loaded()
 	{
-		load_plugin_textdomain('real3d-flipbook', false, plugin_basename(dirname(REAL3D_FLIPBOOK_FILE)) . '/languages');
+		load_plugin_textdomain('real3d-flipbook-lite', false, plugin_basename(dirname(REAL3D_FLIPBOOK_FILE)) . '/languages');
 
 		foreach ($this->products as $key => &$val) {
 			if (isset($val['class'])) {
@@ -450,12 +453,12 @@ class Real3DFlipbook
 				/* translators: %1$s is replaced with the anchor HTML for the "PDF Tools Addon" link. */
 				esc_html__(
 					'Optimize Real3D PDF Flipbooks with %1$s by converting PDF to images and JSON. Speed up the flipbook loading and secure the PDF.',
-					'real3d-flipbook'
+					'real3d-flipbook-lite'
 				),
 				sprintf(
 					'<a href="%1$s" style="text-decoration: none; font-weight: bold;" target="_blank">%2$s</a>',
 					esc_url('https://real3dflipbook.com/pdf-tools-addon/?ref=wp'),
-					esc_html__('PDF Tools Addon for Real3D Flipbook', 'real3d-flipbook')
+					esc_html__('PDF Tools Addon for Real3D Flipbook', 'real3d-flipbook-lite')
 				)
 			);
 
@@ -504,6 +507,7 @@ class Real3DFlipbook
 			add_action('admin_footer', array($this, 'admin_footer'), 11);
 
 			add_action('add_meta_boxes', array($this, 'add_meta_boxes'), 100);
+			add_action('post_submitbox_misc_actions', array($this, 'publish_box_shortcode'));
 			add_action('edit_form_after_title', [$this, 'print_content']);
 			add_action('save_post_r3d', [$this, 'save_post_r3d'], 10, 3);
 		}
@@ -571,8 +575,9 @@ class Real3DFlipbook
 				// Check if JSON decoding was successful
 				if (json_last_error() !== JSON_ERROR_NONE) {
 					wp_die(
-						esc_html(sprintf(__('Invalid JSON data: %s', 'real3d-flipbook'), json_last_error_msg())),
-						esc_html__('Error', 'real3d-flipbook'),
+						/* translators: %s: JSON error message */
+						esc_html(sprintf(__('Invalid JSON data: %s', 'real3d-flipbook-lite'), json_last_error_msg())),
+						esc_html__('Error', 'real3d-flipbook-lite'),
 						['response' => 400]
 					);
 				}
@@ -778,9 +783,9 @@ class Real3DFlipbook
 		printf(
 			'<a href="%1$s" class="thickbox button r3d-insert-flipbook-button" title="%2$s"><span class="wp-media-buttons-icon" style="background:url(%3$simages/th.png); background-repeat: no-repeat; background-position: left bottom;"></span>%4$s</a>',
 			esc_url('#TB_inline?&inlineId=choose_flipbook'),
-			esc_attr__('Select flipbook to insert into post', 'real3d-flipbook'),
+			esc_attr__('Select flipbook to insert into post', 'real3d-flipbook-lite'),
 			esc_url($this->PLUGIN_DIR_URL),
-			esc_html__('Real3D Flipbook', 'real3d-flipbook')
+			esc_html__('Real3D Flipbook', 'real3d-flipbook-lite')
 		);
 	}
 
@@ -791,8 +796,8 @@ class Real3DFlipbook
 
 		if (!current_user_can('manage_options')) {
 			wp_die(
-				esc_html__('You do not have permission to perform this action.', 'real3d-flipbook'),
-				esc_html__('Error', 'real3d-flipbook'),
+				esc_html__('You do not have permission to perform this action.', 'real3d-flipbook-lite'),
+				esc_html__('Error', 'real3d-flipbook-lite'),
 				['response' => 403]
 			);
 		}
@@ -802,15 +807,16 @@ class Real3DFlipbook
 			$newFlipbooks = json_decode($json, true);
 			if (json_last_error() !== JSON_ERROR_NONE) {
 				wp_die(
-					esc_html(sprintf(__('Invalid JSON data: %s', 'real3d-flipbook'), json_last_error_msg())),
-					esc_html__('Error', 'real3d-flipbook'),
+					/* translators: %s: JSON error message */
+					esc_html(sprintf(__('Invalid JSON data: %s', 'real3d-flipbook-lite'), json_last_error_msg())),
+					esc_html__('Error', 'real3d-flipbook-lite'),
 					['response' => 400]
 				);
 			}
 		} else {
 			wp_die(
-				esc_html__('Missing flipbooks data.', 'real3d-flipbook'),
-				esc_html__('Error', 'real3d-flipbook'),
+				esc_html__('Missing flipbooks data.', 'real3d-flipbook-lite'),
+				esc_html__('Error', 'real3d-flipbook-lite'),
 				['response' => 400]
 			);
 		}
@@ -864,7 +870,7 @@ class Real3DFlipbook
 		check_ajax_referer('r3d_nonce', 'security');
 
 		if (!current_user_can('manage_options')) {
-			wp_send_json_error(esc_html__('You do not have permission to perform this action.', 'real3d-flipbook'), 403);
+			wp_send_json_error(esc_html__('You do not have permission to perform this action.', 'real3d-flipbook-lite'), 403);
 		}
 
 		$flipbooks = array();
@@ -923,40 +929,40 @@ class Real3DFlipbook
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			esc_html__('Flipbooks', 'real3d-flipbook'),
-			esc_html__('Flipbooks', 'real3d-flipbook'),
+			esc_html__('Flipbooks', 'real3d-flipbook-lite'),
+			esc_html__('Flipbooks', 'real3d-flipbook-lite'),
 			$capability,
 			'edit.php?post_type=r3d'
 		);
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			esc_html__('Add new', 'real3d-flipbook'),
-			esc_html__('Add new', 'real3d-flipbook'),
+			esc_html__('Add new', 'real3d-flipbook-lite'),
+			esc_html__('Add new', 'real3d-flipbook-lite'),
 			$capability,
 			'post-new.php?post_type=r3d'
 		);
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			esc_html__('Categories', 'real3d-flipbook'),
-			esc_html__('Categories', 'real3d-flipbook'),
+			esc_html__('Categories', 'real3d-flipbook-lite'),
+			esc_html__('Categories', 'real3d-flipbook-lite'),
 			$capability,
 			'edit-tags.php?taxonomy=r3d_category&post_type=r3d'
 		);
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			esc_html__('Authors', 'real3d-flipbook'),
-			esc_html__('Authors', 'real3d-flipbook'),
+			esc_html__('Authors', 'real3d-flipbook-lite'),
+			esc_html__('Authors', 'real3d-flipbook-lite'),
 			$capability,
 			'edit-tags.php?taxonomy=r3d_author&post_type=r3d'
 		);
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			esc_html__('Import / Export', 'real3d-flipbook'),
-			esc_html__('Import / Export', 'real3d-flipbook'),
+			esc_html__('Import / Export', 'real3d-flipbook-lite'),
+			esc_html__('Import / Export', 'real3d-flipbook-lite'),
 			'manage_options',
 			'real3d_flipbook_import',
 			array($this, "import")
@@ -966,8 +972,8 @@ class Real3DFlipbook
 
 		add_submenu_page(
 			'real3d_flipbook_admin',
-			esc_html__('Settings', 'real3d-flipbook'),
-			esc_html__('Settings', 'real3d-flipbook'),
+			esc_html__('Settings', 'real3d-flipbook-lite'),
+			esc_html__('Settings', 'real3d-flipbook-lite'),
 			'manage_options',
 			'real3d_flipbook_settings',
 			array($this, "settings")
@@ -1057,10 +1063,10 @@ class Real3DFlipbook
 			<?php
 						if (count($flipbooks)) {
 						?>
-			<h3 style='margin-bottom: 20px;'><?php esc_html_e("Insert Flipbook", "real3d-flipbook"); ?></h3>
+			<h3 style='margin-bottom: 20px;'><?php esc_html_e("Insert Flipbook", "real3d-flipbook-lite"); ?></h3>
 			<select id='r3d-select-flipbook'>
 				<option value='' selected=selected>
-					<?php esc_html_e("Default Flipbook (Global Settings)", "real3d-flipbook"); ?>
+					<?php esc_html_e("Default Flipbook (Global Settings)", "real3d-flipbook-lite"); ?>
 				</option>
 				<?php
 								foreach ($flipbooks as $book) {
@@ -1074,42 +1080,42 @@ class Real3DFlipbook
 			</select>
 			<?php
 						} else {
-							esc_html_e("No flipbooks found. Create new flipbook or set flipbook source", "real3d-flipbook");
+							esc_html_e("No flipbooks found. Create new flipbook or set flipbook source", "real3d-flipbook-lite");
 						}
 						?>
 
-			<h3 style="margin-top: 40px;"><?php esc_html_e("Flipbook source", "real3d-flipbook") ?></h3>
-			<p><?php esc_html_e("Select PDF or images from media library, or enter PDF URL. PDF needs to be on the same domain or CORS needs to be enabled.", "real3d-flipbook") ?>
+			<h3 style="margin-top: 40px;"><?php esc_html_e("Flipbook source", "real3d-flipbook-lite") ?></h3>
+			<p><?php esc_html_e("Select PDF or images from media library, or enter PDF URL. PDF needs to be on the same domain or CORS needs to be enabled.", "real3d-flipbook-lite") ?>
 			</p>
 
 			<div class="r3d-row r3d-row-pdf">
 
 				<input type='text' class='regular-text' id='r3d-pdf-url' placeholder="PDF URL">
 				<button class='button-secondary'
-					id='r3d-select-pdf'><?php esc_html_e("Select PDF", "real3d-flipbook"); ?></button>
+					id='r3d-select-pdf'><?php esc_html_e("Select PDF", "real3d-flipbook-lite"); ?></button>
 				<button class='button-secondary'
-					id='r3d-select-images'><?php esc_html_e("Select images", "real3d-flipbook"); ?></button>
+					id='r3d-select-images'><?php esc_html_e("Select images", "real3d-flipbook-lite"); ?></button>
 				<div class="r3d-pages"></div>
 
 			</div>
 
-			<h3 style="margin-top: 40px;"><?php esc_html_e("Thumbnail", "real3d-flipbook") ?></h3>
-			<p><?php esc_html_e("Select image from media library, or enter URL.", "real3d-flipbook") ?></p>
+			<h3 style="margin-top: 40px;"><?php esc_html_e("Thumbnail", "real3d-flipbook-lite") ?></h3>
+			<p><?php esc_html_e("Select image from media library, or enter URL.", "real3d-flipbook-lite") ?></p>
 
 			<div class="r3d-row r3d-row-thumb">
 				<input type='text' class='regular-text' id='r3d-thumb-url' placeholder="Thumbnail URL">
 				<button class='button-secondary'
-					id='r3d-select-thumb'><?php esc_html_e("Select Image", "real3d-flipbook"); ?></button>
+					id='r3d-select-thumb'><?php esc_html_e("Select Image", "real3d-flipbook-lite"); ?></button>
 
 			</div>
 
-			<h3 style="margin-top: 40px;"><?php esc_html_e("Flipbook settings", "real3d-flipbook") ?></h3>
+			<h3 style="margin-top: 40px;"><?php esc_html_e("Flipbook settings", "real3d-flipbook-lite") ?></h3>
 
 			<div class="r3d-row r3d-row-mode">
 				<span class="r3d-label-wrapper"><label
-						for="r3d-mode"><?php esc_html_e("Mode", "real3d-flipbook") ?></label></span>
+						for="r3d-mode"><?php esc_html_e("Mode", "real3d-flipbook-lite") ?></label></span>
 				<select id='r3d-mode' class="r3d-setting">
-					<option selected="selected" value=""><?php esc_html_e("Default", "real3d-flipbook"); ?></option>
+					<option selected="selected" value=""><?php esc_html_e("Default", "real3d-flipbook-lite"); ?></option>
 					<option value="normal">Normal (inside div)</option>
 					<option value="lightbox">Lightbox (popup)</option>
 					<option value="fullscreen">Fullscreen</option>
@@ -1118,9 +1124,9 @@ class Real3DFlipbook
 
 			<div class="r3d-row r3d-row-thumb r3d-row-lightbox" style="display: none;">
 				<span class="r3d-label-wrapper"><label
-						for="r3d-thumb"><?php esc_html_e("Show thumbnail", "real3d-flipbook"); ?></label></span>
+						for="r3d-thumb"><?php esc_html_e("Show thumbnail", "real3d-flipbook-lite"); ?></label></span>
 				<select id='r3d-thumb' class="r3d-setting">
-					<option selected="selected" value=""><?php esc_html_e("Default", "real3d-flipbook"); ?></option>
+					<option selected="selected" value=""><?php esc_html_e("Default", "real3d-flipbook-lite"); ?></option>
 					<option value="1">yes</option>
 					<option value="">no</option>
 				</select>
@@ -1128,7 +1134,7 @@ class Real3DFlipbook
 
 			<div class="r3d-row r3d-row-class r3d-row-lightbox" style="display: none;">
 				<span class="r3d-label-wrapper"><label
-						for="r3d-class"><?php esc_html_e("CSS class", "real3d-flipbook") ?></label></span>
+						for="r3d-class"><?php esc_html_e("CSS class", "real3d-flipbook-lite") ?></label></span>
 				<input id="r3d-class" type="text" class="r3d-setting">
 			</div>
 
@@ -1138,7 +1144,7 @@ class Real3DFlipbook
 
 			<div class="r3d-row r3d-row-insert">
 				<button class="button button-primary button-large" disabled="disabled"
-					id="r3d-insert-btn"><?php esc_html_e("Insert flipbook", "real3d-flipbook"); ?></button>
+					id="r3d-insert-btn"><?php esc_html_e("Insert flipbook", "real3d-flipbook-lite"); ?></button>
 			</div>
 
 		</div>
@@ -1198,8 +1204,8 @@ class Real3DFlipbook
 	{
 		if (!current_user_can('manage_options')) {
 			wp_die(
-				esc_html__('You do not have permission to access this page.', 'real3d-flipbook'),
-				esc_html__('Error', 'real3d-flipbook'),
+				esc_html__('You do not have permission to access this page.', 'real3d-flipbook-lite'),
+				esc_html__('Error', 'real3d-flipbook-lite'),
 				['response' => 403]
 			);
 		}
@@ -1236,13 +1242,12 @@ class Real3DFlipbook
 	public function add_meta_boxes()
 	{
 
-		add_meta_box('r3d_post_meta_box_shortcode', esc_html__('Shortcode', 'real3d-flipbook'), array($this, 'create_meta_box_shortcode'), 'r3d', 'side', 'high');
 		
-		add_meta_box('r3d_post_meta_box_help', esc_html__('Help', 'real3d-flipbook'), array($this, 'create_meta_box_help'), 'r3d', 'side', 'high');
+		add_meta_box('r3d_post_meta_box_help', esc_html__('Help', 'real3d-flipbook-lite'), array($this, 'create_meta_box_help'), 'r3d', 'side', 'default');
 
 		add_meta_box(
 			'real3d_pro_features',
-			esc_html__('Upgrade to PRO', 'real3d-flipbook'), // Title of the metabox
+			esc_html__('Upgrade to PRO', 'real3d-flipbook-lite'), // Title of the metabox
 			array($this, 'pro_features_metabox_content'), // Callback function that will echo the content of the metabox
 			'r3d',
 			'normal',
@@ -1252,25 +1257,30 @@ class Real3DFlipbook
 
 	}
 
-	public function create_meta_box_shortcode($post)
+	public function publish_box_shortcode($post)
 	{
-		if ($post->post_type !== 'r3d') {
+		if (!$post || $post->post_type !== 'r3d') {
 			return;
 		}
 
 		$flipbook_id = get_post_meta($post->ID, 'flipbook_id', true);
-
-		// Check if flipbook_id is set and not empty
+		?>
+<div class="misc-pub-section r3d-publish-shortcode">
+<?php
 		if (!empty($flipbook_id)) {
 		?>
-<code>[real3dflipbook id="<?php echo esc_attr($flipbook_id); ?>"]</code>
-<div id="<?php echo esc_attr($flipbook_id); ?>" class="button-secondary copy-shortcode">Copy</div>
+	<span class="r3d-publish-shortcode-label"><?php esc_html_e('Shortcode', 'real3d-flipbook-lite'); ?></span>
+	<code>[real3dflipbook id="<?php echo esc_attr($flipbook_id); ?>"]</code>
+	<div id="<?php echo esc_attr($flipbook_id); ?>" class="button-secondary copy-shortcode">Copy</div>
 <?php
 		} else {
 		?>
-<p><?php esc_html_e('Publish the flipbook to get the shortcode.', 'real3d-flipbook'); ?></p>
+	<span class="r3d-publish-shortcode-empty"><?php esc_html_e('Publish the flipbook to get the shortcode.', 'real3d-flipbook-lite'); ?></span>
 <?php
 		}
+		?>
+</div>
+<?php
 	}
 
 
@@ -1282,36 +1292,41 @@ class Real3DFlipbook
 		?>
 <div style="padding:4px 8px 10px;">
 	<style>
-	.r3d-pro-mb-head { margin: 6px 0 0; color: #1d2327; font-size: 13px; }
-	.r3d-pro-mb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; margin: 10px 0 16px; }
-	.r3d-pro-mb-grid span { color: #50575e; font-size: 13px; }
-	.r3d-pro-mb-grid .r3d-check { color: #84af05; font-weight: 700; margin-right: 4px; }
-	.r3d-pro-mb-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-	.r3d-pro-mb-actions .button-primary { background: #84af05; border-color: #719504; }
-	.r3d-pro-mb-actions .button-primary:hover, .r3d-pro-mb-actions .button-primary:focus { background: #719504; border-color: #5e7c03; }
-	.r3d-pro-mb-note { color: #787c82; font-size: 12px; margin-top: 8px; }
+	#real3d_pro_features { border: 1px solid #1d2327; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
+	#real3d_pro_features .postbox-header { border-bottom: 0; background: #1d2327; }
+	#real3d_pro_features .postbox-header .hndle { color: #fff; font-size: 15px; }
+	#real3d_pro_features .postbox-header .handle-actions button, #real3d_pro_features .postbox-header .handle-actions button::before, #real3d_pro_features .postbox-header .handle-actions span::before { color: #c3c4c7; }
+	.r3d-pro-mb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px 24px; margin: 12px 0 20px; padding: 0; list-style: none; }
+	.r3d-pro-mb-grid li { position: relative; margin: 0; padding-left: 28px; color: #1d2327; font-size: 14px; font-weight: 500; line-height: 20px; }
+	.r3d-pro-mb-grid li::before { content: ""; position: absolute; left: 0; top: 1px; width: 18px; height: 18px; border-radius: 50%; background: #84af05 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 12px no-repeat; }	.r3d-pro-mb-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+	.wp-core-ui .r3d-pro-mb-actions .button-primary { display: inline-flex; align-items: center; box-sizing: border-box; min-height: 40px; padding: 0 20px; line-height: 1.4; border-color: #84af05; border-radius: 8px; background: #84af05; color: #fff; font-weight: 600; transition: background .2s, border-color .2s; }
+	.wp-core-ui .r3d-pro-mb-actions .button-primary:hover, .wp-core-ui .r3d-pro-mb-actions .button-primary:focus { border-color: #719504; background: #719504; color: #fff; }
+	.wp-core-ui .r3d-pro-mb-actions .button-primary:focus { box-shadow: 0 0 0 1px #fff, 0 0 0 3px #5e7c03; }
+	.r3d-pro-mb-actions .r3d-pro-mb-secondary { display: inline-flex; align-items: center; box-sizing: border-box; min-height: 40px; padding: 0 20px; line-height: 1.4; border: 1.5px solid #84af05; border-radius: 8px; background: transparent; color: #5c7a04; font-size: 13px; font-weight: 600; text-decoration: none; transition: all .2s; }
+	.r3d-pro-mb-actions .r3d-pro-mb-secondary:hover, .r3d-pro-mb-actions .r3d-pro-mb-secondary:focus { background: #84af05; color: #fff; }
+	.r3d-pro-mb-actions .r3d-pro-mb-secondary:focus { outline: 0; box-shadow: 0 0 0 1px #fff, 0 0 0 3px #5e7c03; }
+	.r3d-pro-mb-note { color: #787c82; font-size: 12px; margin-top: 10px; }
 	</style>
-	<p class="r3d-pro-mb-head"><?php esc_html_e('This flipbook renders at standard resolution — PRO renders sharp 4K with optimized multi-tier page loading.', 'real3d-flipbook'); ?></p>
-	<div class="r3d-pro-mb-grid">
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('4K resolution zoom', 'real3d-flipbook'); ?></span>
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Optimized page loading', 'real3d-flipbook'); ?></span>
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('PDF links and text search', 'real3d-flipbook'); ?></span>
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Toolbar and UI customization', 'real3d-flipbook'); ?></span>
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Analytics and deep linking', 'real3d-flipbook'); ?></span>
-		<span><span class="r3d-check">&#10003;</span><?php esc_html_e('Mobile and global settings', 'real3d-flipbook'); ?></span>
-	</div>
+	<ul class="r3d-pro-mb-grid">
+		<li><?php esc_html_e('Deeper zoom', 'real3d-flipbook-lite'); ?></li>
+		<li><?php esc_html_e('Sharper pages', 'real3d-flipbook-lite'); ?></li>
+		<li><?php esc_html_e('PDF links and text search', 'real3d-flipbook-lite'); ?></li>
+		<li><?php esc_html_e('Bookmarks, autoplay and page downloads', 'real3d-flipbook-lite'); ?></li>
+		<li><?php esc_html_e('Toolbar and UI customization', 'real3d-flipbook-lite'); ?></li>
+		<li><?php esc_html_e('Lightbox customization', 'real3d-flipbook-lite'); ?></li>
+		<li><?php esc_html_e('Analytics and deep linking', 'real3d-flipbook-lite'); ?></li>
+		<li><?php esc_html_e('Mobile and global settings', 'real3d-flipbook-lite'); ?></li>
+	</ul>
 	<div class="r3d-pro-mb-actions">
 		<a class="button button-primary" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=metabox'); ?>" target="_blank">
-			<?php esc_html_e('Upgrade to PRO', 'real3d-flipbook'); ?>
+			<?php esc_html_e('Upgrade to PRO', 'real3d-flipbook-lite'); ?>
 		</a>
-		<a class="button button-secondary" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=metabox-try#try'); ?>" target="_blank">
-			<?php esc_html_e('Try your PDF or images in PRO', 'real3d-flipbook'); ?>
-		</a>
+		<a class="r3d-pro-mb-secondary" data-r3d-try data-label-book="<?php esc_attr_e('Preview this flipbook in PRO', 'real3d-flipbook-lite'); ?>" data-label-empty="<?php esc_attr_e('Try your PDF or images in PRO', 'real3d-flipbook-lite'); ?>" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=metabox-try#try'); ?>" target="_blank"><?php esc_html_e('Preview this flipbook in PRO', 'real3d-flipbook-lite'); ?></a>
 		<a href="<?php echo esc_url(admin_url('admin.php?page=real3d_flipbook_upgrade')); ?>">
-			<?php esc_html_e('View all PRO features', 'real3d-flipbook'); ?>
+			<?php esc_html_e('View all PRO features', 'real3d-flipbook-lite'); ?>
 		</a>
 	</div>
-	<div class="r3d-pro-mb-note"><?php esc_html_e('Plans from $49/year · 30-day money-back guarantee · Your flipbooks carry over', 'real3d-flipbook'); ?></div>
+	<div class="r3d-pro-mb-note"><?php esc_html_e('Plans from $49/year · 30-day money-back guarantee · Your flipbooks carry over', 'real3d-flipbook-lite'); ?></div>
 </div>
 <?php
 	}
@@ -1342,18 +1357,18 @@ a:hover .link-icon {
 </style>
 <a href="https://youtu.be/1ljFRYr0Kh8" target="_blank">
 	<span class="dashicons dashicons-video-alt3 link-icon video-icon"></span>
-	<?php esc_html_e('Getting Started Video', 'real3d-flipbook'); ?>
+	<?php esc_html_e('Getting Started Video', 'real3d-flipbook-lite'); ?>
 </a>
 <br />
 <a href="https://real3dflipbook.gitbook.io/wp-lite/" target="_blank">
 	<span class="dashicons dashicons-book link-icon help-icon"></span>
-	<?php esc_html_e('Online Documentation', 'real3d-flipbook'); ?>
+	<?php esc_html_e('Online Documentation', 'real3d-flipbook-lite'); ?>
 
 </a>
 <br />
 <a href="https://wordpress.org/support/plugin/real3d-flipbook-lite/" target="_blank">
 	<span class="dashicons dashicons-sos link-icon help-icon"></span>
-	<?php esc_html_e('Support Forum', 'real3d-flipbook'); ?>
+	<?php esc_html_e('Support Forum', 'real3d-flipbook-lite'); ?>
 
 </a>
 <?php
@@ -1409,6 +1424,7 @@ a:hover .link-icon {
 				'securepdf' => '-1',
 				'rtl' => '-1',
 				'lang' => '-1',
+				'layout' => '-1',
 			),
 			$atts
 		);

@@ -5,10 +5,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div class='wrap'>
 
-	<h3><?php esc_html_e('Import flipbooks', 'real3d-flipbook'); ?></h3>
+	<h3><?php esc_html_e('Import flipbooks', 'real3d-flipbook-lite'); ?></h3>
 
 
-	<p><?php esc_html_e('Import flipbooks from JSON( overwrite existing flipbooks)', 'real3d-flipbook'); ?></p>
+	<p><?php esc_html_e('Import flipbooks from JSON( overwrite existing flipbooks)', 'real3d-flipbook-lite'); ?></p>
 
 
 
@@ -16,10 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<p class="submit"><a href="#" id="import" class="button button-secondary">Import</a></p>
 
 
-	<h3><?php esc_html_e('Export flipbooks', 'real3d-flipbook'); ?></h3>
+	<h3><?php esc_html_e('Export flipbooks', 'real3d-flipbook-lite'); ?></h3>
 	<p>
 		<a class='button button-secondary' id="download"
-			href='#'><?php esc_html_e('Download JSON', 'real3d-flipbook'); ?></a>
+			href='#'><?php esc_html_e('Download JSON', 'real3d-flipbook-lite'); ?></a>
 	</p>
 
 </div>

@@ -49,144 +49,144 @@
 	</style>
 
 	<div class="r3d-hero">
-		<h1><?php esc_html_e('Upgrade to PRO', 'real3d-flipbook'); ?></h1>
-		<p><?php esc_html_e('Everything in Lite, plus sharper pages, faster loading and full control over the viewer.', 'real3d-flipbook'); ?></p>
+		<h1><?php esc_html_e('Upgrade to PRO', 'real3d-flipbook-lite'); ?></h1>
+		<p><?php esc_html_e('Everything in Lite, plus sharper pages, faster loading and full control over the viewer.', 'real3d-flipbook-lite'); ?></p>
 	</div>
 
 	<div class="r3d-featured">
 		<div class="r3d-featured-card">
 			<span class="dashicons dashicons-visibility"></span>
-			<h3><?php esc_html_e('4K resolution zoom', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('PRO renders every page in sharp 4K — fine print and detailed artwork stay crisp at full zoom. Lite shows standard resolution.', 'real3d-flipbook'); ?></p>
+			<h3><?php esc_html_e('4K resolution zoom', 'real3d-flipbook-lite'); ?></h3>
+			<p><?php esc_html_e('PRO renders every page in sharp 4K — fine print and detailed artwork stay crisp at full zoom. Lite shows standard resolution.', 'real3d-flipbook-lite'); ?></p>
 		</div>
 		<div class="r3d-featured-card">
 			<span class="dashicons dashicons-search"></span>
-			<h3><?php esc_html_e('PDF links and text search', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('Links inside your PDF work in the flipbook, and readers can search the full text of every page.', 'real3d-flipbook'); ?></p>
+			<h3><?php esc_html_e('PDF links and text search', 'real3d-flipbook-lite'); ?></h3>
+			<p><?php esc_html_e('Links inside your PDF work in the flipbook, and readers can search the full text of every page.', 'real3d-flipbook-lite'); ?></p>
 		</div>
 		<div class="r3d-featured-card">
 			<span class="dashicons dashicons-admin-customizer"></span>
-			<h3><?php esc_html_e('Full UI customization', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('8 layouts, 3 skins, toolbar layout, colors and icons — match the flipbook to your brand.', 'real3d-flipbook'); ?></p>
+			<h3><?php esc_html_e('Full UI customization', 'real3d-flipbook-lite'); ?></h3>
+			<p><?php esc_html_e('8 layouts, 3 skins, toolbar layout, colors and icons — match the flipbook to your brand.', 'real3d-flipbook-lite'); ?></p>
 		</div>
 		<div class="r3d-featured-card">
 			<span class="dashicons dashicons-chart-line"></span>
-			<h3><?php esc_html_e('Analytics and deep linking', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('Track flipbook events in Google Analytics and link directly to any page of any flipbook.', 'real3d-flipbook'); ?></p>
+			<h3><?php esc_html_e('Analytics and deep linking', 'real3d-flipbook-lite'); ?></h3>
+			<p><?php esc_html_e('Track flipbook events in Google Analytics and link directly to any page of any flipbook.', 'real3d-flipbook-lite'); ?></p>
 		</div>
 	</div>
 
 	<div class="r3d-reassure">
 		<div class="r3d-carryover">
-			<?php esc_html_e('All your existing flipbooks and settings carry over — nothing to rebuild.', 'real3d-flipbook'); ?>
+			<?php esc_html_e('All your existing flipbooks and settings carry over — nothing to rebuild.', 'real3d-flipbook-lite'); ?>
 		</div>
-		<div class="r3d-guarantee"><?php esc_html_e('Plans from $49/year · 30-day money-back guarantee', 'real3d-flipbook'); ?></div>
+		<div class="r3d-guarantee"><?php esc_html_e('Plans from $49/year · 30-day money-back guarantee', 'real3d-flipbook-lite'); ?></div>
 		<div class="r3d-proofline">
 			<span class="r3d-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-			<?php esc_html_e('4.53 / 5 (1,060+ ratings) · 22,000+ customers · Power Elite author on Envato', 'real3d-flipbook'); ?>
+			<?php esc_html_e('4.53 / 5 (1,060+ ratings) · 22,000+ customers · Power Elite author on Envato', 'real3d-flipbook-lite'); ?>
 		</div>
 	</div>
 
 	<div class="r3d-cta r3d-cta-top">
 		<a class="button button-primary button-hero" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=upgrade-page-top'); ?>" target="_blank">
-			<?php esc_html_e('Upgrade to PRO Now', 'real3d-flipbook'); ?>
+			<?php esc_html_e('Upgrade to PRO Now', 'real3d-flipbook-lite'); ?>
 		</a>
 		<br>
 		<a class="r3d-try-link" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=upgrade-page-try#try'); ?>" target="_blank">
-			<?php esc_html_e('Try your PDF or images in PRO', 'real3d-flipbook'); ?>
+			<?php esc_html_e('Try your PDF or images in PRO', 'real3d-flipbook-lite'); ?>
 		</a>
 	</div>
 
 	<div class="r3d-compare">
-		<h2><?php esc_html_e('Lite vs PRO', 'real3d-flipbook'); ?></h2>
+		<h2><?php esc_html_e('Lite vs PRO', 'real3d-flipbook-lite'); ?></h2>
 		<table>
 			<tr>
 				<th></th>
-				<th><?php esc_html_e('Lite', 'real3d-flipbook'); ?></th>
-				<th><?php esc_html_e('PRO', 'real3d-flipbook'); ?></th>
+				<th><?php esc_html_e('Lite', 'real3d-flipbook-lite'); ?></th>
+				<th><?php esc_html_e('PRO', 'real3d-flipbook-lite'); ?></th>
 			</tr>
 			<tr>
-				<td><strong><?php esc_html_e('Page resolution & zoom', 'real3d-flipbook'); ?></strong></td>
-				<td><?php esc_html_e('Standard resolution', 'real3d-flipbook'); ?></td>
-				<td><strong><?php esc_html_e('4K resolution — sharp at full zoom', 'real3d-flipbook'); ?></strong></td>
+				<td><strong><?php esc_html_e('Page resolution & zoom', 'real3d-flipbook-lite'); ?></strong></td>
+				<td><?php esc_html_e('Standard resolution', 'real3d-flipbook-lite'); ?></td>
+				<td><strong><?php esc_html_e('4K resolution — sharp at full zoom', 'real3d-flipbook-lite'); ?></strong></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Optimized page loading', 'real3d-flipbook'); ?></td>
-				<td><?php esc_html_e('One page size for everything', 'real3d-flipbook'); ?></td>
-				<td><?php esc_html_e('Multi-tier — right size per device and zoom, faster load', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Optimized page loading', 'real3d-flipbook-lite'); ?></td>
+				<td><?php esc_html_e('One page size for everything', 'real3d-flipbook-lite'); ?></td>
+				<td><?php esc_html_e('Multi-tier — right size per device and zoom, faster load', 'real3d-flipbook-lite'); ?></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Realistic 3D page flip', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Realistic 3D page flip', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('PDF and image flipbooks', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('PDF and image flipbooks', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Toolbar', 'real3d-flipbook'); ?></td>
-				<td><?php esc_html_e('Show / hide buttons', 'real3d-flipbook'); ?></td>
-				<td><?php esc_html_e('Full customization', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Toolbar', 'real3d-flipbook-lite'); ?></td>
+				<td><?php esc_html_e('Show / hide buttons', 'real3d-flipbook-lite'); ?></td>
+				<td><?php esc_html_e('Full customization', 'real3d-flipbook-lite'); ?></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('UI layouts and appearance', 'real3d-flipbook'); ?></td>
-				<td><?php esc_html_e('Default layout', 'real3d-flipbook'); ?></td>
-				<td><?php esc_html_e('8 layouts, 3 skins, FontAwesome or Lucide icons, progress bar', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('UI layouts and appearance', 'real3d-flipbook-lite'); ?></td>
+				<td><?php esc_html_e('Default layout', 'real3d-flipbook-lite'); ?></td>
+				<td><?php esc_html_e('8 layouts, 3 skins, FontAwesome or Lucide icons, progress bar', 'real3d-flipbook-lite'); ?></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Links inside PDF', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Links inside PDF', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="r3d-no">&mdash;</span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Text search', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Text search', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="r3d-no">&mdash;</span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Deep linking', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Deep linking', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="r3d-no">&mdash;</span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Google Analytics', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Google Analytics', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="r3d-no">&mdash;</span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Custom Background', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Custom Background', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="r3d-no">&mdash;</span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Mobile Settings', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Mobile Settings', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="r3d-no">&mdash;</span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Global settings', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Global settings', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="r3d-no">&mdash;</span></td>
 				<td><span class="dashicons dashicons-yes"></span></td>
 			</tr>
 			<tr>
-				<td><?php esc_html_e('Addon support', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Addon support', 'real3d-flipbook-lite'); ?></td>
 				<td><span class="r3d-no">&mdash;</span></td>
-				<td><?php esc_html_e('Compatible, sold separately', 'real3d-flipbook'); ?></td>
+				<td><?php esc_html_e('Compatible, sold separately', 'real3d-flipbook-lite'); ?></td>
 			</tr>
 		</table>
 	</div>
 
 	<div class="r3d-testimonial">
 		<span class="r3d-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-		<blockquote><?php esc_html_e('Beautifully designed plugin with an incredible amount of features, plus excellent support. I\'m extremely satisfied after using this plugin for over 5 years. I would recommend it to anyone.', 'real3d-flipbook'); ?></blockquote>
-		<cite><?php esc_html_e('Barnabas12 — Envato review', 'real3d-flipbook'); ?></cite>
+		<blockquote><?php esc_html_e('Beautifully designed plugin with an incredible amount of features, plus excellent support. I\'m extremely satisfied after using this plugin for over 5 years. I would recommend it to anyone.', 'real3d-flipbook-lite'); ?></blockquote>
+		<cite><?php esc_html_e('Barnabas12 — Envato review', 'real3d-flipbook-lite'); ?></cite>
 	</div>
 
 	<div class="r3d-cta r3d-cta-bottom">
 		<a href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=upgrade-page-bottom'); ?>" target="_blank">
-			<?php esc_html_e('Ready to upgrade? Get PRO — from $49/year →', 'real3d-flipbook'); ?>
+			<?php esc_html_e('Ready to upgrade? Get PRO — from $49/year →', 'real3d-flipbook-lite'); ?>
 		</a>
 	</div>
 </div>

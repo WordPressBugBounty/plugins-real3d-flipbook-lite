@@ -265,7 +265,7 @@ function r3d_escAttr(value) {
       "rangeChunkSize",
       "dropdown",
       "PDF range chunk size",
-      "Range request siz in KB. Larger is better for large PDFs, smaller is better for small PDFs.",
+      "Range request size in KB. Larger is better for large PDFs, smaller is better for small PDFs.",
       [
         { display: "64 KB", value: "64" },
         { display: "128 KB", value: "128" },
@@ -474,13 +474,6 @@ function r3d_escAttr(value) {
     );
 
     addOptionGeneral(
-      "zIndex",
-      "text",
-      "Container z-index",
-      "Set z-index of flipbook container"
-    );
-
-    addOptionGeneral(
       "preloaderText",
       "text",
       "Preloader text",
@@ -497,13 +490,6 @@ function r3d_escAttr(value) {
     );
 
     addOptionGeneral(
-      "pdfBrowserViewerIfIE",
-      "checkbox",
-      "Download PDF instead of displaying flipbook if browser is Internet Explorer",
-      "For PDF flipbook"
-    );
-
-    addOptionGeneral(
       "arrowsAlwaysEnabledForNavigation",
       "checkbox",
       "Force keyboard arrows for navigation",
@@ -515,13 +501,6 @@ function r3d_escAttr(value) {
       "checkbox",
       "Disable arrows for navigation if not fullscreen",
       "Disable arrows for navigation if not fullscreen"
-    );
-
-    addOptionGeneral(
-      "touchSwipeEnabled",
-      "checkbox",
-      "Touch swipe to turn page",
-      "Turn pages with touch & swipe or click & drag"
     );
 
     addOptionGeneral(
@@ -585,6 +564,13 @@ function r3d_escAttr(value) {
       ]);
 
       addOption(name, name + "[order]", "text", "Order");
+
+      if (
+        ["currentPage", "btnPrev", "btnNext", "btnTools", "btnClose", "search"].indexOf(
+          name
+        ) === -1
+      )
+        addOption(name, name + "[toolsMenu]", "checkbox", "In Tools menu");
     }
 
     addMenuButton("currentPage");
@@ -624,20 +610,6 @@ function r3d_escAttr(value) {
       "PDF file URL"
     );
 
-    addOption(
-      "btnDownloadPdf",
-      "btnDownloadPdf[forceDownload]",
-      "checkbox",
-      "force download"
-    );
-
-    addOption(
-      "btnDownloadPdf",
-      "btnDownloadPdf[openInNewWindow]",
-      "checkbox",
-      "open PDF in new browser window"
-    );
-
     addOption("btnPrint", "printPdfUrl", "selectFile", "PDF file for printing");
 
     addOption(
@@ -653,7 +625,7 @@ function r3d_escAttr(value) {
       "shareUrl",
       "text",
       "Share URL",
-      "URL that will be shaed, if not set it will use the website URL"
+      "URL that will be shared, if not set it will use the website URL"
     );
 
     addOption(
@@ -693,28 +665,7 @@ function r3d_escAttr(value) {
       "lights",
       "checkbox",
       "Lights",
-      "realistic lightning, disable for faster performance"
-    );
-
-    addOptionWebgl(
-      "lightPositionX",
-      "text",
-      "Light pposition x",
-      "between -500 and 500"
-    );
-
-    addOptionWebgl(
-      "lightPositionY",
-      "text",
-      "Light position y",
-      "between -500 and 500"
-    );
-
-    addOptionWebgl(
-      "lightPositionZ",
-      "text",
-      "Light position z",
-      "between 1000 and 2000"
+      "realistic lighting, disable for faster performance"
     );
 
     addOptionWebgl(
@@ -851,7 +802,7 @@ function r3d_escAttr(value) {
       "dropdown",
       "Bitmap resize quality",
       "Bitmap resize quality (webgl mode)",
-      ["", "low", "medium", "heigh"]
+      ["", "low", "medium", "high"]
     );
 
     // Preview (per-flipbook). The #flipbook-preview-options table only exists when the
@@ -928,7 +879,7 @@ function r3d_escAttr(value) {
       "menu-bar-2",
       "menu2Transparent",
       "checkbox",
-      "Transoarent",
+      "Transparent",
       "menu has no background"
     );
 
@@ -966,7 +917,7 @@ function r3d_escAttr(value) {
       "menu-bar",
       "menuTransparent",
       "checkbox",
-      "Transoarent",
+      "Transparent",
       "Menu has no background"
     );
 
@@ -1051,8 +1002,6 @@ function r3d_escAttr(value) {
 
     addOption("side-buttons", "arrowColor", "color", "Color");
 
-    addOption("side-buttons", "arrowColorHover", "color", "Hover color");
-
     addOption("side-buttons", "arrowBackground", "color", "Background color");
 
     addOption(
@@ -1092,40 +1041,6 @@ function r3d_escAttr(value) {
 
     addOption("side-buttons", "arrowBorder", "text", "Border", "custom CSS");
 
-    addOption(
-      "current-page",
-      "currentPagePositionV",
-      "dropdown",
-      "Current page display vertical position",
-      "Vertical position",
-      ["top", "bottom"]
-    );
-
-    addOption(
-      "current-page",
-      "currentPagePositionH",
-      "dropdown",
-      "Horizontal position",
-      "Current page display horizontal position",
-      ["left", "right"]
-    );
-
-    addOption(
-      "current-page",
-      "currentPageMarginV",
-      "text",
-      "Vertical margin",
-      "between 0 and 10"
-    );
-
-    addOption(
-      "current-page",
-      "currentPageMarginH",
-      "text",
-      "Horizontal margin",
-      "between 0 and 10"
-    );
-
     setOptionValue("pdfUrl", options.pdfUrl);
 
     
@@ -1140,15 +1055,17 @@ function r3d_escAttr(value) {
           '<h2 style="margin:12px 0 4px;font-size:20px;font-weight:600;color:#1d2327;">This is a PRO feature</h2>' +
           '<p style="margin:0 0 16px;color:#50575e;font-size:13px;">Upgrade to Real3D Flipbook PRO to unlock:</p>' +
           '<ul style="list-style:none;display:inline-block;text-align:left;margin:0 0 16px;padding:0;color:#1d2327;font-size:13.5px;line-height:2.1;">' +
-          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>4K resolution zoom</li>' +
-          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Optimized page loading</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Deeper zoom</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Sharper pages</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>PDF links and text search</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Bookmarks, autoplay and page downloads</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Toolbar and UI customization</li>' +
+          '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Lightbox customization</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Analytics and deep linking</li>' +
           '<li><span style="color:#84af05;font-weight:700;margin-right:7px;">&#10003;</span>Mobile and global settings</li>' +
           '</ul>' +
           '<div style="background:#f6f7f7;border-radius:8px;padding:9px 12px;margin:0 0 10px;font-size:12px;color:#50575e;">Plans from $49/year &middot; 30-day money-back guarantee &middot; Your flipbooks carry over</div>' +
-          '<a style="font-size:12px;color:#2271b1;" href="https://real3dflipbook.com/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=popup-editor" target="_blank">See live demos</a>' +
+          '<a style="font-size:12px;color:var(--wp-admin-theme-color,#2271b1);" href="https://real3dflipbook.com/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=popup-editor" target="_blank">See live demos</a>' +
           '</div>',
         showCancelButton: true,
         showCloseButton: true,
@@ -1165,6 +1082,41 @@ function r3d_escAttr(value) {
         }
       });
     });
+
+    function r3dProBox(title) {
+      var $box = $(
+        '<div class="postbox r3d-pro-box r3d-pro-content"><div class="postbox-header"><h2></h2><span class="r3d-mb-pro-badge">PRO</span></div></div>'
+      );
+      $box.find("h2").text(title);
+      return $box;
+    }
+
+    if (!$("#flipbook-skin-options").length) {
+      var $uiTab = $("#tab-ui").append(
+        '<p class="description">Skins, colors, the flipbook background and button styles are part of PRO.</p>'
+      );
+      [
+        "Skin",
+        "Flipbook background",
+        "Top Menu",
+        "Bottom Menu",
+        "Buttons",
+        "Floating Buttons (on transparent menu)",
+        "Arrows",
+        "Close lightbox button",
+        "Sidebar",
+      ].forEach(function (title) {
+        $uiTab.append(r3dProBox(title));
+      });
+    }
+
+    if (!$("#flipbook-mobile-options tbody tr").length) {
+      $("#flipbook-mobile-options").replaceWith(
+        r3dProBox(
+          "Use a different PDF, view mode, zoom and page quality on phones and tablets"
+        )
+      );
+    }
     
 
     function r3dBuildMenuButtonsTable() {
@@ -1310,6 +1262,14 @@ function r3d_escAttr(value) {
         });
         $tdPos.prepend($pos);
 
+        var $tdTools = $('<td class="r3d-mb-tools"></td>').appendTo($tr);
+        var $toolsMenu = $src.find('[name="' + btn.name + '[toolsMenu]"]');
+        if ($toolsMenu.length) {
+          var $rowTools = $toolsMenu.closest("tr");
+          $tdTools.append($toolsMenu);
+          $rowTools.remove();
+        }
+
         var $tdMore = $('<td class="r3d-mb-more"></td>').appendTo($tr);
         var $rest = $src.find("tbody tr");
         if (btn.name === "btnShare") {
@@ -1318,7 +1278,7 @@ function r3d_escAttr(value) {
         var $extras = null;
         if ($rest.length) {
           $extras = $(
-            '<tr class="r3d-mb-extras" style="display:none;"><td></td><td colspan="5"></td></tr>'
+            '<tr class="r3d-mb-extras" style="display:none;"><td></td><td colspan="6"></td></tr>'
           );
           var $extraTable = $('<table class="form-table"><tbody></tbody></table>');
           $extraTable.find("tbody").append($rest);
@@ -1367,7 +1327,7 @@ function r3d_escAttr(value) {
         if (mbLockedIcon) $tdLockedName.append(mbLockedIcon);
         $tdLockedName.append($("<span></span>").text(btn.title));
         $tdLockedName.append('<span class="r3d-mb-pro-badge">PRO</span>');
-        $('<td colspan="4"></td>').appendTo($tr);
+        $('<td colspan="5"></td>').appendTo($tr);
         $tbody.append($tr);
       });
       
@@ -1387,6 +1347,127 @@ function r3d_escAttr(value) {
     }
 
     r3dBuildMenuButtonsTable();
+
+    function r3dLayoutNote(shown) {
+      var preset = !!shown && shown !== "1";
+      $(".r3d-mb-table").toggleClass("is-preset", preset);
+      $("#r3d-pick-layout-note")
+        .text(
+          shown === "6"
+            ? "Minimal hides most toolbar buttons, whatever the Enabled column says. Button positions only apply to the Bottom bar style."
+            : "This style places the toolbar buttons itself, so the Position column only applies to the Bottom bar style."
+        )
+        .toggle(preset);
+    }
+
+    function r3dPicker($box, name, items, fallback, onPaint) {
+      if (!$box.length) return;
+      var $select = $("#post").find('select[name="' + name + '"]');
+      var locked = !$select.length;
+      var globalValue = String(
+        (options.globals && options.globals[name]) || fallback
+      );
+
+      function paint() {
+        var value = locked ? fallback : $select.val();
+        var shown = value || globalValue;
+        $box.find(".r3d-pick-item").each(function () {
+          var itemValue = this.getAttribute("data-value");
+          this.classList.toggle("is-selected", itemValue === shown);
+          this.setAttribute("aria-pressed", String(itemValue === shown));
+          this.classList.toggle(
+            "is-global",
+            !locked && !value && itemValue === globalValue
+          );
+        });
+        $box.find(".r3d-pick-reset").toggle(!locked && !!value);
+        if (onPaint) onPaint(shown);
+      }
+
+      items.forEach(function (item) {
+        var isLocked = locked && item.value !== fallback;
+        var $item = $('<button type="button" class="r3d-pick-item"></button>')
+          .attr("data-value", item.value)
+          .append($("<img>", { src: item.img, alt: "", loading: "lazy" }))
+          .append($('<span class="r3d-pick-label"></span>').text(item.label));
+        if (isLocked)
+          $item
+            .addClass("is-locked r3d-pro-content")
+            .append('<span class="r3d-pick-pro">PRO</span>');
+        $item.on("click", function () {
+          if (locked) return;
+          $select.val(item.value).trigger("change");
+        });
+        $box.append($item);
+      });
+
+      if (!locked) {
+        $(
+          '<button type="button" class="button-link r3d-pick-reset">Use global setting</button>'
+        )
+          .on("click", function () {
+            $select.val("").trigger("change");
+          })
+          .appendTo($box);
+        $select.on("change", paint);
+      }
+      paint();
+    }
+
+    (function r3dStylePickers() {
+      var base = pluginDir + "assets/images/toolbar/";
+      r3dPicker(
+        $("#r3d-pick-layout"),
+        "layout",
+        [
+          ["1", "Bottom bar"],
+          ["2", "Top corners"],
+          ["3", "Top bar"],
+          ["4", "Top pill"],
+          ["5", "Bottom corners"],
+          ["6", "Minimal"],
+          ["7", "Player"],
+          ["8", "Pill"],
+        ].map(function (layout) {
+          return {
+            value: layout[0],
+            label: layout[1],
+            img: base + "layout-" + layout[0] + ".webp",
+          };
+        }),
+        "1",
+        r3dLayoutNote
+      );
+      r3dPicker(
+        $("#r3d-pick-icons"),
+        "iconSet",
+        [
+          {
+            value: "fontawesome",
+            label: "FontAwesome",
+            img: base + "icons-fontawesome.webp",
+          },
+          { value: "lucide", label: "Lucide", img: base + "icons-lucide.webp" },
+        ],
+        "fontawesome"
+      );
+
+      var $mbBox = $("#r3d-mb-box");
+      try {
+        if (window.localStorage.getItem("r3dToolbarButtonsOpen") === "1")
+          $mbBox.removeClass("closed");
+      } catch (e) {}
+      $mbBox.on("click", ".hndle, .handlediv", function () {
+        setTimeout(function () {
+          try {
+            window.localStorage.setItem(
+              "r3dToolbarButtonsOpen",
+              $mbBox.hasClass("closed") ? "0" : "1"
+            );
+          } catch (e) {}
+        });
+      });
+    })();
 
     $("input.alpha-color-picker").alphaColorPicker();
 
@@ -1606,7 +1687,6 @@ function r3d_escAttr(value) {
 
     // var $form = $('#real3dflipbook-options-form')
     var $form = $("#post");
-    var previewFlipbook;
     var fu = (cb, d, ...a) => {
       return setTimeout(cb, d, ...a);
     };
@@ -1637,109 +1717,920 @@ function r3d_escAttr(value) {
     }
 
     disableSave();
-    $("#preview-action").append(
-      $(
-        '<div class="button button-secondary flipbook-preview">Preview Flipbook</div>'
-      )
-    );
 
-    $(".flipbook-preview").click(function (e) {
-      e.preventDefault();
-
-      sortOptions();
-
-      var o = jQuery.extend(true, {}, options.globals, options);
-
-      o.assets = {
-        preloader: pluginDir + "assets/images/preloader.jpg",
-        left: pluginDir + "assets/images/left.png",
-        overlay: pluginDir + "assets/images/overlay.jpg",
-        flipMp3: pluginDir + "assets/mp3/turnPage.mp3",
-        shadowPng: pluginDir + "assets/images/shadow.png",
+    (function livePreview() {
+      var WIDE = window.matchMedia("(min-width: 851px)");
+      var DESKTOP = { w: 1000, h: 707 };
+      var PHONE = { w: 390, h: 760 };
+      var IPHONE_UA =
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+      var state = {
+        dev: "desktop",
+        phoneView: null,
+        dirty: false,
+        timer: null,
+        settleTimer: null,
+        settled: false,
+        stale: false,
+        converting: false,
+        bookH: 0,
       };
 
-      o.pages = o.pages || [];
-
-      if (o.pages.length < 1 && !getOptionValue("pdfUrl")) {
-        alert("Flipbook has no pages!");
-        e.preventDefault();
-        return false;
+      function assetUrl(selector, attr, fallback) {
+        var el = document.querySelector(selector);
+        return el && el[attr] ? el[attr] : fallback;
       }
 
-      for (var key in o.pages) {
-        if (o.pages[key].htmlContent)
-          o.pages[key].htmlContent = unescape(o.pages[key].htmlContent);
+      var viewerJs = assetUrl(
+        'script[src*="js/flipbook.min.js"]',
+        "src",
+        pluginDir + "js/flipbook.min.js"
+      );
+      var viewerCss = assetUrl(
+        'link[href*="css/flipbook.min.css"]',
+        "href",
+        pluginDir + "css/flipbook.min.css"
+      );
+
+      function svg(inner) {
+        return (
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          inner +
+          "</svg>"
+        );
       }
 
-      var lightboxElement = $("<p></p>");
-      o.lightBox = true;
-      o.lightBoxOpened = true;
+      var icons = {
+        expand: svg('<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>'),
+        chevron: svg('<path d="M6 15l6-6 6 6"/>'),
+        desktop: svg(
+          '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>'
+        ),
+        phone: svg(
+          '<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>'
+        ),
+        close: svg('<path d="M18 6 6 18M6 6l12 12"/>'),
+        eye: svg(
+          '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+        ),
+        eyeOff: svg(
+          '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/>'
+        ),
+      };
 
-      // o.lightboxBackground = o.backgroundImage || o.background || o.backgroundColor
-      // o.lightboxBackground = 'rgba(0,0,0,.5)'
+      var DEVICES = [
+        { value: "desktop", title: "Desktop preview", html: icons.desktop },
+        { value: "phone", title: "Phone preview", html: icons.phone },
+      ];
+      var VIEWS = [
+        { value: "page", title: "As it sits in the page", html: "In page" },
+        {
+          value: "full",
+          title: "Filling the phone screen",
+          html: "Full screen",
+        },
+      ];
 
-      if (pageEditor) {
-        var pages = pageEditor.getItems();
-
-        pages.forEach(function (itemsArr, pageIndex) {
-          itemsArr.forEach(function (item, itemIndex) {
-            o.pages[pageIndex] = o.pages[pageIndex] || {};
-            o.pages[pageIndex].items = o.pages[pageIndex].items || [];
-            o.pages[pageIndex].items[itemIndex] = item;
-            if (o.pages[pageIndex].items[itemIndex].url) {
-              o.pages[pageIndex].items[itemIndex].url = unescape(
-                o.pages[pageIndex].items[itemIndex].url
+      function switchHtml(cls, label, items, active) {
+        var index = Math.max(
+          0,
+          items.findIndex(function (item) {
+            return item.value === active;
+          })
+        );
+        return (
+          '<div class="r3d-lp-switch ' +
+          cls +
+          '" role="group" aria-label="' +
+          label +
+          '" data-index="' +
+          index +
+          '">' +
+          items
+            .map(function (item) {
+              return (
+                '<button type="button" data-value="' +
+                item.value +
+                '" title="' +
+                item.title +
+                '" aria-label="' +
+                item.title +
+                '" aria-pressed="' +
+                (item.value === active) +
+                '">' +
+                item.html +
+                "</button>"
               );
-            }
+            })
+            .join("") +
+          "</div>"
+        );
+      }
+
+      function setSwitch($switch, value) {
+        $switch.find("button").each(function (i) {
+          var on = $(this).data("value") === value;
+          this.setAttribute("aria-pressed", String(on));
+          if (on) $switch.attr("data-index", i);
+        });
+      }
+
+      function devicesHtml(active) {
+        return switchHtml(
+          "r3d-lp-icons r3d-lp-devices",
+          "Preview device",
+          DEVICES,
+          active
+        );
+      }
+
+      function viewsHtml(active) {
+        return switchHtml(
+          "r3d-lp-text r3d-lp-views",
+          "Phone view",
+          VIEWS,
+          active
+        );
+      }
+
+      var $panel = $(
+        '<div id="r3d-lp">' +
+          '<div class="r3d-lp-head">' +
+          '<h2><span class="r3d-lp-eye">' +
+          icons.eye +
+          icons.eyeOff +
+          "</span>Live preview</h2>" +
+          devicesHtml("desktop") +
+          '<button type="button" class="r3d-lp-icon r3d-lp-large" title="Open larger preview" aria-label="Open larger preview">' +
+          icons.expand +
+          "</button>" +
+          '<button type="button" class="button r3d-lp-show" aria-expanded="false">Show preview</button>' +
+          '<button type="button" class="r3d-lp-icon r3d-lp-collapse" title="Hide preview" aria-label="Hide preview" aria-expanded="true">' +
+          icons.chevron +
+          "</button>" +
+          "</div>" +
+          '<div class="r3d-lp-body">' +
+          '<div class="r3d-lp-stage"><iframe title="Flipbook preview"></iframe>' +
+          '<p class="r3d-lp-empty">Add a PDF or images to see your flipbook here.</p></div>' +
+          '<div class="r3d-lp-under">' +
+          viewsHtml("page") +
+          "</div>" +
+          "</div>" +
+          '<div class="r3d-lp-foot">' +
+          '<span class="r3d-lp-status">Saved settings</span>' +
+          '<button type="button" class="button button-primary r3d-lp-update"></button>' +
+          "</div>" +
+          "</div>"
+      );
+      var $stage = $panel.find(".r3d-lp-stage");
+      var frame = $panel.find("iframe")[0];
+      var $status = $panel.find(".r3d-lp-status");
+
+      function valuesOf(obj) {
+        Object.keys(obj).forEach(function (key) {
+          var value = obj[key];
+          if (value === null || value === undefined) delete obj[key];
+          else if (typeof value === "object") valuesOf(value);
+          else if (value === "true") obj[key] = true;
+          else if (value === "false") obj[key] = false;
+          else if (
+            typeof value === "string" &&
+            value.trim() !== "" &&
+            !isNaN(value)
+          )
+            obj[key] = Number(value);
+        });
+        return obj;
+      }
+
+      function formValues(selector) {
+        return convertSerializedArrayToObject(
+          $form.find(selector).serializeArray()
+        );
+      }
+
+      function hasContent(o) {
+        return (
+          !!o.pdfUrl ||
+          (Array.isArray(o.pages) &&
+            o.pages.some(function (page) {
+              return page && page.src;
+            }))
+        );
+      }
+
+      function readOptions() {
+        sortOptions();
+        var o = $.extend(
+          true,
+          {},
+          valuesOf($.extend(true, {}, options.globals)),
+          valuesOf(formValues(".flipbook-option-field"))
+        );
+        if (!Array.isArray(o.pages) || !o.pages.length)
+          o.pages = $.extend(true, [], options.pages || []);
+        o.pages.forEach(function (page) {
+          if (page && page.htmlContent)
+            page.htmlContent = unescape(page.htmlContent);
+        });
+        if (pageEditor) {
+          pageEditor.getItems().forEach(function (items, pageIndex) {
+            o.pages[pageIndex] = o.pages[pageIndex] || {};
+            o.pages[pageIndex].items = items.map(function (item) {
+              var copy = $.extend({}, item);
+              delete copy.node;
+              if (copy.url) copy.url = unescape(copy.url);
+              return copy;
+            });
+          });
+        }
+        o.rootFolder = pluginDir;
+        o.assets = {
+          preloader: pluginDir + "assets/images/preloader.jpg",
+          left: pluginDir + "assets/images/left.png",
+          overlay: pluginDir + "assets/images/overlay.jpg",
+          flipMp3: pluginDir + "assets/mp3/turnPage.mp3",
+          shadowPng: pluginDir + "assets/images/shadow.png",
+          spinner: pluginDir + "assets/images/spinner.gif",
+        };
+        o.pdfjsworkerSrc = pluginDir + "js/libs/pdf.worker.min.js";
+        o.flipbookSrc = viewerJs;
+        o.cMapUrl = pluginDir + "assets/cmaps/";
+        o.mode = "normal";
+        o.lightBox = false;
+        o.sound = false;
+        o.deeplinkingEnabled = false;
+        o.deeplinkingPrefix = "";
+        o.deeplinking = { enabled: false, prefix: "" };
+        o.doubleClickZoomDisabled = !o.doubleClickZoom;
+        o.pageDragDisabled = !o.pageDrag;
+        o.notes = options.notes;
+        if (o.btnDownloadPdf && o.pdfUrl && !o.btnDownloadPdf.url)
+          o.btnDownloadPdf.url = o.pdfUrl;
+        return o;
+      }
+
+      function phoneView() {
+        if (state.phoneView) return state.phoneView;
+        var form = valuesOf(formValues('[name="mode"], [name="modeMobile"]'));
+        var globals = options.globals || {};
+        var mode =
+          form.modeMobile ||
+          globals.modeMobile ||
+          form.mode ||
+          globals.mode ||
+          "normal";
+        return mode === "normal" ? "page" : "full";
+      }
+
+      function variantFor(dev) {
+        if (dev === "desktop") return "desktop";
+        return phoneView() === "full" ? "phone-full" : "phone-page";
+      }
+
+      function frameDoc(variant) {
+        var phone = variant !== "desktop";
+        var css =
+          "html,body{margin:0;height:100%;overflow:hidden;background:#fff}#b{position:relative;width:100%;height:100%}";
+        var body = '<div id="b"></div>';
+        if (variant === "phone-page") {
+          css =
+            "html,body{margin:0;height:100%;overflow:hidden;background:#fff}" +
+            ".site{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid #eceef0}" +
+            ".logo{width:78px;height:14px;border-radius:4px;background:#2c3338}" +
+            ".menu{display:grid;gap:4px}.menu i{display:block;width:20px;height:2px;border-radius:1px;background:#2c3338}" +
+            "main{padding:18px 16px}.h{height:18px;width:64%;border-radius:4px;background:#c9ccd1;margin:0 0 12px}" +
+            ".l{height:8px;border-radius:4px;background:#e3e5e8;margin:0 0 8px}" +
+            "#b{position:relative;width:100%;height:506px;margin:16px 0 18px}";
+          body =
+            '<header class="site"><span class="logo"></span><span class="menu"><i></i><i></i><i></i></span></header>' +
+            '<main><div class="h"></div><div class="l" style="width:94%"></div><div class="l" style="width:72%"></div>' +
+            '<div id="b"></div>' +
+            '<div class="l"></div><div class="l" style="width:90%"></div><div class="l" style="width:96%"></div><div class="l" style="width:58%"></div></main>';
+        }
+        return (
+          '<!doctype html><html><head><meta charset="utf-8">' +
+          (phone
+            ? '<script>Object.defineProperty(navigator,"userAgent",{get:function(){return ' +
+              JSON.stringify(IPHONE_UA) +
+              ";}});<\/script>"
+            : "") +
+          '<link rel="stylesheet" href="' +
+          viewerCss +
+          '">' +
+          "<style>" +
+          css +
+          "</style>" +
+          '<script src="' +
+          viewerJs +
+          '"><\/script>' +
+          "<script>" +
+          'window.r3dBuild=function(o){if(window.r3dBook)return window.r3dBook;window.r3dBook=new FlipBook(document.getElementById("b"),o);return window.r3dBook;};' +
+          'document.addEventListener("keydown",function(e){if(e.key==="Escape")parent.postMessage({r3dPreview:"esc"},"*");});' +
+          "<\/script></head><body>" +
+          body +
+          "<script>setTimeout(function(){var f=frameElement;if(f&&f.r3dReady)f.r3dReady(f);});<\/script>" +
+          "</body></html>"
+        );
+      }
+
+      function currentPage(frameEl) {
+        var w = frameEl.contentWindow;
+        var book = w && w.r3dBook;
+        if (book && book.cPage && book.cPage.length) return book.cPage[0] + 1;
+        return Number(frameEl.dataset.startPage) || 1;
+      }
+
+      function reload(frameEl, variant) {
+        var fresh = document.createElement("iframe");
+        fresh.title = frameEl.title;
+        fresh.setAttribute("style", frameEl.getAttribute("style") || "");
+        fresh.dataset.startPage = currentPage(frameEl);
+        fresh.dataset.variant = variant;
+        if (frameEl.dataset.fill) fresh.dataset.fill = frameEl.dataset.fill;
+        fresh.r3dReady = frameEl.r3dReady;
+        frameEl.parentNode.replaceChild(fresh, frameEl);
+        var doc = fresh.contentDocument;
+        doc.open();
+        doc.write(frameDoc(variant));
+        doc.close();
+        return fresh;
+      }
+
+      function extraFor(frameEl) {
+        if (frameEl.dataset.variant === "phone-full")
+          return { containerRatio: PHONE.w / PHONE.h };
+        if (frameEl.dataset.variant === "desktop" && frameEl.dataset.fill)
+          return {
+            containerRatio: frameEl.clientWidth / frameEl.clientHeight,
+          };
+        return {};
+      }
+
+      function build(frameEl) {
+        var w = frameEl.contentWindow;
+        if (!w || !w.r3dBuild) return null;
+        var o = $.extend(readOptions(), extraFor(frameEl));
+        if (!hasContent(o)) return null;
+        var start = Number(frameEl.dataset.startPage) || 1;
+        if (start > 1) o.startPage = start;
+        return w.r3dBuild(o);
+      }
+
+      function wireNotes(book) {
+        if (!book || typeof book.on !== "function") return;
+        ["r3d-update-note", "r3d-delete-note"].forEach(function (eventName) {
+          book.on(eventName, function (e) {
+            $.ajax({
+              type: "POST",
+              url: ajaxurl,
+              data: {
+                note: e.note,
+                bookId: options.id,
+                action: eventName.replace(/-/g, "_"),
+              },
+            });
           });
         });
       }
 
-      if (previewFlipbook) previewFlipbook.dispose();
-      previewFlipbook = null;
+      function setStatus(text, cls) {
+        $status
+          .text(text)
+          .removeClass("is-busy is-dirty")
+          .addClass(cls || "");
+      }
 
-      o.cMapUrl = pluginDir + "assets/cmaps/";
+      function refreshButton() {
+        $panel.find(".r3d-lp-update").text($("#publish").val() || "Update");
+      }
 
-      o.doubleClickZoomDisabled = !o.doubleClickZoom;
-      o.pageDragDisabled = !o.pageDrag;
-
-      o.notes = options.notes;
-
-      previewFlipbook = lightboxElement.flipBook(o);
-
-      previewFlipbook.on("r3d-update-note", function (e) {
-        sendAjax(e, "r3d_update_note");
-      });
-
-      previewFlipbook.on("r3d-delete-note", function (e) {
-        sendAjax(e, "r3d_delete_note");
-      });
-
-      function sendAjax(e, action) {
-        $.ajax({
-          type: "POST",
-          url: ajaxurl,
-          data: {
-            // notes: (JSON.stringify(e.notes)),
-            note: e.note,
-            bookId: options.id,
-            // security: agl_nonce[0],
-            action: action,
-          },
-          // dataType: "json",
-          success: function (data, textStatus, jqXHR) {
-            // alert("Saved")
-          },
-
-          error: function (XMLHttpRequest, textStatus, errorThrown) {
-            alert("Status: " + textStatus);
-            alert("Error: " + errorThrown);
-          },
+      function layout() {
+        var phone = state.dev === "phone";
+        var size = phone ? PHONE : DESKTOP;
+        var $body = $panel.find(".r3d-lp-body").toggleClass("is-phone", phone);
+        var avail = $body.width();
+        if (!avail) return;
+        var maxH = $panel.hasClass("is-side")
+          ? Math.min(phone ? 560 : 460, window.innerHeight * 0.6)
+          : window.innerHeight * 0.36;
+        if (phone) maxH -= 44;
+        var k = Math.min(avail / size.w, maxH / size.h, 1);
+        var h = !phone && state.bookH ? Math.min(state.bookH, size.h) : size.h;
+        $stage.css({
+          width: Math.round(size.w * k),
+          height: Math.round(h * k),
+        });
+        $(frame).css({
+          width: size.w,
+          height: size.h,
+          transform: "scale(" + k + ")",
         });
       }
 
-      $(window).trigger("resize");
-    });
+      function place() {
+        if (WIDE.matches && $("#post-body").hasClass("columns-2")) {
+          $("#postbox-container-1").prepend($panel);
+          $panel.removeClass("is-band").addClass("is-side");
+        } else {
+          $("#real3dflipbook-admin").prepend($panel);
+          $panel.removeClass("is-side").addClass("is-band");
+        }
+        layout();
+        stuck();
+      }
+
+      function stuck() {
+        var panel = $panel[0];
+        var top = parseFloat(window.getComputedStyle(panel).top) || 0;
+        $panel.toggleClass(
+          "is-stuck",
+          window.scrollY > 0 && panel.getBoundingClientRect().top <= top + 1
+        );
+      }
+
+      function load() {
+        setSwitch($panel.find(".r3d-lp-views"), phoneView());
+        
+        syncTryLabel();
+        
+        state.stale = $panel.hasClass("is-collapsed");
+        if (!state.stale) frame = reload(frame, variantFor(state.dev));
+      }
+
+      function watchHeight(el) {
+        var w = el.contentWindow;
+        var b = w.document.getElementById("b");
+        if (!w.ResizeObserver) return;
+        new w.ResizeObserver(function () {
+          if (!b.style.height) return;
+          var h = Math.ceil(b.getBoundingClientRect().height);
+          if (!h || h === state.bookH) return;
+          state.bookH = h;
+          layout();
+        }).observe(b);
+      }
+
+      function onReady(el) {
+        var book = show(build(el));
+        if (!book) state.bookH = 0;
+        else if (el.dataset.variant === "desktop") watchHeight(el);
+        layout();
+        if (state.dirty) setStatus("Unsaved changes", "is-dirty");
+        else setStatus(book ? "Saved settings" : "No pages yet");
+        settle();
+      }
+
+      function settle() {
+        if (state.settleTimer) return;
+        state.settleTimer = setTimeout(function () {
+          state.settled = true;
+        }, 2500);
+      }
+
+      function show(book) {
+        $stage.toggleClass("is-empty", !book);
+        return book;
+      }
+
+      function schedule() {
+        if (!state.settled || state.converting) return;
+        clearTimeout(state.timer);
+        setStatus("Updating…", "is-busy");
+        state.timer = setTimeout(function () {
+          state.dirty = true;
+          load();
+        }, 650);
+      }
+
+      function openLarger() {
+        var opener = this;
+        var dev = state.dev;
+        var name = $.trim($("#title").val()) || "Untitled flipbook";
+        var $lb = $(
+          '<div id="r3d-lp-lightbox" role="dialog" aria-modal="true" aria-labelledby="r3d-lp-name">' +
+            '<div class="r3d-lp-backdrop" title="Close"></div>' +
+            '<div class="r3d-lp-box">' +
+            '<div class="r3d-lp-box-head">' +
+            '<div class="r3d-lp-title"><span class="r3d-lp-eyebrow">Preview</span><h1 id="r3d-lp-name"></h1></div>' +
+            '<span class="r3d-lp-chip' +
+            (state.dirty
+              ? ' is-dirty">Unsaved changes'
+              : '">Saved settings') +
+            "</span>" +
+            devicesHtml(dev) +
+            '<span class="r3d-lp-sep" aria-hidden="true"></span>' +
+            '<span class="r3d-lp-hint" aria-hidden="true"><kbd>Esc</kbd> to close</span>' +
+            '<button type="button" class="r3d-lp-close" aria-label="Close preview" title="Close (Esc)">' +
+            icons.close +
+            "</button>" +
+            "</div>" +
+            '<div class="r3d-lp-box-stage">' +
+            '<div class="r3d-lp-device"><iframe title="Larger flipbook preview"></iframe></div>' +
+            '<div class="r3d-lp-box-under">' +
+            viewsHtml(phoneView()) +
+            "</div>" +
+            "</div>" +
+            "</div>" +
+            "</div>"
+        ).appendTo("body");
+        $lb.find("#r3d-lp-name").text(name);
+        $("body").addClass("r3d-lp-open");
+        var $box = $lb.find(".r3d-lp-box");
+        var $boxStage = $lb.find(".r3d-lp-box-stage");
+        var $device = $lb.find(".r3d-lp-device");
+        var big = $lb.find("iframe")[0];
+        big.dataset.fill = "1";
+
+        function size() {
+          var gutter = window.innerWidth < 700 ? 24 : 56;
+          var maxW = Math.min(window.innerWidth - gutter, 1400);
+          var maxH = window.innerHeight - gutter - 56;
+          if (dev === "phone") {
+            var chrome = 94;
+            var k = Math.min(
+              1,
+              (maxH - chrome) / PHONE.h,
+              (maxW - 40) / PHONE.w
+            );
+            $boxStage.addClass("is-phone").css({
+              width: Math.max(
+                Math.round(PHONE.w * k) + 160,
+                Math.min(660, maxW)
+              ),
+              height: Math.round(PHONE.h * k) + chrome,
+            });
+            $device.css({
+              width: Math.round(PHONE.w * k),
+              height: Math.round(PHONE.h * k),
+            });
+            $(big).css({
+              width: PHONE.w,
+              height: PHONE.h,
+              transform: "scale(" + k + ")",
+            });
+          } else {
+            var w = maxW;
+            var h = Math.min(maxH, w * 0.75);
+            $boxStage.removeClass("is-phone").css({
+              width: Math.round(w),
+              height: Math.round(h),
+            });
+            $device.css({ width: Math.round(w), height: Math.round(h) });
+            $(big).css({
+              width: Math.round(w),
+              height: Math.round(h),
+              transform: "none",
+            });
+          }
+          $box.css({ width: $boxStage.outerWidth() });
+        }
+
+        function render() {
+          setSwitch($lb.find(".r3d-lp-devices"), dev);
+          setSwitch($lb.find(".r3d-lp-views"), phoneView());
+          size();
+          big = reload(big, variantFor(dev));
+        }
+
+        big.dataset.startPage = currentPage(frame);
+        big.r3dReady = function (el) {
+          wireNotes(build(el));
+        };
+        render();
+
+        function close() {
+          $lb.remove();
+          $("body").removeClass("r3d-lp-open");
+          $(document).off("keydown.r3dlp");
+          $(window).off("message.r3dlp resize.r3dlp");
+          opener.focus();
+        }
+
+        $lb.on("click", ".r3d-lp-close, .r3d-lp-backdrop", close);
+        $lb.on("click", ".r3d-lp-devices button", function () {
+          var value = $(this).data("value");
+          if (value === dev) return;
+          dev = value;
+          render();
+        });
+        $lb.on("click", ".r3d-lp-views button", function () {
+          var value = $(this).data("value");
+          if (value === phoneView()) return;
+          state.phoneView = value;
+          render();
+          if (state.dev === "phone") load();
+        });
+        $(document).on("keydown.r3dlp", function (e) {
+          if (e.key === "Escape") close();
+        });
+        $(window).on("message.r3dlp", function (e) {
+          var data = e.originalEvent.data;
+          if (
+            data &&
+            data.r3dPreview === "esc" &&
+            e.originalEvent.source === big.contentWindow
+          )
+            close();
+        });
+        $(window).on("resize.r3dlp", size);
+        $lb.find(".r3d-lp-close").trigger("focus");
+      }
+
+      $("body").addClass("r3d-lp-active");
+      place();
+      refreshButton();
+
+      try {
+        if (window.localStorage.getItem("r3dLivePreviewCollapsed") === "1")
+          $panel.addClass("is-collapsed");
+      } catch (e) {}
+
+      frame.r3dReady = onReady;
+      load();
+      if (state.stale) settle();
+
+      $(window).on("resize", layout);
+      $(window).on("scroll", stuck);
+      stuck();
+      if (window.ResizeObserver)
+        new ResizeObserver(function () {
+          layout();
+        }).observe($panel.find(".r3d-lp-body")[0]);
+      function relocate() {
+        place();
+        load();
+      }
+      if (WIDE.addEventListener) WIDE.addEventListener("change", relocate);
+      else WIDE.addListener(relocate);
+
+      $form.on(
+        "change input",
+        ".flipbook-option-field, #real3dflipbook-admin input, #real3dflipbook-admin select, #real3dflipbook-admin textarea",
+        schedule
+      );
+
+      var pagesContainer = document.getElementById("pages-container");
+      if (pagesContainer && window.MutationObserver)
+        new MutationObserver(schedule).observe(pagesContainer, {
+          childList: true,
+        });
+
+      $form.on("r3dconvert", function (e, done, total) {
+        clearTimeout(state.timer);
+        state.converting = done < total;
+        if (state.converting)
+          setStatus("Converting pages… " + done + " of " + total, "is-busy");
+        else schedule();
+      });
+
+      $panel.on("click", ".r3d-lp-devices button", function () {
+        var value = $(this).data("value");
+        if (value === state.dev) return;
+        state.dev = value;
+        setSwitch($panel.find(".r3d-lp-devices"), value);
+        layout();
+        load();
+      });
+
+      $panel.on("click", ".r3d-lp-views button", function () {
+        var value = $(this).data("value");
+        if (value === phoneView()) return;
+        state.phoneView = value;
+        load();
+      });
+
+      $panel.on("click", ".r3d-lp-collapse, .r3d-lp-show", function () {
+        var collapsed = !$panel.hasClass("is-collapsed");
+        $panel.toggleClass("is-collapsed", collapsed);
+        try {
+          window.localStorage.setItem(
+            "r3dLivePreviewCollapsed",
+            collapsed ? "1" : "0"
+          );
+        } catch (e) {}
+        layout();
+        if (!collapsed && state.stale) load();
+      });
+
+      $panel.on("click", ".r3d-lp-head", function (e) {
+        if (
+          $panel.hasClass("is-collapsed") &&
+          !$(e.target).closest("button").length
+        )
+          $panel.find(".r3d-lp-show").trigger("click");
+      });
+
+      $panel.on("click", ".r3d-lp-update", function () {
+        $("#publish").trigger("click");
+      });
+
+      $panel.on("click", ".r3d-lp-large", openLarger);
+
+      
+      var TRY_ORIGIN = "https://real3dflipbook.com";
+      var IMAGE_TYPES = {
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        png: "image/png",
+        webp: "image/webp",
+        gif: "image/gif",
+      };
+
+      function fileName(url) {
+        return (
+          decodeURIComponent(url.split(/[?#]/)[0].split("/").pop()) ||
+          "flipbook"
+        );
+      }
+
+      function download(url, signal, onProgress) {
+        return fetch(url.replace(/^https?:/, location.protocol), {
+          credentials: "same-origin",
+          signal: signal,
+        }).then(function (response) {
+          if (!response.ok) throw new Error(response.status);
+          var type = (response.headers.get("Content-Type") || "").split(";")[0];
+          var total = Number(response.headers.get("Content-Length")) || 0;
+          if (!onProgress || !response.body || !response.body.getReader)
+            return response.blob();
+          var reader = response.body.getReader();
+          var chunks = [];
+          var loaded = 0;
+          return (function pump() {
+            return reader.read().then(function (part) {
+              if (part.done) return new Blob(chunks, { type: type });
+              chunks.push(part.value);
+              loaded += part.value.length;
+              onProgress(loaded, total);
+              return pump();
+            });
+          })();
+        });
+      }
+
+      function megabytes(bytes) {
+        return (bytes / 1048576).toFixed(1);
+      }
+
+      function tryFiles(o, signal, progress) {
+        if (o.pdfUrl)
+          return download(o.pdfUrl, signal, function (loaded, total) {
+            if (total)
+              progress(
+                "Loading your PDF… " +
+                  megabytes(loaded) +
+                  " of " +
+                  megabytes(total) +
+                  " MB",
+                (loaded / total) * 100
+              );
+            else progress("Loading your PDF… " + megabytes(loaded) + " MB");
+          }).then(function (blob) {
+            return [
+              new File([blob], fileName(o.pdfUrl), { type: "application/pdf" }),
+            ];
+          });
+        var srcs = (o.pages || [])
+          .map(function (page) {
+            return page && page.src;
+          })
+          .filter(Boolean);
+        var done = 0;
+        return Promise.all(
+          srcs.map(function (src) {
+            return download(src, signal).then(function (blob) {
+              done++;
+              progress(
+                "Loading pages… " + done + " of " + srcs.length,
+                (done / srcs.length) * 100
+              );
+              var ext = (fileName(src).split(".").pop() || "").toLowerCase();
+              var type = /^image\//.test(blob.type)
+                ? blob.type
+                : IMAGE_TYPES[ext] || "image/jpeg";
+              return new File([blob], fileName(src), { type: type });
+            });
+          })
+        );
+      }
+
+      function syncTryLabel() {
+        var attr = hasContent(readOptions())
+          ? "data-label-book"
+          : "data-label-empty";
+        $("a[data-r3d-try]").each(function () {
+          var text = this.getAttribute(attr);
+          if (text) this.textContent = text;
+        });
+      }
+
+      function openTry(href) {
+        var o = readOptions();
+        var withFiles = hasContent(o);
+        var controller = window.AbortController ? new AbortController() : null;
+        var sent = false;
+        var $lb = $(
+          '<div id="r3d-lp-lightbox" class="is-try" role="dialog" aria-modal="true" aria-label="Your flipbook in PRO">' +
+            '<div class="r3d-lp-backdrop" title="Close"></div>' +
+            '<div class="r3d-lp-box">' +
+            '<div class="r3d-lp-box-head">' +
+            '<div class="r3d-lp-title"><span class="r3d-lp-eyebrow">Real3D Flipbook PRO</span><h1>Your flipbook in PRO</h1></div>' +
+            '<span class="r3d-lp-hint">Opens on real3dflipbook.com. Your file stays in your browser.</span>' +
+            '<button type="button" class="r3d-lp-close" aria-label="Close" title="Close (Esc)">' +
+            icons.close +
+            "</button>" +
+            "</div>" +
+            '<iframe title="Real3D Flipbook PRO"></iframe>' +
+            (withFiles
+              ? '<div class="r3d-try-loading" role="status"><span class="r3d-try-spinner"></span><p></p><span class="r3d-try-bar"><span></span></span></div>'
+              : "") +
+            "</div>" +
+            "</div>"
+        ).appendTo("body");
+        var tryFrame = $lb.find("iframe")[0];
+        var $loading = $lb.find(".r3d-try-loading");
+        $("body").addClass("r3d-lp-open");
+
+        function progress(text, percent) {
+          $loading.find("p").text(text);
+          $loading.find(".r3d-try-bar").toggle(percent !== undefined);
+          if (percent !== undefined)
+            $loading
+              .find(".r3d-try-bar span")
+              .css("width", Math.min(100, percent) + "%");
+        }
+
+        progress(o.pdfUrl ? "Loading your PDF…" : "Loading your pages…");
+        var files = withFiles
+          ? tryFiles(o, controller && controller.signal, progress)
+          : Promise.resolve([]);
+        files.then(
+          function () {
+            if (!sent) progress("Opening in PRO…");
+          },
+          function (error) {
+            if (error && error.name === "AbortError") return;
+            $loading.addClass("is-error");
+            progress(
+              "Your file couldn't be loaded here. You can drop it into the page instead."
+            );
+            $('<button type="button" class="button">Continue</button>')
+              .appendTo($loading)
+              .on("click", function () {
+                $loading.remove();
+              });
+          }
+        );
+
+        function close() {
+          if (controller) controller.abort();
+          $lb.remove();
+          $("body").removeClass("r3d-lp-open");
+          $(document).off("keydown.r3dtry");
+          $(window).off("message.r3dtry");
+        }
+
+        $(window).on("message.r3dtry", function (e) {
+          var event = e.originalEvent;
+          if (
+            sent ||
+            event.origin !== TRY_ORIGIN ||
+            event.source !== tryFrame.contentWindow ||
+            !event.data ||
+            event.data.r3dTry !== "ready"
+          )
+            return;
+          sent = true;
+          files.then(
+            function (list) {
+              if (!list.length || !tryFrame.contentWindow) return;
+              tryFrame.contentWindow.postMessage(
+                { r3dTry: "files", files: list },
+                TRY_ORIGIN
+              );
+              setTimeout(function () {
+                $loading.remove();
+              }, 800);
+            },
+            function () {}
+          );
+        });
+        $lb.on("click", ".r3d-lp-close, .r3d-lp-backdrop", close);
+        $(document).on("keydown.r3dtry", function (e) {
+          if (e.key === "Escape") close();
+        });
+        tryFrame.src = href;
+      }
+
+      $(document).on("click", "a[data-r3d-try]", function (e) {
+        if (e.which > 1 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+          return;
+        e.preventDefault();
+        openTry(this.href);
+      });
+      
+    })();
 
     // Function to parse input names into keys
     function parseInputName(name) {
@@ -2118,7 +3009,7 @@ function r3d_escAttr(value) {
             "</strong></span>"
         ).appendTo(td);
 
-      if (typeof help != "undefined")
+      if (help)
         var p = $('<p class="description">' + help + "</p>").appendTo(td);
     }
 
@@ -2408,6 +3299,10 @@ function r3d_escAttr(value) {
     function convertWithPDFTools(addMorePages) {
       //convert PDF flipbook
       const converter = new FLIPBOOK.PDFTools();
+      converter.onPDFError = function (error) {
+        $form.trigger("r3dconvert", [0, 0]);
+        FLIPBOOK.PDFTools.prototype.onPDFError.call(this, error);
+      };
       const pdfToolsOptions = window.options.globals.pdfTools;
       const $info = $("#add-pages-info");
       const $description = $("#add-pages-description");
@@ -2441,6 +3336,7 @@ function r3d_escAttr(value) {
       pdfToolsOptions.security = options.security;
       pdfToolsOptions.startIndex = startIndex;
       converter.convertPDF(pdfDocument, pdfToolsOptions);
+      $form.trigger("r3dconvert", [0, converter.numPages]);
 
       for (let i = 0; i < pdfDocument._pdfInfo.numPages; i++) {
         createPageHtml(startIndex + i)
@@ -2509,6 +3405,8 @@ function r3d_escAttr(value) {
         } else {
           $info.text("Added page " + e.pageNumber + " of " + e.total);
         }
+
+        $form.trigger("r3dconvert", [e.pageNumber, e.total]);
       });
     }
 

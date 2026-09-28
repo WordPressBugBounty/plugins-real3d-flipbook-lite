@@ -149,7 +149,12 @@
   height: 100% !important;
 }
 
-.flipbook-page3 img {
+/* The engine's own page bitmap (and the legacy pagePreloader image) only.
+   Never a bare `img`: the HTML overlay of a page lives in the same element,
+   and its images (catalog pages, page-editor items, the watermark) keep
+   their own styles. */
+.flipbook-page3-bg > img,
+.flipbook-page3-inner > img {
   top: 0;
   bottom: 0;
   right: 0;
@@ -2014,8 +2019,9 @@
   height: 100%;
 }
 
-.flipbook-carousel-page img,
-.flipbook-scroll-page img {
+/* Page bitmap only - see .flipbook-page3-bg > img. */
+.flipbook-carousel-page-bg > img,
+.flipbook-scroll-page-bg > img {
   top: 0;
   bottom: 0;
   right: 0;

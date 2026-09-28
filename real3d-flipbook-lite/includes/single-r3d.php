@@ -1,8 +1,11 @@
 <?php
+if (!defined('ABSPATH')) {
+	exit;
+}
 
 if (post_password_required()) {
 	get_header();
-	echo get_the_password_form();
+	echo get_the_password_form(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	get_footer();
 	return;
 }
@@ -63,5 +66,5 @@ if ($show_flipbook) {
 	get_footer();
 } else {
 
-	esc_html_e('Forbidden', 'real3d-flipbook');
+	esc_html_e('Forbidden', 'real3d-flipbook-lite');
 }

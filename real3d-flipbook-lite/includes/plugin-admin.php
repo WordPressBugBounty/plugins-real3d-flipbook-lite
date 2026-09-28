@@ -36,7 +36,7 @@ function r3d_save_general_callback()
 	check_ajax_referer('r3d_nonce', 'security');
 
 	if (!current_user_can('manage_options')) {
-		wp_die(__('You do not have permission to perform this action.'), 403);
+		wp_die(esc_html__('You do not have permission to perform this action.', 'real3d-flipbook-lite'), 403);
 	}
 
 	unset($_POST['security'], $_POST['action']);
@@ -78,7 +78,7 @@ function r3d_reset_general_callback()
 	check_ajax_referer('r3d_nonce', 'security');
 
 	if (!current_user_can('manage_options')) {
-		wp_die(esc_html__('You do not have permission to perform this action.', 'real3d-flipbook'), 403);
+		wp_die(esc_html__('You do not have permission to perform this action.', 'real3d-flipbook-lite'), 403);
 	}
 
 	r3dfb_setDefaults();
@@ -93,41 +93,41 @@ function r3dfb_save_thumbnail_callback()
 	// Security & permission
 	check_ajax_referer('saving-real3d-flipbook', 'security');
 	if (!current_user_can('upload_files')) {
-		wp_send_json_error(['message' => esc_html__('You do not have permission to upload files.', 'real3d-flipbook')]);
+		wp_send_json_error(['message' => esc_html__('You do not have permission to upload files.', 'real3d-flipbook-lite')]);
 	}
 
 	// Flipbook ID check
 	$id = isset($_POST['id']) ? absint(sanitize_text_field(wp_unslash($_POST['id']))) : 0;
 	if ($id <= 0) {
-		wp_send_json_error(['message' => esc_html__('Invalid flipbook ID.', 'real3d-flipbook')]);
+		wp_send_json_error(['message' => esc_html__('Invalid flipbook ID.', 'real3d-flipbook-lite')]);
 	}
 
 	$book = get_option('real3dflipbook_' . $id);
 	if (!$book) {
-		wp_send_json_error(['message' => esc_html__('The specified flipbook does not exist.', 'real3d-flipbook')]);
+		wp_send_json_error(['message' => esc_html__('The specified flipbook does not exist.', 'real3d-flipbook-lite')]);
 	}
 
 	// Upload paths
 	$upload_dir = wp_upload_dir();
 	if (!empty($upload_dir['error'])) {
-		wp_send_json_error(['message' => esc_html__('Upload directory error: ', 'real3d-flipbook') . esc_html($upload_dir['error'])]);
+		wp_send_json_error(['message' => esc_html__('Upload directory error: ', 'real3d-flipbook-lite') . esc_html($upload_dir['error'])]);
 	}
 
 	$book_folder = $upload_dir['basedir'] . "/real3d-flipbook/flipbook_{$id}/";
-	$book_url = $upload_dir['baseurl'] . "/real3d-flipbook/flipbook_{$id}/";
 
-	if ((!file_exists($book_folder) && !mkdir($book_folder, 0755, true)) || !is_writable($book_folder)) {
-		wp_send_json_error(['message' => esc_html(sprintf(__('Cannot write to folder: %s', 'real3d-flipbook'), $book_folder))]);
+	if (!wp_mkdir_p($book_folder) || !wp_is_writable($book_folder)) {
+		/* translators: %s: folder path */
+		wp_send_json_error(['message' => esc_html(sprintf(__('Cannot write to folder: %s', 'real3d-flipbook-lite'), $book_folder))]);
 	}
 
 	// Validate upload
 	if (empty($_FILES['file']['tmp_name'])) {
-		wp_send_json_error(['message' => esc_html__('No file uploaded.', 'real3d-flipbook')]);
+		wp_send_json_error(['message' => esc_html__('No file uploaded.', 'real3d-flipbook-lite')]);
 	}
 
 	// File size (2MB)
 	if ($_FILES['file']['size'] > 2 * 1024 * 1024) {
-		wp_send_json_error(['message' => esc_html__('File size exceeds the maximum limit.', 'real3d-flipbook')]);
+		wp_send_json_error(['message' => esc_html__('File size exceeds the maximum limit.', 'real3d-flipbook-lite')]);
 	}
 
 	// Extension & image check
@@ -135,33 +135,37 @@ function r3dfb_save_thumbnail_callback()
 	$filename = sanitize_file_name($_FILES['file']['name']);
 	$extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 	if (!in_array($extension, $allowed_extensions)) {
-		wp_send_json_error(['message' => esc_html__('Invalid file extension.', 'real3d-flipbook')]);
+		wp_send_json_error(['message' => esc_html__('Invalid file extension.', 'real3d-flipbook-lite')]);
 	}
 	if (getimagesize($_FILES['file']['tmp_name']) === false) {
-		wp_send_json_error(['message' => esc_html__('File is not a valid image.', 'real3d-flipbook')]);
+		wp_send_json_error(['message' => esc_html__('File is not a valid image.', 'real3d-flipbook-lite')]);
 	}
 
 	// Unique filename
-	$hashed_filename = 'thumbnail_' . time() . '_' . wp_generate_password(4, false, false) . '.' . $extension;
-	$destination = $book_folder . $hashed_filename;
-	$counter = 0;
-	while (file_exists($destination)) {
-		$counter++;
-		$hashed_filename = 'thumbnail_' . time() . '_' . wp_generate_password(4, false, false) . "_{$counter}." . $extension;
-		$destination = $book_folder . $hashed_filename;
-	}
+	$file = $_FILES['file'];
+	$file['name'] = 'thumbnail_' . time() . '_' . wp_generate_password(4, false, false) . '.' . $extension;
 
 	// Move file
-	if (!move_uploaded_file($_FILES['file']['tmp_name'], $destination)) {
-		wp_send_json_error(['message' => esc_html__('Failed to save the uploaded file.', 'real3d-flipbook')]);
+	require_once ABSPATH . 'wp-admin/includes/file.php';
+	$book_dir = function ($dirs) use ($id) {
+		$dirs['subdir'] = "/real3d-flipbook/flipbook_{$id}";
+		$dirs['path'] = $dirs['basedir'] . $dirs['subdir'];
+		$dirs['url'] = $dirs['baseurl'] . $dirs['subdir'];
+		return $dirs;
+	};
+	add_filter('upload_dir', $book_dir);
+	$moved = wp_handle_upload($file, ['test_form' => false]);
+	remove_filter('upload_dir', $book_dir);
+	if (empty($moved['url']) || !empty($moved['error'])) {
+		wp_send_json_error(['message' => esc_html__('Failed to save the uploaded file.', 'real3d-flipbook-lite')]);
 	}
-	$thumbnail_url = $book_url . $hashed_filename;
+	$thumbnail_url = $moved['url'];
 
 	// Remove old thumbnail
 	if (!empty($book['lightboxThumbnailUrl'])) {
 		$old_file = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $book['lightboxThumbnailUrl']);
 		if (file_exists($old_file)) {
-			@unlink($old_file);
+			wp_delete_file($old_file);
 		}
 	}
 
@@ -225,11 +229,11 @@ function r3dfb_pdf_links_notice()
 
 	printf(
 		'<div class="notice notice-warning"><p><strong>%1$s</strong> %2$s</p><p><a href="%3$s" class="button button-secondary">%4$s</a> &nbsp; <a href="%5$s">%6$s</a></p></div>',
-		esc_html__('Real3D Flipbook:', 'real3d-flipbook'),
-		esc_html__('Opening PDF links as flipbooks is now off by default. This site was using the previous default, so links to PDF files now open the file instead of a flipbook. You can switch it back on under Settings > Overrides.', 'real3d-flipbook'),
+		esc_html__('Real3D Flipbook:', 'real3d-flipbook-lite'),
+		esc_html__('Opening PDF links as flipbooks is now off by default. This site was using the previous default, so links to PDF files now open the file instead of a flipbook. You can switch it back on under Settings > Overrides.', 'real3d-flipbook-lite'),
 		esc_url(admin_url('admin.php?page=real3d_flipbook_settings')),
-		esc_html__('Open settings', 'real3d-flipbook'),
+		esc_html__('Open settings', 'real3d-flipbook-lite'),
 		esc_url(wp_nonce_url(add_query_arg('r3d_dismiss_pdf_links', '1'), 'r3d_dismiss_pdf_links')),
-		esc_html__('Dismiss', 'real3d-flipbook')
+		esc_html__('Dismiss', 'real3d-flipbook-lite')
 	);
 }

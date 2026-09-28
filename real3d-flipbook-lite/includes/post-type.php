@@ -1,4 +1,7 @@
 <?php
+if (!defined('ABSPATH')) {
+	exit;
+}
 
 class R3D_Post_Type
 {
@@ -22,22 +25,22 @@ class R3D_Post_Type
 
 		register_post_type('r3d', array(
 			'labels'             => array(
-				'name'               => esc_html__('Real3D Flipbook', 'real3d-flipbook'),
-				'singular_name'      => esc_html__('Real3D Flipbook', 'real3d-flipbook'),
-				'menu_name'          => esc_html__('Real3D Flipbook', 'real3d-flipbook'),
-				'name_admin_bar'     => esc_html__('Real3D Flipbook', 'real3d-flipbook'),
-				'add_new'            => esc_html__('Add New', 'real3d-flipbook'),
-				'add_new_item'       => esc_html__('Add New Flipbook', 'real3d-flipbook'),
-				'new_item'           => esc_html__('New Book', 'real3d-flipbook'),
-				'edit_item'          => esc_html__('Edit Book', 'real3d-flipbook'),
-				'view_item'          => esc_html__('View Book', 'real3d-flipbook'),
-				'all_items'          => esc_html__('Flipbooks', 'real3d-flipbook'),
-				'search_items'       => esc_html__('Search', 'real3d-flipbook'),
-				'parent_item_colon'  => esc_html__('Parent Book:', 'real3d-flipbook'),
-				'not_found'          => esc_html__('Flipbook Not found.', 'real3d-flipbook'),
-				'not_found_in_trash' => esc_html__('Flipbook Not found in Trash.', 'real3d-flipbook')
+				'name'               => esc_html__('Real3D Flipbook', 'real3d-flipbook-lite'),
+				'singular_name'      => esc_html__('Real3D Flipbook', 'real3d-flipbook-lite'),
+				'menu_name'          => esc_html__('Real3D Flipbook', 'real3d-flipbook-lite'),
+				'name_admin_bar'     => esc_html__('Real3D Flipbook', 'real3d-flipbook-lite'),
+				'add_new'            => esc_html__('Add New', 'real3d-flipbook-lite'),
+				'add_new_item'       => esc_html__('Add New Flipbook', 'real3d-flipbook-lite'),
+				'new_item'           => esc_html__('New Book', 'real3d-flipbook-lite'),
+				'edit_item'          => esc_html__('Edit Book', 'real3d-flipbook-lite'),
+				'view_item'          => esc_html__('View Book', 'real3d-flipbook-lite'),
+				'all_items'          => esc_html__('Flipbooks', 'real3d-flipbook-lite'),
+				'search_items'       => esc_html__('Search', 'real3d-flipbook-lite'),
+				'parent_item_colon'  => esc_html__('Parent Book:', 'real3d-flipbook-lite'),
+				'not_found'          => esc_html__('Flipbook Not found.', 'real3d-flipbook-lite'),
+				'not_found_in_trash' => esc_html__('Flipbook Not found in Trash.', 'real3d-flipbook-lite')
 			),
-			'description'        => esc_html__('Description.', 'real3d-flipbook'),
+			'description'        => esc_html__('Description.', 'real3d-flipbook-lite'),
 			'public'             => true,
 			'publicly_queryable' => true,
 			'show_ui'            => true,
@@ -64,15 +67,15 @@ class R3D_Post_Type
 
 		register_taxonomy('r3d_category', 'r3d', array(
 			'labels'             => array(
-				'name' => esc_html__('Flipbook Categories', 'real3d-flipbook'),
-				'singular_name' => esc_html__('Flipbook Category', 'real3d-flipbook'),
-				'search_items' =>  esc_html__('Search Categories', 'real3d-flipbook'),
-				'all_items' => esc_html__('All Categories', 'real3d-flipbook'),
-				'edit_item' => esc_html__('Edit Categories', 'real3d-flipbook'),
-				'update_item' => esc_html__('Update Category', 'real3d-flipbook'),
-				'add_new_item' => esc_html__('Add New Category', 'real3d-flipbook'),
-				'new_item_name' => esc_html__('New Category', 'real3d-flipbook'),
-				'menu_name' => esc_html__('Categories', 'real3d-flipbook')
+				'name' => esc_html__('Flipbook Categories', 'real3d-flipbook-lite'),
+				'singular_name' => esc_html__('Flipbook Category', 'real3d-flipbook-lite'),
+				'search_items' =>  esc_html__('Search Categories', 'real3d-flipbook-lite'),
+				'all_items' => esc_html__('All Categories', 'real3d-flipbook-lite'),
+				'edit_item' => esc_html__('Edit Categories', 'real3d-flipbook-lite'),
+				'update_item' => esc_html__('Update Category', 'real3d-flipbook-lite'),
+				'add_new_item' => esc_html__('Add New Category', 'real3d-flipbook-lite'),
+				'new_item_name' => esc_html__('New Category', 'real3d-flipbook-lite'),
+				'menu_name' => esc_html__('Categories', 'real3d-flipbook-lite')
 			),
 			'hierarchical'      => true,
 			'public'            => true,
@@ -84,15 +87,15 @@ class R3D_Post_Type
 
 		register_taxonomy('r3d_author', 'r3d', array(
 			'labels'             => array(
-				'name' => esc_html__('Flipbook Authors', 'real3d-flipbook'),
-				'singular_name' => esc_html__('Flipbook Author', 'real3d-flipbook'),
-				'search_items' =>  esc_html__('Search Authors', 'real3d-flipbook'),
-				'all_items' => esc_html__('All Authors', 'real3d-flipbook'),
-				'edit_item' => esc_html__('Edit Author', 'real3d-flipbook'),
-				'update_item' => esc_html__('Update Author', 'real3d-flipbook'),
-				'add_new_item' => esc_html__('Add New Author', 'real3d-flipbook'),
-				'new_item_name' => esc_html__('New Author', 'real3d-flipbook'),
-				'menu_name' => esc_html__('Authors', 'real3d-flipbook')
+				'name' => esc_html__('Flipbook Authors', 'real3d-flipbook-lite'),
+				'singular_name' => esc_html__('Flipbook Author', 'real3d-flipbook-lite'),
+				'search_items' =>  esc_html__('Search Authors', 'real3d-flipbook-lite'),
+				'all_items' => esc_html__('All Authors', 'real3d-flipbook-lite'),
+				'edit_item' => esc_html__('Edit Author', 'real3d-flipbook-lite'),
+				'update_item' => esc_html__('Update Author', 'real3d-flipbook-lite'),
+				'add_new_item' => esc_html__('Add New Author', 'real3d-flipbook-lite'),
+				'new_item_name' => esc_html__('New Author', 'real3d-flipbook-lite'),
+				'menu_name' => esc_html__('Authors', 'real3d-flipbook-lite')
 			),
 			'hierarchical'      => true,
 			'public'            => true,
@@ -248,7 +251,7 @@ class R3D_Post_Type
 			}
 
 
-			wp_redirect(admin_url('edit.php?post_type=r3d'));
+			wp_safe_redirect(admin_url('edit.php?post_type=r3d'));
 			exit;
 		} else {
 			wp_die('Post creation failed, could not find original post: ' . esc_html($post_id));
@@ -267,11 +270,11 @@ class R3D_Post_Type
 
 		$columns = array(
 			'cb'        => '<input type="checkbox" />',
-			'cover' => esc_html__('Cover', 'real3d-flipbook'),
-			'title'     => esc_html__('Title', 'real3d-flipbook'),
-			'shortcode' => esc_html__('Shortcode', 'real3d-flipbook'),
-			'date'      => esc_html__('Date', 'real3d-flipbook'),
-			'author'      => esc_html__('Author', 'real3d-flipbook')
+			'cover' => esc_html__('Cover', 'real3d-flipbook-lite'),
+			'title'     => esc_html__('Title', 'real3d-flipbook-lite'),
+			'shortcode' => esc_html__('Shortcode', 'real3d-flipbook-lite'),
+			'date'      => esc_html__('Date', 'real3d-flipbook-lite'),
+			'author'      => esc_html__('Author', 'real3d-flipbook-lite')
 		);
 
 		return $columns;
@@ -323,7 +326,7 @@ class R3D_Post_Type
 			$selected = isset($_GET[$taxonomy]) ? intval($_GET[$taxonomy]) : '';
 
 			wp_dropdown_categories(array(
-				'show_option_all' => esc_html__('All Categories', 'real3d-flipbook'),
+				'show_option_all' => esc_html__('All Categories', 'real3d-flipbook-lite'),
 				'taxonomy'        => $taxonomy,
 				'name'            => $taxonomy,
 				'orderby'         => 'name',

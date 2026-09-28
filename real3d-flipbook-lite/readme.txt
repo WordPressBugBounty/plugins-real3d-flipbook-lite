@@ -3,10 +3,10 @@ Contributors: creativeinteractivemedia
 Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
-Tested up to: 7.0
-Stable tag: 5.4
-License: GPLv3
-License URI: http://www.gnu.org/licenses/gpl-3.0.html
+Tested up to: 7.1
+Stable tag: 5.5
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Upload a PDF or images, get a 3D flipbook. Embed it anywhere with a block or shortcode - a realistic page-flip PDF viewer for WordPress.
 
@@ -225,6 +225,15 @@ Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_s
 5. Scroll PDF viewer - continuous scrolling instead of page flips.
 
 == Changelog ==
+
+= 5.5 =
+* New: live preview in the flipbook editor - the flipbook updates as you change settings, on desktop or phone, with a larger preview in a lightbox
+* New: the Toolbar tab shows every toolbar style and icon set as a picture
+* New: any toolbar button can be moved into the Tools ("More") menu
+* Change: the shortcode is now in the Publish box with a Copy button; the "Preview Flipbook" button is replaced by the live preview
+* Change: removed settings that had no effect
+* Change: the plugin uses its own text domain, real3d-flipbook-lite, so translations from translate.wordpress.org load
+* Improvement: code updates from the WordPress.org Plugin Check
 
 = 5.4 =
 * Security and stability fixes - update recommended
@@ -648,6 +657,9 @@ Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_s
 * initial release
 
 == Upgrade Notice ==
+
+= 5.5 =
+Live preview in the flipbook editor - see your flipbook update as you change settings, on desktop and phone.
 
 = 5.4 =
 Security and stability fixes - update recommended. Also faster loading, better use of the space around the toolbar, and fixes for book sizing on load and page flip sound on iOS.

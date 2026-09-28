@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.4';
+FLIPBOOK.version = '5.4.1';
 
 // page.image / page.imageBitmap are keyed by texture size, but legacy paths hand
 // back a bare Image, an ImageBitmap or a URL string. Resolve the requested tier,
@@ -171,10 +171,11 @@ FLIPBOOK.Main = class {
             enabled: false,
         },
         btnFirst: {
-            enabled: false,
+            enabled: true,
             title: 'First page',
             svg: 'last',
             iconReverse: true,
+            toolsMenu: true,
         },
         btnPrev: {
             enabled: true,
@@ -187,8 +188,9 @@ FLIPBOOK.Main = class {
             title: 'Next page',
         },
         btnLast: {
-            enabled: false,
+            enabled: true,
             title: 'Last page',
+            toolsMenu: true,
         },
         btnZoomIn: {
             enabled: true,
@@ -655,8 +657,10 @@ FLIPBOOK.Main = class {
             pageSegmentsW: 10,
             btnAutoplay: { toolsMenu: true },
             btnBookmark: { toolsMenu: true },
-            btnFirst: { enabled: false },
-            btnLast: { enabled: false },
+            // First/Last stay in the Tools menu on phones even when a host
+            // moved them out — no room for extra side arrows there.
+            btnFirst: { toolsMenu: true },
+            btnLast: { toolsMenu: true },
             currentPage: { enabled: false },
             pagesInMemory: 16, // a flip-past texture costs ~3MB now instead of
             // ~14MB, so a phone can hold twice the window for less memory and
@@ -2363,12 +2367,17 @@ FLIPBOOK.Main = class {
         }
 
     pauseGlobalSound() {
+        // Only pause what is playing: with sound already off there is nothing to
+        // resume, and resuming would switch on a sound the book disabled.
+        if (!this.options.sound) return;
         this.toggleSound(false);
         this.soundPaused = true;
     }
 
     resumeGlobalSound() {
-        if (this.soundPaused) this.toggleSound(true);
+        if (!this.soundPaused) return;
+        this.soundPaused = false;
+        this.toggleSound(true);
     }
 
     addPageNames() {
@@ -2464,7 +2473,8 @@ FLIPBOOK.Main = class {
                 // Only create params object if needed
                 const params = {};
                 if (bitmapResizeHeight) params.resizeHeight = bitmapResizeHeight;
-                if (bitmapResizeQuality) params.resizeQuality = bitmapResizeQuality;
+                const resizeQuality = bitmapResizeQuality === 'heigh' ? 'high' : bitmapResizeQuality;
+                if (['pixelated', 'low', 'medium', 'high'].indexOf(resizeQuality) !== -1) params.resizeQuality = resizeQuality;
 
                 const bmp = await createImageBitmap(blob, Object.keys(params).length ? params : undefined);
                 
@@ -5164,7 +5174,11 @@ FLIPBOOK.Main = class {
             this.btnPrev.style.marginLeft = o.arrowMargin + 'px';
             this.initArrowButton(this.btnPrev, this.prevPage.bind(this), o.btnPrev.title);
 
-            if (o.btnFirst.enabled) {
+            // First/Last that live in the Tools menu (the default) are menu
+            // entries only: no side arrow and no toolbar button.
+            const inTools = (name) => !!(o[name].enabled && o[name].toolsMenu && o.btnTools.enabled);
+
+            if (o.btnFirst.enabled && !inTools('btnFirst')) {
                 const $svgFirst = this.createSVGIcon('last', true);
                 this.btnFirst = document.createElement('span');
                 this.btnFirst.appendChild($svgFirst);
@@ -5176,7 +5190,7 @@ FLIPBOOK.Main = class {
                 this.initArrowButton(this.btnFirst, this.firstPage.bind(this), o.btnFirst.title);
             }
 
-            if (o.btnLast.enabled) {
+            if (o.btnLast.enabled && !inTools('btnLast')) {
                 const $svgLast = this.createSVGIcon('last');
                 this.btnLast = document.createElement('span');
                 this.btnLast.appendChild($svgLast);
@@ -5189,7 +5203,7 @@ FLIPBOOK.Main = class {
             }
 
             if (!o.menuNavigationButtons) {
-                if (o.btnOrder.indexOf('btnFirst') >= 0) {
+                if (!inTools('btnFirst') && o.btnOrder.indexOf('btnFirst') >= 0) {
                     o.btnOrder.splice(o.btnOrder.indexOf('btnFirst'), 1);
                 }
                 if (o.btnOrder.indexOf('btnPrev') >= 0) {
@@ -5198,7 +5212,7 @@ FLIPBOOK.Main = class {
                 if (o.btnOrder.indexOf('btnNext') >= 0) {
                     o.btnOrder.splice(o.btnOrder.indexOf('btnNext'), 1);
                 }
-                if (o.btnOrder.indexOf('btnLast') >= 0) {
+                if (!inTools('btnLast') && o.btnOrder.indexOf('btnLast') >= 0) {
                     o.btnOrder.splice(o.btnOrder.indexOf('btnLast'), 1);
                 }
             }
@@ -5221,6 +5235,8 @@ FLIPBOOK.Main = class {
         o.btnOrder = [
                 'currentPage',
                 'progressBar',
+                'btnFirst',
+                'btnLast',
                 'btnZoomOut',
                 'btnZoomIn',
                 'btnThumbs',
@@ -5388,6 +5404,8 @@ FLIPBOOK.Main = class {
                 break;
 
             case 'btnSound':
+                // The visitor's choice wins over a pending resume after page media.
+                this.soundPaused = false;
                 this.toggleSound();
                 break;
             case 'btnExpand':
@@ -10203,7 +10221,9 @@ FLIPBOOK.animate = function (params) {
 };
 FLIPBOOK.extend = function () {
     function isPlainObject(obj) {
-        return Object.prototype.toString.call(obj) === '[object Object]';
+        if (Object.prototype.toString.call(obj) !== '[object Object]') return false;
+        var proto = Object.getPrototypeOf(obj);
+        return proto === null || Object.getPrototypeOf(proto) === null;
     }
 
     var options,

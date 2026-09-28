@@ -43,17 +43,17 @@ function createAddon($name, $icon, $title, $description, $urls, $isInstalled = f
 		<div class="r3d-addon-actions">
 			<?php if (!empty($infoUrl)) : ?>
 				<a class="button button-secondary" href="<?php echo esc_url($urls[$name]['info']); ?>" target="_blank">
-					<?php esc_html_e('More Info', 'real3d-flipbook'); ?>
+					<?php esc_html_e('More Info', 'real3d-flipbook-lite'); ?>
 				</a>
 			<?php endif; ?>
 			<?php if ($requiresPro) : ?>
 				<a class="r3d-addon-pro" href="<?php echo esc_url(admin_url('admin.php?page=real3d_flipbook_upgrade')); ?>">
-					<?php esc_html_e('Requires PRO', 'real3d-flipbook'); ?>
+					<?php esc_html_e('Requires PRO', 'real3d-flipbook-lite'); ?>
 				</a>
 			<?php endif; ?>
 			<?php if ($isInstalled) : ?>
 				<span class="r3d-addon-installed">
-					<span class="dashicons dashicons-yes"></span><?php esc_html_e('Installed', 'real3d-flipbook'); ?>
+					<span class="dashicons dashicons-yes"></span><?php esc_html_e('Installed', 'real3d-flipbook-lite'); ?>
 				</span>
 			<?php endif; ?>
 		</div>
@@ -86,28 +86,28 @@ function createAddon($name, $icon, $title, $description, $urls, $isInstalled = f
 	</style>
 
 	<div class="r3d-addons-hero">
-		<h1><?php esc_html_e('Real3D Flipbook Addons', 'real3d-flipbook'); ?></h1>
-		<p><?php esc_html_e('Make Real3D Flipbook more powerful with Addons', 'real3d-flipbook'); ?></p>
+		<h1><?php esc_html_e('Real3D Flipbook Addons', 'real3d-flipbook-lite'); ?></h1>
+		<p><?php esc_html_e('Make Real3D Flipbook more powerful with Addons', 'real3d-flipbook-lite'); ?></p>
 	</div>
 
 	<div class="r3d-bundle">
-		<div class="r3d-bundle-badge"><?php esc_html_e('Save 57%', 'real3d-flipbook'); ?></div>
-		<h3><?php esc_html_e('Addon Bundle', 'real3d-flipbook'); ?></h3>
-		<p><?php esc_html_e('All 7 add-ons: Book Shelf, PDF Tools, Page Editor, WooCommerce, Elementor, WPBakery, Preview Mode', 'real3d-flipbook'); ?></p>
+		<div class="r3d-bundle-badge"><?php esc_html_e('Save 57%', 'real3d-flipbook-lite'); ?></div>
+		<h3><?php esc_html_e('Addon Bundle', 'real3d-flipbook-lite'); ?></h3>
+		<p><?php esc_html_e('All 7 add-ons: Book Shelf, PDF Tools, Page Editor, WooCommerce, Elementor, WPBakery, Preview Mode', 'real3d-flipbook-lite'); ?></p>
 		<a class="button button-primary button-large" href="<?php echo esc_url($urls['bundle']['info']); ?>" target="_blank">
-			<?php esc_html_e('Get the Bundle', 'real3d-flipbook'); ?>
+			<?php esc_html_e('Get the Bundle', 'real3d-flipbook-lite'); ?>
 		</a>
 	</div>
 
 	<div class="r3d-addon-grid">
 		<?php
-		createAddon('pageEditor', 'edit', __('Page Editor Addon', 'real3d-flipbook'), __('Add links, videos, sounds, Youtube, Vimeo and more to flipbook pages easily with visual editor', 'real3d-flipbook'), $urls, defined('R3D_PAGE_EDITOR_VERSION'), !$r3d_is_pro);
-		createAddon('wooCommerce', 'cart', __('WooCommerce Addon', 'real3d-flipbook'), __('Display flipbook on WooCommerce single product page', 'real3d-flipbook'), $urls, defined('R3D_WOO_VERSION'));
-		createAddon('pdfTools', 'performance', __('PDF Tools Addon', 'real3d-flipbook'), __('Optimize PDF flipbooks for faster loading by converting PDF to images and JSON', 'real3d-flipbook'), $urls, defined('R3D_PDF_TOOLS_VERSION'), !$r3d_is_pro);
-		createAddon('elementor', 'welcome-widgets-menus', __('Elementor Addon', 'real3d-flipbook'), __('Use Real3D Flipbook with Elementor as an element', 'real3d-flipbook'), $urls, class_exists("Elementor_Real3D_Flipbook"));
-		createAddon('bookShelf', 'book-alt', __('Bookshelf Addon', 'real3d-flipbook'), __('Create responsive book shelves with flipbooks', 'real3d-flipbook'), $urls, class_exists("Bookshelf_Addon"));
-		createAddon('wpBakery', 'layout', __('WPBakery Addon', 'real3d-flipbook'), __('Use Real3D Flipbook with WPBakery page builder', 'real3d-flipbook'), $urls, class_exists("Real3DFlipbook_VCAddon"));
-		createAddon('previewMode', 'lock', __('Preview Mode Addon', 'real3d-flipbook'), __('Show first x number of pages based on user login status', 'real3d-flipbook'), $urls, class_exists("R3D_Preview"));
+		createAddon('pageEditor', 'edit', __('Page Editor Addon', 'real3d-flipbook-lite'), __('Add links, videos, sounds, Youtube, Vimeo and more to flipbook pages easily with visual editor', 'real3d-flipbook-lite'), $urls, defined('R3D_PAGE_EDITOR_VERSION'), !$r3d_is_pro);
+		createAddon('wooCommerce', 'cart', __('WooCommerce Addon', 'real3d-flipbook-lite'), __('Display flipbook on WooCommerce single product page', 'real3d-flipbook-lite'), $urls, defined('R3D_WOO_VERSION'));
+		createAddon('pdfTools', 'performance', __('PDF Tools Addon', 'real3d-flipbook-lite'), __('Optimize PDF flipbooks for faster loading by converting PDF to images and JSON', 'real3d-flipbook-lite'), $urls, defined('R3D_PDF_TOOLS_VERSION'), !$r3d_is_pro);
+		createAddon('elementor', 'welcome-widgets-menus', __('Elementor Addon', 'real3d-flipbook-lite'), __('Use Real3D Flipbook with Elementor as an element', 'real3d-flipbook-lite'), $urls, class_exists("Elementor_Real3D_Flipbook"));
+		createAddon('bookShelf', 'book-alt', __('Bookshelf Addon', 'real3d-flipbook-lite'), __('Create responsive book shelves with flipbooks', 'real3d-flipbook-lite'), $urls, class_exists("Bookshelf_Addon"));
+		createAddon('wpBakery', 'layout', __('WPBakery Addon', 'real3d-flipbook-lite'), __('Use Real3D Flipbook with WPBakery page builder', 'real3d-flipbook-lite'), $urls, class_exists("Real3DFlipbook_VCAddon"));
+		createAddon('previewMode', 'lock', __('Preview Mode Addon', 'real3d-flipbook-lite'), __('Show first x number of pages based on user login status', 'real3d-flipbook-lite'), $urls, class_exists("R3D_Preview"));
 		?>
 	</div>
 

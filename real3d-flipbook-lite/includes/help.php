@@ -39,17 +39,17 @@ if (!defined('ABSPATH')) {
 	?>
 	<div class="r3d-help-hero">
 		<h1><?php echo $r3d_has_flipbooks
-			? esc_html__('Real3D Flipbook', 'real3d-flipbook')
-			: esc_html__('Welcome to Real3D Flipbook', 'real3d-flipbook'); ?></h1>
-		<p><?php esc_html_e('Transform your PDFs and images into engaging flipbooks — portfolios, magazines, brochures and product catalogs with a realistic 3D page flip.', 'real3d-flipbook'); ?></p>
+			? esc_html__('Real3D Flipbook', 'real3d-flipbook-lite')
+			: esc_html__('Welcome to Real3D Flipbook', 'real3d-flipbook-lite'); ?></h1>
+		<p><?php esc_html_e('Transform your PDFs and images into engaging flipbooks — portfolios, magazines, brochures and product catalogs with a realistic 3D page flip.', 'real3d-flipbook-lite'); ?></p>
 		<a href="<?php echo esc_url(admin_url('post-new.php?post_type=r3d')); ?>" class="button button-primary button-hero">
 			<?php echo $r3d_has_flipbooks
-				? esc_html__('Add new flipbook', 'real3d-flipbook')
-				: esc_html__('Create your first flipbook', 'real3d-flipbook'); ?>
+				? esc_html__('Add new flipbook', 'real3d-flipbook-lite')
+				: esc_html__('Create your first flipbook', 'real3d-flipbook-lite'); ?>
 		</a>
 		<?php if ($r3d_has_flipbooks) { ?>
 		<a href="<?php echo esc_url(admin_url('edit.php?post_type=r3d')); ?>" class="button button-hero">
-			<?php esc_html_e('View your flipbooks', 'real3d-flipbook'); ?>
+			<?php esc_html_e('View your flipbooks', 'real3d-flipbook-lite'); ?>
 		</a>
 		<?php } ?>
 	</div>
@@ -57,18 +57,18 @@ if (!defined('ABSPATH')) {
 	<div class="r3d-steps">
 		<div class="r3d-step">
 			<span class="r3d-step-num">1</span>
-			<h3><?php esc_html_e('Add a new flipbook', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('Go to Real3D Flipbook → Add New and select your PDF or images.', 'real3d-flipbook'); ?></p>
+			<h3><?php esc_html_e('Add a new flipbook', 'real3d-flipbook-lite'); ?></h3>
+			<p><?php esc_html_e('Go to Real3D Flipbook → Add New and select your PDF or images.', 'real3d-flipbook-lite'); ?></p>
 		</div>
 		<div class="r3d-step">
 			<span class="r3d-step-num">2</span>
-			<h3><?php esc_html_e('Publish and copy the shortcode', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('Publish the flipbook, then copy its shortcode from the Shortcode box.', 'real3d-flipbook'); ?></p>
+			<h3><?php esc_html_e('Publish and copy the shortcode', 'real3d-flipbook-lite'); ?></h3>
+			<p><?php esc_html_e('Publish the flipbook, then copy its shortcode from the Shortcode box.', 'real3d-flipbook-lite'); ?></p>
 		</div>
 		<div class="r3d-step">
 			<span class="r3d-step-num">3</span>
-			<h3><?php esc_html_e('Embed it anywhere', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('Paste the shortcode into any post or page — or use the Gutenberg block.', 'real3d-flipbook'); ?></p>
+			<h3><?php esc_html_e('Embed it anywhere', 'real3d-flipbook-lite'); ?></h3>
+			<p><?php esc_html_e('Paste the shortcode into any post or page — or use the Gutenberg block.', 'real3d-flipbook-lite'); ?></p>
 		</div>
 	</div>
 
@@ -78,18 +78,18 @@ if (!defined('ABSPATH')) {
 		?>
 		<div class="r3d-resource">
 			<span class="dashicons dashicons-book"></span>
-			<h3><?php esc_html_e('Documentation', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('Detailed instructions and tips on using Real3D Flipbook.', 'real3d-flipbook'); ?></p>
+			<h3><?php esc_html_e('Documentation', 'real3d-flipbook-lite'); ?></h3>
+			<p><?php esc_html_e('Detailed instructions and tips on using Real3D Flipbook.', 'real3d-flipbook-lite'); ?></p>
 			<a class="button button-secondary" href="<?php echo esc_url('https://real3dflipbook.gitbook.io/wp-lite'); ?>" target="_blank">
-				<?php esc_html_e('Open documentation', 'real3d-flipbook'); ?>
+				<?php esc_html_e('Open documentation', 'real3d-flipbook-lite'); ?>
 			</a>
 		</div>
 		<div class="r3d-resource">
 			<span class="dashicons dashicons-sos"></span>
-			<h3><?php esc_html_e('Support forum', 'real3d-flipbook'); ?></h3>
-			<p><?php esc_html_e('Need help or found a bug? Get assistance or share feedback.', 'real3d-flipbook'); ?></p>
+			<h3><?php esc_html_e('Support forum', 'real3d-flipbook-lite'); ?></h3>
+			<p><?php esc_html_e('Need help or found a bug? Get assistance or share feedback.', 'real3d-flipbook-lite'); ?></p>
 			<a class="button button-secondary" href="<?php echo esc_url('https://wordpress.org/support/plugin/real3d-flipbook-lite/'); ?>" target="_blank">
-				<?php esc_html_e('Visit support forum', 'real3d-flipbook'); ?>
+				<?php esc_html_e('Visit support forum', 'real3d-flipbook-lite'); ?>
 			</a>
 		</div>
 		<?php
@@ -103,7 +103,7 @@ if (!defined('ABSPATH')) {
 	
 	?>
 	<div class="r3d-video">
-		<h2><?php esc_html_e('Video tutorial', 'real3d-flipbook'); ?></h2>
+		<h2><?php esc_html_e('Video tutorial', 'real3d-flipbook-lite'); ?></h2>
 		<div class="r3d-video-frame">
 			<iframe src="https://www.youtube.com/embed/1ljFRYr0Kh8"
 				allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

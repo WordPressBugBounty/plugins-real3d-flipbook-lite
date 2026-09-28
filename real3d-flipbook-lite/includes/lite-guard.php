@@ -1,4 +1,7 @@
 <?php
+if (!defined('ABSPATH')) {
+	exit;
+}
 
 // Lite-dependency guard for the requires-lite build of Real3D Flipbook PRO. Returns
 // true if Pro may load, or false (after queuing an admin notice) if Lite is missing or
