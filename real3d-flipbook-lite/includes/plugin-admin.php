@@ -41,7 +41,14 @@ function r3d_save_general_callback()
 
 	unset($_POST['security'], $_POST['action']);
 
-	$data = $_POST;
+	$allowed_keys = array_merge(
+		array_keys(r3dfb_getDefaults()),
+		array_keys((array) get_option('real3dflipbook_global', array())),
+		array('manageFlipbooks', 'btnBackgroundHover', 'lockedPageSize', 'previewTitle', 'previewDescription', 'previewButtonText', 'previewButtonUrl', 'sideMenuOverMenu', 'sideMenuOverMenu2', 'socialShare')
+	);
+	$allowed_keys = apply_filters('r3d_global_settings_keys', $allowed_keys);
+
+	$data = array_intersect_key($_POST, array_flip($allowed_keys));
 
 	if (isset($data['slug']) && (get_option('real3dflipbook_global')['slug'] ?? '') != $data['slug']) {
 		update_option('r3d_flush_rewrite_rules', true);
@@ -163,8 +170,30 @@ function r3dfb_save_thumbnail_callback()
 
 	// Remove old thumbnail
 	if (!empty($book['lightboxThumbnailUrl'])) {
-		$old_file = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], $book['lightboxThumbnailUrl']);
-		if (file_exists($old_file)) {
+		$thumb_path = function ($url) use ($upload_dir) {
+			$file = realpath(str_replace($upload_dir['baseurl'], $upload_dir['basedir'], preg_replace('/[?#].*/s', '', (string) $url)));
+			return $file ? wp_normalize_path($file) : '';
+		};
+		$old_file = $thumb_path($book['lightboxThumbnailUrl']);
+		$old_name = basename($old_file);
+		$book_root = realpath($book_folder);
+		$deletable = $old_file && $book_root && is_file($old_file)
+			&& strpos($old_file, trailingslashit(wp_normalize_path($book_root))) === 0
+			&& preg_match('/^thumbnail(_\d+_[a-z0-9]+(-\d+)?)?\.(jpe?g|png|gif|webp)$/i', $old_name);
+		if ($deletable) {
+			foreach ((array) get_option('real3dflipbooks_ids', array()) as $other_id) {
+				if ((int) $other_id === $id) {
+					continue;
+				}
+				$other = get_option('real3dflipbook_' . $other_id);
+				$other_url = is_array($other) && !empty($other['lightboxThumbnailUrl']) ? (string) $other['lightboxThumbnailUrl'] : '';
+				if ($other_url && basename(preg_replace('/[?#].*/s', '', $other_url)) === $old_name && $thumb_path($other_url) === $old_file) {
+					$deletable = false;
+					break;
+				}
+			}
+		}
+		if ($deletable) {
 			wp_delete_file($old_file);
 		}
 	}

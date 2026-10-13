@@ -4,7 +4,7 @@ Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 5.5
+Stable tag: 5.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -225,6 +225,31 @@ Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_s
 5. Scroll PDF viewer - continuous scrolling instead of page flips.
 
 == Changelog ==
+
+= 5.7 =
+* Security and stability fixes - update recommended
+* New: "Hard cover" option (General tab) - the front and back covers are thick boards with a cloth texture, a hinge groove and a spine, larger than the pages, in a colour of your choice ("Hard cover color"); a flipbook with Hard cover always uses the WebGL view mode
+* Improvement: the page shading at the spine is no longer the same on every spread - it follows how many pages lie on each side (WebGL view mode)
+* Improvement: fewer blank pages while flipping, in the WebGL, 3D, 2D and Swipe view modes - the next pages are prepared in advance and the visible pages are sharpened once the book rests
+* Improvement: image flipbooks show the page thumbnail in place of the loading spinner while the full page image loads, in every view mode, and open as soon as the thumbnail of the first page has arrived
+* Improvement: image flipbooks use less memory in the WebGL view mode
+* Improvement: a flipbook in a closed lightbox no longer keeps loading pages
+* Improvement: less jumping while a flipbook loads on the page - its starting height follows the "Container aspect ratio" setting and is never taller than the browser window
+* Change: new look for the toolbar - one divider line instead of a border around the bar, smaller buttons with a rounded hover highlight
+* Change: more compact More and Share menus with the same hover highlight as the toolbar; on short flipbooks the More menu fits inside the flipbook and scrolls instead of being cut off
+* Change: buttons that are switched on (open thumbnails, table of contents, search, bookmarks, More and Share menus, autoplay while it runs) get a grey highlight
+* Change: the Simple view mode quickly fades between pages instead of switching instantly
+* Change: Scroll view mode - the mouse wheel and touch scrolling beside the pages scroll the web page; only the pages scroll the flipbook
+* Change: the Toolbar tab shows a simple drawing of each toolbar style, and the icon sets are called Solid and Outline
+* Fix: image flipbook in a lightbox (WebGL view mode) - after closing and reopening the lightbox a page could stay on the loading spinner until the site was reloaded
+* Fix: a page that was already loaded could stay blank until the page turn finished (WebGL view mode)
+* Fix: a page image that fails to load is requested again instead of leaving the page on the loading spinner
+* Fix: "Maximum call stack size exceeded" error in the 3D, 2D and Simple view modes when a flipbook is hidden, for example in an inactive tab or a closed accordion
+* Fix: on phones the 3D, 2D and Simple view modes opened on the page after the start page for even page numbers, and thumbnails and the table of contents could open the neighbouring page
+* Fix: the Simple view mode skipped a page on Next and Previous on phones
+* Fix: Scroll view mode - after opening at a start page the page number showed the previous page until the reader scrolled, and Next and Previous continued from it
+* Fix: the table of contents did not open when one of its items pointed to a page after the last page of the book
+* Fix: on narrow screens the Share menu did not open from the More menu, and toolbar buttons could be missing when the More button is turned off
 
 = 5.5 =
 * New: live preview in the flipbook editor - the flipbook updates as you change settings, on desktop or phone, with a larger preview in a lightbox
@@ -657,6 +682,9 @@ Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_s
 * initial release
 
 == Upgrade Notice ==
+
+= 5.7 =
+Security and stability fixes - update recommended. Also a new Hard cover option, fewer blank pages while flipping, and page thumbnails while image pages load.
 
 = 5.5 =
 Live preview in the flipbook editor - see your flipbook update as you change settings, on desktop and phone.

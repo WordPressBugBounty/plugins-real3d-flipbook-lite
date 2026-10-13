@@ -362,6 +362,27 @@ function r3d_escAttr(value) {
     );
 
     addOptionGeneral(
+      "hardCover",
+      "checkbox",
+      "Hard cover",
+      "Hardbound book - front and back cover are rigid boards, larger than the pages. Always uses the WebGL view mode"
+    );
+
+    addOptionGeneral(
+      "hardCoverOverhang",
+      "text",
+      "Hard cover size",
+      "how much larger the covers are than the pages, in percent of the page height"
+    );
+
+    addOptionGeneral(
+      "hardCoverColor",
+      "color",
+      "Hard cover color",
+      "color of the cover board that shows around the pages"
+    );
+
+    addOptionGeneral(
       "pageCaptions",
       "checkbox",
       "Page Captions",
@@ -1388,7 +1409,11 @@ function r3d_escAttr(value) {
         var isLocked = locked && item.value !== fallback;
         var $item = $('<button type="button" class="r3d-pick-item"></button>')
           .attr("data-value", item.value)
-          .append($("<img>", { src: item.img, alt: "", loading: "lazy" }))
+          .append(
+            item.svg
+              ? $(item.svg)
+              : $("<img>", { src: item.img, alt: "", loading: "lazy" })
+          )
           .append($('<span class="r3d-pick-label"></span>').text(item.label));
         if (isLocked)
           $item
@@ -1416,6 +1441,16 @@ function r3d_escAttr(value) {
 
     (function r3dStylePickers() {
       var base = pluginDir + "assets/images/toolbar/";
+      var shapes = {
+        1: '<rect class="p" x="15" y="8" width="14" height="13" rx="1"/><rect x="3" y="23.5" width="38" height="3.5" rx="1"/>',
+        2: '<rect class="p" x="15" y="8" width="14" height="14" rx="1"/><rect x="4" y="4" width="8" height="3.5" rx="1.75"/><rect x="29" y="4" width="11" height="3.5" rx="1.75"/>',
+        3: '<rect class="p" x="15" y="9" width="14" height="13" rx="1"/><rect x="3" y="3" width="38" height="3.5" rx="1"/>',
+        4: '<rect class="p" x="15" y="9" width="14" height="13" rx="1"/><rect x="13" y="3.5" width="18" height="3.5" rx="1.75"/>',
+        5: '<rect class="p" x="15" y="8" width="14" height="14" rx="1"/><rect x="4" y="22.5" width="8" height="3.5" rx="1.75"/><rect x="29" y="22.5" width="11" height="3.5" rx="1.75"/>',
+        6: '<rect class="p" x="15" y="8" width="14" height="14" rx="1"/><rect x="32" y="4" width="8" height="3.5" rx="1.75"/>',
+        7: '<rect class="p" x="15" y="6" width="14" height="13" rx="1"/><rect x="3" y="21" width="38" height="6" rx="1"/><rect class="w" x="5" y="22.2" width="34" height="0.9"/>',
+        8: '<rect class="p" x="15" y="7" width="14" height="13" rx="1"/><rect x="13" y="22.5" width="18" height="3.5" rx="1.75"/>',
+      };
       r3dPicker(
         $("#r3d-pick-layout"),
         "layout",
@@ -1432,7 +1467,10 @@ function r3d_escAttr(value) {
           return {
             value: layout[0],
             label: layout[1],
-            img: base + "layout-" + layout[0] + ".webp",
+            svg:
+              '<svg viewBox="0 0 44 30" aria-hidden="true"><rect class="f" x="1" y="1" width="42" height="28" rx="4"/>' +
+              shapes[layout[0]] +
+              "</svg>",
           };
         }),
         "1",
@@ -1444,10 +1482,10 @@ function r3d_escAttr(value) {
         [
           {
             value: "fontawesome",
-            label: "FontAwesome",
+            label: "Solid",
             img: base + "icons-fontawesome.webp",
           },
-          { value: "lucide", label: "Lucide", img: base + "icons-lucide.webp" },
+          { value: "lucide", label: "Outline", img: base + "icons-lucide.webp" },
         ],
         "fontawesome"
       );
@@ -1518,7 +1556,7 @@ function r3d_escAttr(value) {
         disableRange: options.disableRange,
         disableAutoFetch: true,
         disableStream: true,
-        // isEvalSupported: true,
+        isEvalSupported: false,
         // maxImageSize: -1,
         // pdfBug: false,
         // postMessageTransfers: true,
@@ -1682,6 +1720,8 @@ function r3d_escAttr(value) {
           .find(".page-html-content")
           .attr("name", "pages[" + i + "][htmlContent]");
         $item.find(".page-json").attr("name", "pages[" + i + "][json]");
+        $item.find(".page-src-small").attr("name", "pages[" + i + "][srcSmall]");
+        $item.find(".page-src-large").attr("name", "pages[" + i + "][srcLarge]");
       }
     }
 
@@ -3376,6 +3416,8 @@ function r3d_escAttr(value) {
         options.pages[pageIndex].src = e.src;
         options.pages[pageIndex].thumb = e.thumb;
         if (e.json) options.pages[pageIndex].json = e.json;
+        options.pages[pageIndex].srcSmall = e.srcSmall || "";
+        options.pages[pageIndex].srcLarge = e.srcLarge || "";
 
         const $page = $pagesContainer
           .find('.page[data-index="' + pageIndex + '"]')
@@ -3385,6 +3427,8 @@ function r3d_escAttr(value) {
         $page.find(".page-src").val(e.src);
         $page.find(".page-thumb").val(e.thumb);
         $page.find(".page-json").val(e.json);
+        $page.find(".page-src-small").val(e.srcSmall || "");
+        $page.find(".page-src-large").val(e.srcLarge || "");
 
         const page = options.pages[pageIndex];
         if (page) {
@@ -3632,6 +3676,8 @@ function r3d_escAttr(value) {
         src = "",
         thumb = "",
         json = "",
+        srcSmall = "",
+        srcLarge = "",
         htmlContent = "",
       } = page;
       const pageNumber = id + 1;
@@ -3643,6 +3689,8 @@ function r3d_escAttr(value) {
       const escapedSrc = r3d_escAttr(src);
       const escapedThumb = r3d_escAttr(thumb);
       const escapedJson = r3d_escAttr(json);
+      const escapedSrcSmall = r3d_escAttr(srcSmall);
+      const escapedSrcLarge = r3d_escAttr(srcLarge);
 
       let sendPagesAsJson = false;
       let pageHtml;
@@ -3665,6 +3713,8 @@ function r3d_escAttr(value) {
 		  		  <input class="page-src flipbook-option-field" type="hidden" placeholder="src" value="${escapedSrc}" readonly/>
 		  		  <input class="page-thumb flipbook-option-field" type="hidden" placeholder="thumb" value="${escapedThumb}" readonly/>
 		  		  <input class="page-json flipbook-option-field" type="hidden" placeholder="json" value="${escapedJson}" readonly/>
+		  		  <input class="page-src-small flipbook-option-field" type="hidden" placeholder="srcSmall" value="${escapedSrcSmall}" readonly/>
+		  		  <input class="page-src-large flipbook-option-field" type="hidden" placeholder="srcLarge" value="${escapedSrcLarge}" readonly/>
 		  		  <input class="page-html-content flipbook-option-field" type="hidden" placeholder="htmlContent" value="${escapedHtmlContent}" readonly/>
 		  		</div>
 		  	  </li>
@@ -3873,6 +3923,25 @@ function r3d_escAttr(value) {
 
     getOption("viewMode", "select").change(onViewModeChange);
     onViewModeChange();
+
+    function onHardCoverChange() {
+      var val = getOption("hardCover", "select").val();
+      var on =
+        val == "true" ||
+        (val === "" && String(options.globals.hardCover) == "true");
+      var globalWebgl = String(options.globals.viewMode) == "webgl";
+      var viewMode = getOption("viewMode", "select");
+      var allowed = function (v) {
+        return v == "webgl" || (v === "" && globalWebgl);
+      };
+      viewMode.find("option").each(function () {
+        $(this).prop("disabled", on && !allowed($(this).val()));
+      });
+      if (on && !allowed(viewMode.val())) viewMode.val("webgl").trigger("change");
+    }
+
+    getOption("hardCover", "select").change(onHardCoverChange);
+    onHardCoverChange();
 
     function setOptionValue(optionName, value = "", type = "input") {
       options[optionName] = value;
@@ -4143,6 +4212,11 @@ function r3d_escAttr(value) {
 
     function setSrc(index, val) {
       getPage(index).find(".page-src").val(val);
+      getPage(index).find(".page-src-small, .page-src-large").val("");
+      if (options.pages && options.pages[index]) {
+        delete options.pages[index].srcSmall;
+        delete options.pages[index].srcLarge;
+      }
     }
 
     function getThumb(index) {

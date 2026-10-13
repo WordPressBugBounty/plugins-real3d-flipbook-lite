@@ -29,6 +29,7 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
         this.spacer = el; // existing this.book — becomes the size-spacer
 
         this.pageGap = 8;
+        this.sidePad = 32;
         this.scale = 1;
         this.zoom = 1;
         // _committedScale is the scale at which page wrappers / scroller
@@ -41,6 +42,7 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
         this.enabled = false;
         this.zoomDisabled = false;
         this._scrollEndTimer = null;
+        this._goingTo = -1;
 
         options.pageGap = this.pageGap;
 
@@ -100,7 +102,7 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
         const sourceH = this.options.pageHeight;
         const aspect = sourceW / sourceH;
 
-        const wrapperW = this.viewport.clientWidth || 1;
+        const wrapperW = this.wrapper.clientWidth - (this.viewport.offsetWidth - this.viewport.clientWidth) || 1;
         const wrapperH = this.viewport.clientHeight || 1;
         const wrapperAspect = wrapperW / wrapperH;
 
@@ -152,15 +154,18 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
         this.spacer.style.width = scaledFitW + 'px';
         this.spacer.style.height = totalH + 'px';
 
-        // Center horizontally when content is narrower than the viewport.
-        const viewportW = this.viewport.clientWidth;
-        if (scaledFitW < viewportW) {
-            this.spacer.style.marginLeft = (viewportW - scaledFitW) / 2 + 'px';
-        } else {
-            this.spacer.style.marginLeft = '0';
-        }
+        this._fitViewport(scaledFitW);
 
         this._committedScale = this.scale;
+    }
+
+    _fitViewport(contentW) {
+        const bar = this.viewport.offsetWidth - this.viewport.clientWidth;
+        const free = Math.max(0, (this.wrapper.clientWidth - bar - contentW) / 2);
+        const side = Math.max(0, free - this.sidePad);
+        this.viewport.style.left = side + 'px';
+        this.viewport.style.right = side + 'px';
+        this.spacer.style.marginLeft = free - side + 'px';
     }
 
     // Mouse drag-to-scroll. Touch users get native browser scroll for free,
@@ -222,9 +227,9 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
     // touch-action: pan-x pan-y also helps but iOS Safari is unreliable.
     _setupGestureBlock() {
         const block = (e) => e.preventDefault();
-        this.viewport.addEventListener('gesturestart', block);
-        this.viewport.addEventListener('gesturechange', block);
-        this.viewport.addEventListener('gestureend', block);
+        this.wrapper.addEventListener('gesturestart', block);
+        this.wrapper.addEventListener('gesturechange', block);
+        this.wrapper.addEventListener('gestureend', block);
     }
 
     // Trackpad pinch on desktop fires wheel events with ctrlKey:true. We
@@ -238,7 +243,7 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
             function (e) {
                 if (!e.ctrlKey) return;
                 e.preventDefault();
-                const rect = self.viewport.getBoundingClientRect();
+                const rect = self.main.wrapper.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
                 const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
@@ -258,8 +263,10 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
         this.scrolling = true;
         this.updateRightIndex();
         clearTimeout(this._scrollEndTimer);
+        const goingTo = this._goingTo;
         this._scrollEndTimer = setTimeout(() => {
             this.scrolling = false;
+            this.updateRightIndex(this._goingTo === goingTo);
             this.pagesArr.forEach((p) => {
                 if (p.visibility > 0) p.load();
             });
@@ -288,7 +295,7 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
 
     resize() {}
 
-    updateRightIndex() {
+    updateRightIndex(settled) {
         let maxVis = 0;
         let idx = 0;
         this.pagesArr.forEach((page) => {
@@ -297,6 +304,13 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
                 idx = page.index;
             }
         });
+        if (!maxVis) return;
+        const target = this.pagesArr[this._goingTo];
+        if (target) {
+            if (target.visibility === maxVis) idx = target.index;
+            else if (!settled) return;
+            this._goingTo = -1;
+        }
         this.setRightIndex(idx);
     }
 
@@ -351,6 +365,7 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
             this.viewport.scrollTop = targetY;
         }
 
+        this._goingTo = value;
         this.setRightIndex(value);
         this.main.turnPageComplete();
     }
@@ -416,6 +431,7 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
         // Account for spacer's marginLeft when computing content coords. The
         // spacer may be offset from the viewport origin when narrower than it.
         const marginLeft = parseFloat(this.spacer.style.marginLeft) || 0;
+        const left = parseFloat(this.viewport.style.left) || 0;
         const sl = this.viewport.scrollLeft;
         const st = this.viewport.scrollTop;
 
@@ -432,7 +448,8 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
 
         // Restore focal: scrollLeft = cx*scale + newMargin - focalX
         const newMargin = parseFloat(this.spacer.style.marginLeft) || 0;
-        const targetSL = cx * scale + newMargin - focalX;
+        const shift = left - (parseFloat(this.viewport.style.left) || 0);
+        const targetSL = cx * scale + newMargin - focalX - shift;
         const targetST = cy * scale - focalY;
         this.viewport.scrollLeft = Math.max(0, targetSL);
         this.viewport.scrollTop = Math.max(0, targetST);
@@ -474,12 +491,7 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
         this.spacer.style.width = scaledFitW + 'px';
         this.spacer.style.height = totalH + 'px';
 
-        const viewportW = this.viewport.clientWidth;
-        if (scaledFitW < viewportW) {
-            this.spacer.style.marginLeft = (viewportW - scaledFitW) / 2 + 'px';
-        } else {
-            this.spacer.style.marginLeft = '0';
-        }
+        this._fitViewport(scaledFitW);
     }
 
     // Commit the current scale to real CSS layout and clear the transform.
@@ -588,7 +600,7 @@ FLIPBOOK.PageScroll = class {
     initObserver(scrollRoot) {
         const observer = new IntersectionObserver(
             (entries) => {
-                const entry = entries[0];
+                const entry = entries[entries.length - 1];
                 const visibility = entry.intersectionRatio;
                 if (visibility > 0) {
                     this.show(visibility);
@@ -604,6 +616,7 @@ FLIPBOOK.PageScroll = class {
 
     show(visibility) {
         this.visibility = visibility;
+        this.showThumb();
         if (!this.book.scrolling) this.load();
         if (!this.isVisible) {
             this.bg.style.display = 'block';
@@ -669,18 +682,7 @@ FLIPBOOK.PageScroll = class {
                 img = img.clone;
             }
 
-            if (self.options.doublePage && self.index > 0 && self.index % 2 === 0) {
-                img.style.left = '-100%';
-            }
-            if (self.options.doublePage) {
-                if (self.index === 0 || (self.index === self.options.pages.length - 1 && self.options.backCover)) {
-                    img.style.width = '100%';
-                } else {
-                    img.style.width = '200%';
-                }
-            } else {
-                img.style.width = '100%';
-            }
+            self._imgLayout(img);
 
             const swap = function () {
                 if (self.size > size) return;
@@ -689,6 +691,7 @@ FLIPBOOK.PageScroll = class {
                 Array.from(self.bg.children).forEach(function (c) {
                     if (c !== img && c.tagName === 'IMG') self.bg.removeChild(c);
                 });
+                self._thumb = null;
             };
             if (typeof img.decode === 'function') img.decode().then(swap, swap);
             else swap();
@@ -700,6 +703,8 @@ FLIPBOOK.PageScroll = class {
             this.bg.removeChild(this.bgImg);
         }
         this.bgImg = null;
+        if (this._thumb && this._thumb.parentNode === this.bg) this.bg.removeChild(this._thumb);
+        this._thumb = null;
         this.loaded = false;
         this.size = 0;
 
@@ -708,6 +713,35 @@ FLIPBOOK.PageScroll = class {
         if (this.preloader && !this.preloader.parentNode) {
             this.inner.appendChild(this.preloader);
         }
+    }
+
+    _imgLayout(img) {
+        const o = this.options;
+        if (o.doublePage && this.index > 0 && this.index % 2 === 0) img.style.left = '-100%';
+        if (o.doublePage) {
+            const single = this.index === 0 || (this.index === o.pages.length - 1 && o.backCover);
+            img.style.width = single ? '100%' : '200%';
+        } else {
+            img.style.width = '100%';
+        }
+    }
+
+    showThumb() {
+        if (this.bgImg || this._thumb) return;
+        const o = this.options;
+        const index = o.rightToLeft ? o.numPages - this.index - 1 : this.index;
+        const p = o.pages[index];
+        const spread = p && (p.side === 'left' || p.side === 'right');
+        const ratio = (o.pageWidth / o.pageHeight) * (spread ? 2 : 1);
+        const img = FLIPBOOK.pageThumb(o, index, ratio, (el) => {
+            if (this._thumb !== el || this.bgImg) return;
+            if (this.preloader && this.preloader.parentNode) this.inner.removeChild(this.preloader);
+        });
+        if (!img) return;
+        this._thumb = img;
+        img.classList.add('page-scroll-img');
+        this._imgLayout(img);
+        this.bg.insertBefore(img, this.bg.firstChild);
     }
 
     pauseHTML() {
@@ -723,6 +757,7 @@ FLIPBOOK.PageScroll = class {
         // back to texture-source pageHeight only if fit hasn't been computed
         // yet (very early load, before _updateBaseSize runs).
         const visualPx = (this.book.fitH || o.pageHeight) * (this.book.scale || 1) * dpr;
+        if (!o.pdfMode) return this.main.imageKeyFor(visualPx, (this.book.scale || 1) > 1);
         const tiers = [o.pageTextureSmall, o.pageTextureMedium, o.pageTextureLarge].filter(Boolean);
         return tiers.find((t) => visualPx < t * 0.9) || o.pageTextureLarge;
     }
@@ -775,18 +810,7 @@ FLIPBOOK.PageScroll = class {
                     img = img.clone;
                 }
 
-                if (self.options.doublePage && self.index > 0 && self.index % 2 === 0) {
-                    img.style.left = '-100%';
-                }
-                if (self.options.doublePage) {
-                    if (self.index === 0 || (self.index === self.options.pages.length - 1 && self.options.backCover)) {
-                        img.style.width = '100%';
-                    } else {
-                        img.style.width = '200%';
-                    }
-                } else {
-                    img.style.width = '100%';
-                }
+                self._imgLayout(img);
 
                 // Wait for decode before swapping — appending an undecoded
                 // <img> shows an empty rect for a frame; decode() resolves
@@ -800,6 +824,7 @@ FLIPBOOK.PageScroll = class {
                     Array.from(self.bg.children).forEach(function (c) {
                         if (c !== img && c.tagName === 'IMG') self.bg.removeChild(c);
                     });
+                    self._thumb = null;
                     if (self.preloader && self.preloader.parentNode) {
                         self.inner.removeChild(self.preloader);
                     }

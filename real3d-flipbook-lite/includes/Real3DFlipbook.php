@@ -652,6 +652,10 @@ class Real3DFlipbook
 			return $flipbook;
 		}
 
+		if (isset($flipbook['lightboxThumbnailUrl']) && is_string($flipbook['lightboxThumbnailUrl'])) {
+			$flipbook['lightboxThumbnailUrl'] = $this->sanitize_asset_url($flipbook['lightboxThumbnailUrl']);
+		}
+
 		if (isset($flipbook['tableOfContent']) && is_array($flipbook['tableOfContent'])) {
 			$flipbook['tableOfContent'] = $this->sanitize_toc_items($flipbook['tableOfContent']);
 		}
@@ -666,7 +670,7 @@ class Real3DFlipbook
 					$flipbook['pages'][$pageIndex]['title'] = sanitize_text_field($page['title']);
 				}
 
-				foreach (array('src', 'thumb', 'json') as $urlField) {
+				foreach (array('src', 'thumb', 'json', 'srcSmall', 'srcLarge') as $urlField) {
 					if (isset($page[$urlField]) && is_string($page[$urlField])) {
 						$flipbook['pages'][$pageIndex][$urlField] = $this->sanitize_asset_url($page[$urlField]);
 					}
@@ -694,6 +698,20 @@ class Real3DFlipbook
 					$flipbook['socialShare'][$shareIndex]['target'] = ('_self' === $share['target']) ? '_self' : '_blank';
 				}
 			}
+		}
+
+		foreach (array('previewTitle', 'previewButtonText') as $textField) {
+			if (isset($flipbook[$textField]) && is_string($flipbook[$textField])) {
+				$flipbook[$textField] = sanitize_text_field($flipbook[$textField]);
+			}
+		}
+
+		if (isset($flipbook['previewButtonUrl']) && is_string($flipbook['previewButtonUrl'])) {
+			$flipbook['previewButtonUrl'] = esc_url_raw($flipbook['previewButtonUrl']);
+		}
+
+		if (isset($flipbook['previewDescription']) && is_string($flipbook['previewDescription']) && !current_user_can('unfiltered_html')) {
+			$flipbook['previewDescription'] = wp_kses_post($flipbook['previewDescription']);
 		}
 
 		return $flipbook;
@@ -1747,7 +1765,7 @@ a:hover .link-icon {
 						if (!empty($page['src']) && !empty($page['thumb'])) {
 							$flipbook['pages'][$i]['src'] = $page['thumb'];
 						}
-						unset($flipbook['pages'][$i]['json']);
+						unset($flipbook['pages'][$i]['json'], $flipbook['pages'][$i]['srcSmall'], $flipbook['pages'][$i]['srcLarge']);
 					}
 				}
 			}
@@ -1764,7 +1782,7 @@ a:hover .link-icon {
 
 				if (!is_array($page)) continue;
 
-				foreach (['src', 'thumb', 'json'] as $key) {
+				foreach (['src', 'thumb', 'json', 'srcSmall', 'srcLarge'] as $key) {
 
 					if (empty($page[$key]) || !is_string($page[$key])) continue;
 

@@ -1381,6 +1381,47 @@ body.r3d-lp-open {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   max-width: 640px;
 }
+.r3d-pick-layouts {
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 10px;
+  max-width: 780px;
+  padding-top: 4px;
+}
+.r3d-pick-layouts .r3d-pick-item {
+  align-items: center;
+  gap: 8px;
+  padding: 14px 6px 10px;
+  text-align: center;
+}
+.r3d-pick-item svg {
+  display: block;
+  width: 66px;
+  height: 45px;
+  fill: currentColor;
+}
+.r3d-pick-item svg .f {
+  fill: none;
+  stroke: currentColor;
+  stroke-opacity: 0.4;
+}
+.r3d-pick-item svg .p {
+  fill-opacity: 0.16;
+}
+.r3d-pick-item svg .w {
+  fill: #fff;
+  fill-opacity: 0.85;
+}
+.r3d-pick-layouts .r3d-pick-item.is-selected {
+  color: var(--wp-admin-theme-color, #2271b1);
+}
+.r3d-pick-layouts .r3d-pick-item.is-global::after {
+  top: -9px;
+  left: 8px;
+}
+.r3d-pick-layouts .r3d-pick-pro {
+  top: -9px;
+  right: 8px;
+}
 .r3d-pick-item img {
   display: block;
   width: 100%;

@@ -232,7 +232,7 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 		<div id="tab-menu" style="display:none;">
 			<div class="meta-box-sortables">
 				<h3><?php esc_html_e('Toolbar style', 'real3d-flipbook-lite'); ?></h3>
-				<div class="r3d-pick" id="r3d-pick-layout"></div>
+				<div class="r3d-pick r3d-pick-layouts" id="r3d-pick-layout"></div>
 				<p class="description r3d-pick-note" id="r3d-pick-layout-note" style="display:none;"></p>
 
 				<h3><?php esc_html_e('Icons', 'real3d-flipbook-lite'); ?></h3>

@@ -133,7 +133,7 @@
 			<tr>
 				<td><?php esc_html_e('UI layouts and appearance', 'real3d-flipbook-lite'); ?></td>
 				<td><?php esc_html_e('Default layout', 'real3d-flipbook-lite'); ?></td>
-				<td><?php esc_html_e('8 layouts, 3 skins, FontAwesome or Lucide icons, progress bar', 'real3d-flipbook-lite'); ?></td>
+				<td><?php esc_html_e('8 layouts, 3 skins, solid or outline icons, progress bar', 'real3d-flipbook-lite'); ?></td>
 			</tr>
 			<tr>
 				<td><?php esc_html_e('Links inside PDF', 'real3d-flipbook-lite'); ?></td>

@@ -28,6 +28,7 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
         // in onZoom() when the user pinches in; PageSwipe.load() then swaps
         // the smaller bitmap out (book3-style).
         this.targetTier = options.pageTextureSmall || options.pageTextureLarge;
+        if (!options.pdfMode) this.targetTier = main.imageTierKey(this.targetTier);
 
         this.slides = [];
         this.pagesArr = [];
@@ -228,6 +229,8 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
 
             const ms = Math.round(600 * this.options.pageFlipDuration);
 
+            if (target !== this.currentSlide) this._turnStart();
+
             this._animateToSlide(target, ms, () => {
                 if (target === this.currentSlide) return;
 
@@ -241,6 +244,7 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
 
                 this.currentSlide = target;
 
+                this._landedAt = performance.now();
                 this._repositioning = true;
                 this.updateVisiblePages();
                 this._repositioning = false;
@@ -421,13 +425,17 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
             index--;
         }
 
+        var nt = this._neighbourTier();
         var next = this.pagesArr[index + 1];
-        if (next) next.load();
+        if (next) next.load(null, false, nt);
 
         if (!this.singlePage) {
             var afterNext = this.pagesArr[index + 2];
-            if (afterNext) afterNext.load();
+            if (afterNext) afterNext.load(null, false, nt);
         }
+
+        this._travelDir = 'next';
+        this._loadAhead('next', index);
     }
 
     loadPrevSpread() {
@@ -437,21 +445,57 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
             index--;
         }
 
+        var nt = this._neighbourTier();
         if (this.singlePage) {
             var prev = this.pagesArr[index - 1];
-            if (prev) prev.load();
+            if (prev) prev.load(null, false, nt);
         } else {
             var prev2 = this.pagesArr[index - 2];
-            if (prev2) prev2.load();
+            if (prev2) prev2.load(null, false, nt);
 
             var beforePrev = this.pagesArr[index - 3];
-            if (beforePrev) beforePrev.load();
+            if (beforePrev) beforePrev.load(null, false, nt);
         }
+
+        this._travelDir = 'prev';
+        this._loadAhead('prev', index);
+    }
+
+    _loadAhead(dir, index) {
+        var depth = this.options.pagePrefetchSpreads == null ? 3 : Math.floor(this.options.pagePrefetchSpreads) || 1;
+        if (depth < 2) return;
+        if (this._aheadDir === dir && this._aheadIndex === index) return;
+        this._aheadDir = dir;
+        this._aheadIndex = index;
+
+        var self = this;
+        var list = [];
+        for (var d = 1; d < depth; d++) {
+            if (this.singlePage) {
+                list.push(this.pagesArr[dir === 'next' ? index + 1 + d : index - 1 - d]);
+            } else if (dir === 'next') {
+                list.push(this.pagesArr[index + 1 + 2 * d], this.pagesArr[index + 2 + 2 * d]);
+            } else {
+                list.push(this.pagesArr[index - 2 - 2 * d], this.pagesArr[index - 3 - 2 * d]);
+            }
+        }
+
+        var step = function () {
+            if (self._aheadDir !== dir || self._aheadIndex !== index) return;
+            var page = list.shift();
+            while (!page && list.length) page = list.shift();
+            if (!page) return;
+            page.load(step, true, self._neighbourTier());
+        };
+        step();
     }
 
     loadVisiblePages() {
-        var main = this.options.main;
+        var self = this;
         var index = this.rightIndex;
+        var nt = this._neighbourTier();
+        var settle = this._sharpWait();
+        var vt = settle > 0 ? nt : this.targetTier;
 
         if (this.options.rightToLeft && !this.options.backCover && !this.singlePage) {
             index--;
@@ -463,40 +507,87 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
         var afterNext = this.pagesArr[index + 2];
         var prev = this.pagesArr[index - 2];
         var beforePrev = this.pagesArr[index - 3];
+        [right, left, next, prev, afterNext, beforePrev].forEach(function (p) {
+            if (p) p.showThumb();
+        });
 
         if (this.singlePage) {
             if (right) {
-                right.load(function () {
-                    if (left) left.load(null, true);
-                    if (next) next.load(null, true);
-                });
+                right.load(
+                    function () {
+                        if (left) left.load(null, true, nt);
+                        if (next) next.load(null, true, nt);
+                    },
+                    false,
+                    vt
+                );
             } else if (left) {
-                left.load();
+                left.load(null, false, vt);
             }
         } else {
             if (left) {
-                left.load(function () {
-                    if (right) {
-                        right.load(function () {
-                            if (prev) prev.load(null, true);
-                            if (beforePrev) beforePrev.load(null, true);
-                            if (next) next.load(null, true);
-                            if (afterNext) afterNext.load(null, true);
-                        });
-                    } else {
-                        if (prev) prev.load(null, true);
-                        if (beforePrev) beforePrev.load(null, true);
-                    }
-                });
+                left.load(
+                    function () {
+                        if (right) {
+                            right.load(
+                                function () {
+                                    if (prev) prev.load(null, true, nt);
+                                    if (beforePrev) beforePrev.load(null, true, nt);
+                                    if (next) next.load(null, true, nt);
+                                    if (afterNext) afterNext.load(null, true, nt);
+                                },
+                                false,
+                                vt
+                            );
+                        } else {
+                            if (prev) prev.load(null, true, nt);
+                            if (beforePrev) beforePrev.load(null, true, nt);
+                        }
+                    },
+                    false,
+                    vt
+                );
             } else {
                 if (right) {
-                    right.load(function () {
-                        if (next) next.load(null, true);
-                        if (afterNext) afterNext.load(null, true);
-                    });
+                    right.load(
+                        function () {
+                            if (next) next.load(null, true, nt);
+                            if (afterNext) afterNext.load(null, true, nt);
+                        },
+                        false,
+                        vt
+                    );
                 }
             }
         }
+
+        this._loadAhead(this._travelDir || (this.options.rightToLeft ? 'prev' : 'next'), index);
+
+        clearTimeout(this._sharpTimer);
+        if (vt < this.targetTier) {
+            var at = this.rightIndex;
+            this._sharpTimer = setTimeout(function () {
+                if (self.rightIndex !== at || self.flipping) return;
+                var visible = self.singlePage ? [right || left] : [left, right];
+                visible.forEach(function (page) {
+                    if (page) page.load(null, false, self.targetTier);
+                });
+            }, settle);
+        }
+    }
+
+    _sharpWait() {
+        var d = this.options.pageSharpDelay == null ? 300 : this.options.pageSharpDelay;
+        if (!this._landedAt || !(d > 0)) return 0;
+        return Math.max(0, d - (performance.now() - this._landedAt));
+    }
+
+    _turnStart() {
+        clearTimeout(this._sharpTimer);
+        var keep = this._neighbourTier();
+        this._cancelPdfRenders(function (i, size) {
+            return size > keep;
+        });
     }
 
     updateVisiblePages() {
@@ -766,6 +857,8 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
 
         const prevSlide = this.currentSlide;
 
+        if (slideIndex !== prevSlide) this._turnStart();
+
         this._animateToSlide(slideIndex, ms, () => {
             this.currentSlide = slideIndex;
 
@@ -777,6 +870,7 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
                     if (slideIndex > prevSlide) this.setRightIndex(this.rightIndex + 2);
                     else this.setRightIndex(this.rightIndex - 2);
                 }
+                this._landedAt = performance.now();
             }
 
             this._repositioning = true;
@@ -889,10 +983,10 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
             if (p && p.setRealSize) {
                 p.setRealSize(this.zoom);
                 this._realScalePages.push(p);
-                // Upgrade tier to large now that we're zoomed in. PageSwipe.load
-                // appends the new large IMG and removes the smaller one in the
+                // Upgrade to the current tier now that we're zoomed in. PageSwipe.load
+                // appends the new IMG and removes the smaller one in the
                 // same DOM op (no blink). Pages off-screen stay at small tier.
-                if (p.load) p.load(null, false, this.options.pageTextureLarge);
+                if (p.load) p.load(null, false, this.targetTier);
             }
         });
     }
@@ -941,17 +1035,42 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
     }
 
     onZoom(zoom) {
+        var before = this.targetTier;
+        this.targetTier = this._pickTier();
+
         if (zoom > 1) {
             this.disableFlip();
             this.enablePan();
-            this.targetTier = this.options.pageTextureLarge;
         } else {
             this.enableFlip();
             this.disablePan();
-            this.targetTier = this.options.pageTextureSmall || this.options.pageTextureLarge;
+            if (this.targetTier > before) this.loadVisiblePages();
         }
 
         this.options.main.onZoom(zoom);
+    }
+
+    _displayPageSizePhysical() {
+        var dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+        return this.pageHeight * (this.ratio || 0) * (this.zoom || 1) * dpr;
+    }
+
+    _pickTier() {
+        var o = this.options;
+        var large = o.pageTextureLarge;
+        var medium = o.pageTextureMedium || large;
+        var physical = this._displayPageSizePhysical();
+        var zoomedIn = this.zoom > o.zoomMin && this.zoom > 1;
+        if (!o.pdfMode) return this.main.imageKeyFor(physical, zoomedIn);
+        if (!physical) return o.pageTextureSmall || large;
+        var fit = Math.max(500, Math.ceil((physical * 1.12) / 250) * 250);
+        return zoomedIn && physical > medium ? large : Math.min(fit, medium);
+    }
+
+    _neighbourTier() {
+        var o = this.options;
+        var small = o.pdfMode ? o.pageTextureSmall : this.main.imageTierKey(o.pageTextureSmall);
+        return Math.min(small || this.targetTier, this.targetTier);
     }
 
     rotateLeft() {
@@ -2237,6 +2356,7 @@ FLIPBOOK.PageSwipe = class {
         }
 
         this.size = size;
+        this.showThumb();
 
         var self = this;
         var index = this.options.rightToLeft ? this.options.numPages - this.index - 1 : this.index;
@@ -2249,7 +2369,7 @@ FLIPBOOK.PageSwipe = class {
             // A higher-tier load may have completed in between (zoom-in race).
             // Drop this older render so we don't put a smaller bitmap on top
             // of a larger one.
-            if (self.size > size) {
+            if ((self.shown || 0) > size) {
                 if (!thumb) self.loadHTML();
                 if (callback) callback.call(self);
                 return;
@@ -2267,33 +2387,7 @@ FLIPBOOK.PageSwipe = class {
                     img = img.clone;
                 }
 
-                if (self.options.rightToLeft) {
-                    if (self.options.doublePage && self.index < self.options.numPages - 1 && self.index % 2 == 1) {
-                        img.style.left = '-100%';
-                    }
-                    if (self.options.doublePage) {
-                        if (self.index == self.options.numPages - 1 || (self.index == 0 && self.options.backCover)) {
-                            img.style.width = '100%';
-                        } else {
-                            img.style.width = '200%';
-                        }
-                    } else {
-                        img.style.width = '100%';
-                    }
-                } else {
-                    if (self.options.doublePage && self.index > 0 && self.index % 2 == 0) {
-                        img.style.left = '-100%';
-                    }
-                    if (self.options.doublePage) {
-                        if (self.index == 0 || (self.index == self.options.numPages - 1 && self.options.backCover)) {
-                            img.style.width = '100%';
-                        } else {
-                            img.style.width = '200%';
-                        }
-                    } else {
-                        img.style.width = '100%';
-                    }
-                }
+                self._imgLayout(img);
 
                 // Decode-await before swap so the new IMG is paint-ready when
                 // it replaces the old one — avoids a flash of empty bg during
@@ -2301,17 +2395,21 @@ FLIPBOOK.PageSwipe = class {
                 // inside doSwap because another upgrade may have raced past
                 // us during the await.
                 var doSwap = function () {
-                    if (self.size > size) return;
+                    if ((self.shown || 0) > size) return;
+                    self.shown = size;
                     self.bg.appendChild(img);
                     Array.from(self.bg.children).forEach((c) => {
                         if (c !== img && c.tagName === 'IMG') self.bg.removeChild(c);
                     });
+                    self._thumb = null;
                     if (self.preloader && self.preloader.parentNode) {
                         self.preloader.remove();
                     }
                 };
                 if (img.decode) img.decode().then(doSwap, doSwap);
                 else doSwap();
+            } else if (self.size === size) {
+                self.size = self.shown || 0;
             }
 
             self.setRotation();
@@ -2319,6 +2417,46 @@ FLIPBOOK.PageSwipe = class {
             if (!thumb) self.loadHTML();
             if (callback) callback.call(self);
         });
+    }
+
+    _imgLayout(img) {
+        var o = this.options;
+        var i = this.index;
+        var last = o.numPages - 1;
+        if (o.rightToLeft) {
+            if (o.doublePage && i < last && i % 2 == 1) img.style.left = '-100%';
+            if (o.doublePage) {
+                img.style.width = i == last || (i == 0 && o.backCover) ? '100%' : '200%';
+            } else {
+                img.style.width = '100%';
+            }
+        } else {
+            if (o.doublePage && i > 0 && i % 2 == 0) img.style.left = '-100%';
+            if (o.doublePage) {
+                img.style.width = i == 0 || (i == last && o.backCover) ? '100%' : '200%';
+            } else {
+                img.style.width = '100%';
+            }
+        }
+    }
+
+    showThumb() {
+        if (this.shown || this._thumb) return;
+        var o = this.options;
+        var index = o.rightToLeft ? o.numPages - this.index - 1 : this.index;
+        var p = o.pages[index];
+        var spread = p && (p.side == 'left' || p.side == 'right');
+        var ratio = (o.pageWidth / o.pageHeight) * (spread ? 2 : 1);
+        var self = this;
+        var img = FLIPBOOK.pageThumb(o, index, ratio, function (el) {
+            if (self._thumb !== el || self.shown) return;
+            if (self.preloader && self.preloader.parentNode) self.preloader.remove();
+        });
+        if (!img) return;
+        this._thumb = img;
+        img.classList.add('page-carousel-img');
+        this._imgLayout(img);
+        this.bg.insertBefore(img, this.bg.firstChild);
     }
 
     loadHTML() {
@@ -2350,6 +2488,8 @@ FLIPBOOK.PageSwipe = class {
     unload() {
         this.pageSize = 0;
         this.size = 0;
+        this.shown = 0;
+        this._thumb = null;
         // Drop any IMG bitmaps from bg so iOS releases the compositor
         // backing store. Without this, large-tier images accumulate
         // across many flips and exhaust GPU memory (no zoom required —
@@ -2378,6 +2518,7 @@ FLIPBOOK.PageSwipe = class {
         if (this.pageSize) {
             this.pageSize = null;
             this.bg.innerHTML = '';
+            this._thumb = null;
         }
     }
 

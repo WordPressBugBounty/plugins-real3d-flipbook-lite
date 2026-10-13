@@ -408,6 +408,7 @@
   padding: 0 12px 0 4px !important;
   font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif !important;
   font-size: 14px;
+  font-variant-numeric: tabular-nums;
   line-height: initial;
 }
 
@@ -418,6 +419,7 @@
   font-size: 14px !important;
   max-width: initial !important;
   font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif !important;
+  font-variant-numeric: tabular-nums;
   text-align: right !important;
   height: 100% !important;
   padding: 0 !important;
@@ -496,19 +498,31 @@
   position: relative;
   overflow: visible;
   cursor: pointer;
-  padding-right: 16px;
   /* min-width: 130px; */
-  width: max-content !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 7px 16px 7px 10px !important;
+}
+
+.flipbook-tools .flipbook-menu-btn-wrapper svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.flipbook-share.flipbook-submenu {
+  display: flex;
+  gap: 2px;
 }
 
 .flipbook-share .flipbook-menu-btn-wrapper {
   pointer-events: auto;
-  display: inline-block;
+  display: inline-flex;
+  justify-content: center;
   align-items: center;
   position: relative;
   overflow: visible;
   cursor: pointer;
-  padding: 16px;
+  padding: 10px;
 }
 
 .flipbook-menuBottom .flipbook-has-tooltip::before {
@@ -667,6 +681,35 @@
   align-items: center;
 }
 
+.flipbook-menu-fixed.flipbook-menu-solid > .flipbook-menu:not(:empty) {
+  gap: 2px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.flipbook-menu-btn-tint {
+  isolation: isolate;
+}
+
+.flipbook-menu-btn-tint::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  border-radius: 8px;
+  pointer-events: none;
+  transition: background-color 0.1s ease-out;
+}
+
+@media (hover: hover) {
+  .flipbook-menu-btn-tint:not(.disabled):hover::after {
+    background-color: rgba(128, 128, 128, 0.16);
+  }
+}
+
 @media only screen and (max-width: 768px) {
   .flipbook-menu-fixed .flipbook-menu {
     justify-content: space-around;
@@ -744,26 +787,23 @@
 .flipbook-compact .flipbook-menu-btn-wrapper.flipbook-compact-only {
   display: flex;
 }
-.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnSearch"]:not(.flipbook-compact-only),
-.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnBookmark"]:not(.flipbook-compact-only),
-.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnToc"]:not(.flipbook-compact-only),
-.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnThumbs"]:not(.flipbook-compact-only),
-.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnAutoplay"]:not(.flipbook-compact-only),
-.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnShare"]:not(.flipbook-compact-only) {
+.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnSearch"]:not(.flipbook-compact-only):not(.flipbook-tools > *),
+.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnBookmark"]:not(.flipbook-compact-only):not(.flipbook-tools > *),
+.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnToc"]:not(.flipbook-compact-only):not(.flipbook-tools > *),
+.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnThumbs"]:not(.flipbook-compact-only):not(.flipbook-tools > *),
+.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnAutoplay"]:not(.flipbook-compact-only):not(.flipbook-tools > *),
+.flipbook-compact .flipbook-menu-btn-wrapper[data-name="btnShare"]:not(.flipbook-compact-only):not(.flipbook-tools > *) {
   display: none;
 }
 
 /* Compact mode — shrink tools dropdown so it fits inside short flipbooks.
    !important needed because addCSS() sets padding/size inline on each button. */
-.flipbook-compact .flipbook-submenu .flipbook-menu-btn-wrapper {
-  padding: 12px 20px 12px 16px !important;
-  margin: 0 !important;
-  font-size: 15px;
+.flipbook-compact .flipbook-tools .flipbook-menu-btn-wrapper {
+  padding: 9px 18px 9px 12px !important;
+  font-size: 14px;
 }
-.flipbook-compact .flipbook-submenu .flipbook-menu-btn-wrapper svg {
-  width: 20px !important;
-  height: 20px !important;
-  margin-right: 14px !important;
+.flipbook-compact .flipbook-tools .flipbook-menu-btn-wrapper svg {
+  margin-right: 12px !important;
 }
 
 /* Compact mode — keep bottom/top menu rows on a single line (prevents the
@@ -788,7 +828,7 @@
         ):not([data-name='btnShare'])
     )
   ) {
-  display: none;
+  display: none !important;
 }
 
 .flipbook-menuTop {
@@ -1268,7 +1308,7 @@
 }
 
 .flipbook-thumb-strip-spread.flipbook-thumb-strip-spread-active {
-  box-shadow: 0 0 0 2px var(--flipbook-accent-color);
+  box-shadow: 0 0 0 2px var(--flipbook-accent-color, #3b82f6);
 }
 
 .flipbook-thumb-strip-thumb img,
@@ -1291,7 +1331,7 @@
 }
 
 .flipbook-thumb.flipbook-thumb-active {
-  box-shadow: 0 0 0 4px var(--flipbook-accent-color);
+  box-shadow: 0 0 0 4px var(--flipbook-accent-color, #3b82f6);
 }
 
 .flipbook-thumb-spread {
@@ -1812,6 +1852,16 @@
   border: none;
 }
 
+.flipbook-menuTop.flipbook-menu-fixed.flipbook-border {
+  border-width: 0 0 1px;
+  border-color: rgba(128, 128, 128, 0.22);
+}
+
+.flipbook-menuBottom.flipbook-menu-fixed.flipbook-border {
+  border-width: 1px 0 0;
+  border-color: rgba(128, 128, 128, 0.22);
+}
+
 .flipbook-sub-menu {
   position: absolute;
   top: 0;
@@ -1910,11 +1960,11 @@
 }
 
 /* In scroll mode the bookLayer itself doesn't scroll — the inner viewport
-   does. Block native page-level pinch-zoom on touches that fall on the
-   bookLayer area outside the viewport (e.g. between buttons) so iOS
-   Safari doesn't zoom the host page. */
+   does. Touches on the bookLayer area outside the viewport (beside the
+   pages, between buttons) pan the host page but never pinch-zoom it. */
 .flipbook-bookLayer.flipbook-mode-scroll {
-  touch-action: none;
+  touch-action: pan-x pan-y;
+  cursor: default;
 }
 
 .flipbook-bookLayer.flipbook-mode-scroll .flipbook-scroll-viewport {
@@ -2294,8 +2344,8 @@
   user-select: none;
 }
 
-.flipbook-btn-active {
-  background: rgba(128, 128, 128, 0.5);
+.flipbook-menu-btn-tint.flipbook-btn-active::after {
+  background-color: rgba(128, 128, 128, 0.16);
 }
 
 .flipbook-move {
@@ -2591,7 +2641,9 @@
   text-wrap: nowrap;
   border-radius: 8px !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  padding: 4px;
   animation: flipbook-scale-in 0.15s ease-out;
 }
 
@@ -2600,10 +2652,6 @@
   padding: 4px 12px;
   transition: background 0.15s ease;
   font-size: 13px;
-}
-
-.flipbook-submenu .flipbook-menu-btn:hover {
-  background: rgba(128, 128, 128, 0.12);
 }
 
 .flipbook-menuTop .flipbook-submenu {
@@ -2677,8 +2725,8 @@
 }
 
 /* Colours come from the --progress-* variables the ProgressBar sets from
-   options.progressBar (color / background); they fall back to the skin colour
-   so books that don't set them look exactly as before. */
+   options.progressBar (color / background); the fill falls back to the accent
+   colour, then the skin colour, and the track to the skin colour. */
 .flipbook-progress-bar .progress-track {
   position: absolute;
   top: 4px;
@@ -2695,7 +2743,7 @@
   top: 4px;
   left: 0;
   height: var(--pb-height, 4px);
-  background: var(--progress-fill, var(--flipbook-color));
+  background: var(--progress-fill, var(--flipbook-accent-color, var(--flipbook-color)));
   opacity: 1;
   border-radius: calc(var(--pb-height, 4px) / 2);
   z-index: 2;
@@ -2707,7 +2755,7 @@
   left: 0%;
   width: 12px;
   height: 12px;
-  background: var(--progress-thumb, var(--progress-fill, var(--flipbook-color)));
+  background: var(--progress-thumb, var(--progress-fill, var(--flipbook-accent-color, var(--flipbook-color))));
   border: var(--progress-thumb-border, none);
   border-radius: 50%;
   opacity: 1;
@@ -3016,29 +3064,32 @@
   pointer-events: auto;
 }
 
-/* Inner shadow at spine edge to match WebGL lightMap */
+/* Inner shadow at spine edge, matching the WebGL gutter shading of the face
+   underneath: the engine sets --fb-gutter-w / --fb-gutter-bg on .LInner and
+   .RInner from the same per-face values its shader uses, so the settled
+   page looks like the page did while it was turning. */
 .flipbook-page-html-only::after {
   content: '';
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 6.25%;
+  width: var(--fb-gutter-w, 6.25%);
   z-index: 10;
   pointer-events: none;
 }
 
-/* Right page: spine at left edge — specularF #d7d7d7 -> #CCC (slight highlight) */
+/* Right page: spine at left edge */
 .R .flipbook-page-html-only::after,
 .RInner .flipbook-page-html-only::after {
   left: 0;
-  background: linear-gradient(to right, rgba(255,255,255,0.05), rgba(255,255,255,0));
+  background: var(--fb-gutter-bg, linear-gradient(to right, rgba(255,255,255,0.05), rgba(255,255,255,0)));
 }
 
 /* Left page: spine at right edge */
 .L .flipbook-page-html-only::after,
 .LInner .flipbook-page-html-only::after {
   right: 0;
-  background: linear-gradient(to left, rgba(0,0,0,0.06), rgba(0,0,0,0));
+  background: var(--fb-gutter-bg, linear-gradient(to left, rgba(0,0,0,0.06), rgba(0,0,0,0)));
 }
 
 .C .flipbook-page-html-only::after,
@@ -4044,7 +4095,7 @@
 .flipbook-right-arrow:focus-visible,
 .flipbook-first-arrow:focus-visible,
 .flipbook-last-arrow:focus-visible {
-  outline: 2px solid var(--flipbook-accent-color, #4285f4);
+  outline: 2px solid var(--flipbook-accent-color, #3b82f6);
   outline-offset: 2px;
 }
 

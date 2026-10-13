@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.4.1';
+FLIPBOOK.version = '5.7';
 
 // page.image / page.imageBitmap are keyed by texture size, but legacy paths hand
 // back a bare Image, an ImageBitmap or a URL string. Resolve the requested tier,
@@ -11,6 +11,34 @@ FLIPBOOK.tierSource = function (store, size) {
     if (store[size]) return store[size];
     var tiers = Object.keys(store);
     return tiers.length ? store[tiers[tiers.length - 1]] : null;
+};
+
+FLIPBOOK.pageThumb = function (o, index, ratio, onShow) {
+    if (!o.thumbPlaceholder) return null;
+    var page = o.pages && o.pages[index];
+    if (!page || !page.thumb) return null;
+    var bare = function (u) {
+        return String(u || '').replace(/^https?:/, '');
+    };
+    if (bare(page.thumb) === bare(page.src)) return null;
+    var url = page.thumb;
+    if (o.matchProtocol !== false) url = url.replace(/^https?:/, location.protocol);
+    var img = new Image();
+    img.decoding = 'async';
+    img.alt = '';
+    img.className = 'flipbook-page-thumb';
+    img.onload = function () {
+        if (ratio && Math.abs(img.naturalWidth / img.naturalHeight / ratio - 1) > 0.04) {
+            if (img.parentNode) img.parentNode.removeChild(img);
+            return;
+        }
+        if (onShow) onShow(img);
+    };
+    img.onerror = function () {
+        if (img.parentNode) img.parentNode.removeChild(img);
+    };
+    img.src = url;
+    return img;
 };
 
 // eslint-disable-next-line no-shadow-restricted-names
@@ -30,6 +58,11 @@ FLIPBOOK.tierSource = function (store, size) {
         return new FLIPBOOK.Main(options, el);
     };
 })(window, document);
+
+FLIPBOOK.getBook = function (target) {
+    const el = typeof target === 'string' ? document.getElementById(target) : target && target.jquery ? target[0] : target;
+    return (el && FLIPBOOK.instances && FLIPBOOK.instances.get(el)) || null;
+};
 
 FLIPBOOK.Main = class {
     static defaultOptions = {
@@ -82,7 +115,7 @@ FLIPBOOK.Main = class {
         menu2Margin: 0,
         menu2Padding: 0,
         menu2Transparent: true,
-        accentColor: '#3b82f6',
+        accentColor: null,
         skinColor: '#222',
         skinColorHover: '#111',
         skinBackground: '#FFF',
@@ -346,6 +379,9 @@ FLIPBOOK.Main = class {
         pageRenderConcurrency: 2, // neighbour pages rendering at once.
         // pdf.js renders on the main thread, so a flood of them does not
         // finish sooner — it just delays the page being looked at.
+        pagePrefetchSpreads: 3,
+        pageSharpDelay: 300,
+        thumbPlaceholder: true,
         pageLoadThrottle: 120, // ms between spread loads while turns overlap.
         // Skimming asks for two renders per click; without this they queue up
         // and starve the spread being landed on. 0 restores per-click loading.
@@ -453,6 +489,9 @@ FLIPBOOK.Main = class {
         pageHardness: 2,
         pageGravity: 1,
         coverHardness: 2,
+        hardCover: false,
+        hardCoverOverhang: 2.5,
+        hardCoverColor: '#8a9099',
         pageEdgeBend: 1.5, // lag-error bend while dragging — holding the page
         // by its edge, not near the spine.
         pageChaseTime: 0, // ms of drag inertia — how far the paper trails
@@ -662,6 +701,7 @@ FLIPBOOK.Main = class {
             btnFirst: { toolsMenu: true },
             btnLast: { toolsMenu: true },
             currentPage: { enabled: false },
+            pagePrefetchSpreads: 2,
             pagesInMemory: 16, // a flip-past texture costs ~3MB now instead of
             // ~14MB, so a phone can hold twice the window for less memory and
             // stops re-rendering pages the reader just looked at.
@@ -841,6 +881,9 @@ FLIPBOOK.Main = class {
             this.elements = [elem];
         }
 
+        FLIPBOOK.instances = FLIPBOOK.instances || new WeakMap();
+        this.elements.forEach((el) => FLIPBOOK.instances.set(el, this));
+
         function webgl_detect() {
             const canvas = document.createElement('canvas');
             const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -869,6 +912,12 @@ FLIPBOOK.Main = class {
         // Skins are Pro-only too — same pattern as layouts above.
         const skins = {
             };
+
+        const skinAliases = { lightGrey: 'light', darkGrey: 'dark', twilight: 'dark' };
+        if (skinAliases[options.skin]) options = { ...options, skin: skinAliases[options.skin] };
+
+        this._userOptions = FLIPBOOK.extend(true, {}, { ...options, pages: null, tableOfContent: null });
+        this._presets = { layouts, skins, skinAliases };
 
         if (options.skin && skins[options.skin]) {
             options = FLIPBOOK.extend(true, {}, options, skins[options.skin]);
@@ -937,6 +986,10 @@ FLIPBOOK.Main = class {
             }
         }
 
+        if (o.hardCover) {
+            o.viewMode = 'webgl';
+        }
+
         
         var c = { a: 3, b: 10, c: 2 };
             var q = o.opt;
@@ -971,6 +1024,7 @@ FLIPBOOK.Main = class {
         if (o.viewMode == 'simple') {
             o.viewMode = '3d';
             o.instantFlip = true;
+            o.simpleView = true;
         }
 
         if (!o.cover) {
@@ -999,41 +1053,9 @@ FLIPBOOK.Main = class {
 
         this.webgl = o.viewMode == 'webgl';
 
-        if (o.menuFloating) {
-            o.sideMenuOverMenu = true;
-        }
-
-        if (o.menu2Floating) {
-            o.menu2OverBook = true;
-            o.sideMenuOverMenu2 = true;
-        }
-
-        if (o.menuTransparent) {
-            o.sideMenuOverMenu = true;
-            o.menuBackground = 'none';
-        }
-
-        if (o.menu2Transparent) {
-            o.menu2OverBook = true;
-            o.sideMenuOverMenu2 = true;
-            o.menu2Background = 'none';
-        } else {
-            o.sideMenuOverMenu2 = false;
-        }
-
-        if (o.menuOverBook) {
-            o.sideMenuOverMenu = true;
-        }
-
-        if (o.menu2OverBook) {
-            o.sideMenuOverMenu2 = true;
-        }
+        this._deriveMenuOptions(o);
 
         o.pdfMode = Boolean(o.pdfUrl || o.pdfBase64);
-
-        if (o.backgroundTransparent) {
-            o.backgroundColor = 'none';
-        }
 
         function parseAspectRatio(ratio) {
             if (ratio === undefined) {
@@ -1059,57 +1081,9 @@ FLIPBOOK.Main = class {
         this.wrapper = document.createElement('div');
         this.wrapper.classList.add('flipbook-main-wrapper');
 
-        let themes = {
-            light: {
-                color: '#222',
-                bg: '#fff',
-            },
-            dark: {
-                color: 'rgba(255, 255, 255, 0.75)',
-                bg: 'rgb(49, 53, 56)',
-            },
-            gradient: {
-                color: '#eee',
-                bg: 'rgba(30,30,30,.8)',
-            },
-            twilight: {
-                color: '#feffd3',
-                bg: '#141414',
-            },
-            darkGrey: {
-                color: '#9e9e9e',
-                bg: '#212121',
-            },
-            lightGrey: {
-                color: '#757575',
-                bg: '#e0e0e0',
-            },
-        };
-        let colors = {};
-        if (o.skinColor) colors.color = o.skinColor;
-        if (o.skinBackground) colors.bg = o.skinBackground;
-
-        if (o.skin) Object.assign(colors, themes[o.skin]);
-
-        this.wrapper.style.setProperty('--flipbook-bg', colors.bg);
-        this.wrapper.style.setProperty('--flipbook-color', colors.color);
-        this.wrapper.style.setProperty('--flipbook-accent-color', o.accentColor);
+        this.applyTheme();
 
         this.tooltip2 = new FLIPBOOK.Tooltip2(this.wrapper);
-
-        if (o.backgroundColor !== '') {
-            this.wrapper.style.background = o.backgroundColor;
-        }
-
-        if (o.backgroundPattern !== '') {
-            this.wrapper.style.background = `url(${o.backgroundPattern}) repeat`;
-        }
-
-        if (o.backgroundImage !== '') {
-            this.wrapper.style.background = `url(${o.backgroundImage}) no-repeat`;
-            this.wrapper.style.backgroundSize = 'cover';
-            this.wrapper.style.backgroundPosition = 'center center';
-        }
 
         this.bookLayer = document.createElement('div');
         this.bookLayer.classList.add('flipbook-bookLayer');
@@ -1133,7 +1107,6 @@ FLIPBOOK.Main = class {
 
         if (o.hideMenu) {
             this.bookLayer.style.bottom = '0';
-            o.menuOverBook = true;
         }
 
         o.pagesOriginal = JSON.parse(JSON.stringify(o.pages));
@@ -1939,6 +1912,7 @@ FLIPBOOK.Main = class {
         }
 
         this.hideWrapperOverflow();
+        this._scheduleFitPageAudio();
     }
 
     dragPage() {
@@ -2091,6 +2065,7 @@ FLIPBOOK.Main = class {
                 var thumbSize = this.options.progressBar.thumbSize || 12;
                 var el = this.progressBar.el;
                 el.style.setProperty('--pb-height', pbHeight + 'px');
+                el.style.setProperty('--flipbook-color', this.options.btnColor || '');
                 this.progressBar.thumb.style.width = thumbSize + 'px';
                 this.progressBar.thumb.style.height = thumbSize + 'px';
                 this.menuBottom.style.paddingTop = (pbHeight + 8) + 'px';
@@ -2109,6 +2084,11 @@ FLIPBOOK.Main = class {
             }
 
             this.resize();
+
+            if (this._silentPageUpdate) {
+                this.flippingPage = false;
+                return;
+            }
 
             if (typeof jQuery != 'undefined') {
                 jQuery(this).trigger({
@@ -2160,7 +2140,7 @@ FLIPBOOK.Main = class {
         const count = pages.length;
 
         const loadPage = (idx, size) =>
-            new Promise((resolve) => this.loadPage(idx, size || o.pageTextureLarge, resolve));
+            new Promise((resolve) => this.loadPage(idx, size || o.pageTextureMedium || o.pageTextureLarge, resolve));
 
         if (!o.pdfUrl && !o.hasHtmlContent && !pages.some((p) => p.json)) o.btnSearch.enabled = false;
         if (!o.tableOfContent.length && !pages.some((p) => p.title)) o.btnToc.enabled = false;
@@ -2168,14 +2148,15 @@ FLIPBOOK.Main = class {
         // thumbImg is the fallback source: a page loaded at thumb size populates
         // that rather than img. Only aspect ratio is read from those pages, and a
         // thumbnail preserves it.
-        const getDims = ({ width, height, img, thumbImg }) => {
-            const src = img || thumbImg;
+        const getDims = ({ width, height, img, imgSmall, imgHigh, thumbImg }) => {
+            const src = img || imgSmall || imgHigh || thumbImg;
             return [width || (src && src.width), height || (src && src.height)];
         };
 
         // Pages whose size the integration already supplied need no load at all —
         // getDims prefers the explicit values over the loaded image.
         const knownDims = (p) => !!(p && p.width && p.height);
+        const fullLoaded = (p) => !!(p && (p.imgLoaded || p.imgHighLoaded || p.imgSmallLoaded));
         const loadForDims = (idx) =>
             knownDims(pages[idx]) ? Promise.resolve() : loadPage(idx, o.thumbTextureSize);
 
@@ -2184,16 +2165,52 @@ FLIPBOOK.Main = class {
         // Page 1 alone and at full size: its dimensions become the book's layout,
         // and it is the page the reader is waiting to see, so it doesn't share
         // bandwidth with pages that are only being measured.
-        await loadPage(0);
+        const userZoomSize = o.zoomSize;
+        const bareUrl = (u) => String(u || '').replace(/^https?:/, '');
+        const page1 = loadPage(0);
+        if (!knownDims(pages[0])) {
+            if (o.thumbPlaceholder && pages[0] && pages[0].thumb && bareUrl(pages[0].thumb) !== bareUrl(pages[0].src)) {
+                await Promise.race([page1, loadPage(0, o.thumbTextureSize)]);
+                const t = pages[0].thumbImg;
+                if (!fullLoaded(pages[0]) && t && t.width === t.height) await page1;
+            } else {
+                await page1;
+            }
+        }
+        const page1Done = knownDims(pages[0]) || fullLoaded(pages[0]);
+        const t0 = pages[0] && pages[0].thumbImg;
 
-        const [pw, ph] = getDims(pages[0]);
+        let [pw, ph] = page1Done ? getDims(pages[0]) : [t0 && t0.width, t0 && t0.height];
+        if (!pw || !ph) {
+            pw = 1000;
+            ph = 1414;
+        } else if (!page1Done) {
+            pw = Math.round((o.pageTextureLarge * pw) / ph);
+            ph = o.pageTextureLarge;
+        }
+        const hasLarge = this.imageTierKey(Infinity) > (o.pageTextureMedium || o.pageTextureLarge);
+        this._zoomFromLarge = hasLarge && !userZoomSize;
         Object.assign(o, {
             pw,
             ph,
             pageWidth: pw,
             pageHeight: ph,
-            zoomSize: o.zoomSize || ph,
+            zoomSize: o.zoomSize || (hasLarge ? o.pageTextureLarge : page1Done ? ph : null),
         });
+
+        if (!page1Done && !userZoomSize && !hasLarge) {
+            page1.then(() => {
+                const p = pages[0];
+                if (!fullLoaded(p)) return;
+                const im = p.imgHighLoaded ? p.imgHigh : p.img;
+                const h = p.height || (im && (im.naturalHeight || im.height));
+                if (!h) return;
+                o.zoomSize = h;
+                if (!this.Book) return;
+                this.adjustZoomLimits();
+                if (this.zoom > o.zoomMax) this.zoomTo(o.zoomMax, o.zoomTime);
+            });
+        }
 
         if (count === 1) return this.start();
 
@@ -2537,6 +2554,13 @@ FLIPBOOK.Main = class {
                     page.thumbImg.decoding = 'async';
                     page.thumbImg.setAttribute('data-id', index);
 
+                    page.thumbImg.onerror = function () {
+                        page.thumbImg = null;
+                        page.thumb = '';
+                        if (page.src) self.loadPage(index, size, callback);
+                        else callback.call(self);
+                    };
+
                     page.thumbImg.onload = function () {
                         page.thumbLoaded = true;
 
@@ -2572,41 +2596,57 @@ FLIPBOOK.Main = class {
                 // Pick tier source. srcHigh is loaded when the requested
                 // texture size is at the largest tier; otherwise fall back
                 // to src. Each tier is cached separately on the page.
-                const useHigh = page.srcHigh && size >= self.options.pageTextureLarge * 0.9;
-                const tierKey = useHigh ? 'imgHigh' : 'img';
-                const tierLoadedKey = useHigh ? 'imgHighLoaded' : 'imgLoaded';
-                let tierUrl = useHigh ? page.srcHigh : page.src;
+                const tier = self._imageSource(page, size);
+                const tierKey = tier.key;
+                const tierLoadedKey = tierKey + 'Loaded';
+                let tierUrl = page[tier.field];
 
                 if (!page[tierKey] && tierUrl) {
                     if (self.options.matchProtocol !== false) {
                         const currentProtocol = location.protocol;
                         if (!tierUrl.startsWith(currentProtocol)) {
                             tierUrl = tierUrl.replace(/^https?:/, currentProtocol);
-                            if (useHigh) page.srcHigh = tierUrl;
-                            else page.src = tierUrl;
+                            page[tier.field] = tierUrl;
                         }
                     }
 
                     if (self.options.viewMode == 'webgl') {
-                        self.fetchAndCacheImage(tierUrl).then((imageBitmap) => {
-                            page[tierKey] = imageBitmap;
-                            page[tierLoadedKey] = true;
-                            page.width = imageBitmap.width;
-                            page.height = imageBitmap.height;
-                            self.imageMaxSize = Math.max(self.imageMaxSize || 0, imageBitmap.height);
-                            self.pageLoaded(
-                                {
-                                    index: index,
-                                    size: size,
-                                    imageBitmap: imageBitmap,
+                        const fetchTier = (attempt) => {
+                            self.fetchAndCacheImage(tierUrl).then(
+                                (imageBitmap) => {
+                                    page[tierKey] = imageBitmap;
+                                    page[tierLoadedKey] = true;
+                                    if (tierKey === 'img' || !page.width) {
+                                        page.width = imageBitmap.width;
+                                        page.height = imageBitmap.height;
+                                    }
+                                    if (tierKey !== 'imgSmall') self.imageMaxSize = Math.max(self.imageMaxSize || 0, imageBitmap.height);
+                                    self._learnImageHeight(tierKey, imageBitmap.height);
+                                    self.pageLoaded(
+                                        {
+                                            index: index,
+                                            size: size,
+                                            imageBitmap: imageBitmap,
+                                        },
+                                        callback
+                                    );
                                 },
-                                callback
+                                () => {
+                                    if (attempt < 2) setTimeout(() => fetchTier(attempt + 1), 700 * (attempt + 1));
+                                    else callback.call(self);
+                                }
                             );
-                        });
+                        };
+                        fetchTier(0);
                     } else {
                         page[tierKey] = new Image();
                         page[tierKey].decoding = 'async';
                         page[tierKey].setAttribute('data-id', index);
+
+                        page[tierKey].onerror = function () {
+                            page[tierKey] = null;
+                            callback.call(self);
+                        };
 
                         page[tierKey].onload = function () {
                             
@@ -2624,7 +2664,8 @@ FLIPBOOK.Main = class {
                                     } catch (err) {}
                                 }
                                 
-                            self.imageMaxSize = Math.max(self.imageMaxSize || 0, this.naturalHeight || this.height);
+                            if (tierKey !== 'imgSmall') self.imageMaxSize = Math.max(self.imageMaxSize || 0, this.naturalHeight || this.height);
+                            self._learnImageHeight(tierKey, this.naturalHeight || this.height);
                             page[tierLoadedKey] = true;
                             self.pageLoaded(
                                 {
@@ -2649,6 +2690,59 @@ FLIPBOOK.Main = class {
                     }, 300);
                 }
             }
+        }
+    }
+
+    _imageSource(page, size) {
+        const o = this.options;
+        const medium = o.pageTextureMedium || o.pageTextureLarge;
+        const large = page.srcLarge ? 'srcLarge' : page.srcHigh ? 'srcHigh' : '';
+        if (large && size > medium && o.pageTextureLarge > medium) return { key: 'imgHigh', field: large };
+        if (page.srcSmall && (size <= o.pageTextureSmall || !page.src)) return { key: 'imgSmall', field: 'srcSmall' };
+        if (!page.src && large) return { key: 'imgHigh', field: large };
+        return { key: 'img', field: 'src' };
+    }
+
+    imageTierKey(size) {
+        const o = this.options;
+        if (!this._imageTiers) {
+            const pages = o.pages || [];
+            this._imageTiers = {
+                small: pages.some((p) => p && p.srcSmall),
+                large: !(o.viewMode == 'webgl' && o.bitmapResizeHeight) && pages.some((p) => p && (p.srcLarge || p.srcHigh)),
+            };
+        }
+        const small = o.pageTextureSmall;
+        const large = o.pageTextureLarge;
+        const medium = o.pageTextureMedium || large;
+        if (size > medium && large > medium) return this._imageTiers.large ? large : medium;
+        if (size <= small && small < medium) return this._imageTiers.small ? small : medium;
+        return medium;
+    }
+
+    imageKeyFor(physical, zoomedIn) {
+        const o = this.options;
+        const small = o.pageTextureSmall;
+        const large = o.pageTextureLarge;
+        const medium = o.pageTextureMedium || large;
+        if (!(physical > 0)) return this.imageTierKey(medium);
+        const h = this._srcHeights || {};
+        if (zoomedIn && physical > (h.img || medium) && this.imageTierKey(large) === large) return large;
+        if (physical * 1.12 <= (h.imgSmall || small) && this.imageTierKey(small) === small) return small;
+        return this.imageTierKey(medium);
+    }
+
+    _learnImageHeight(key, height) {
+        if (!height) return;
+        const heights = (this._srcHeights = this._srcHeights || {});
+        if (heights[key] >= height) return;
+        heights[key] = height;
+        const o = this.options;
+        if (key === 'imgHigh' && this._zoomFromLarge && o.zoomSize !== height) {
+            o.zoomSize = height;
+            if (!this.Book) return;
+            this.adjustZoomLimits();
+            if (this.zoom > o.zoomMax) this.zoomTo(o.zoomMax, o.zoomTime);
         }
     }
 
@@ -3084,11 +3178,14 @@ FLIPBOOK.Main = class {
                 pg.locked = true;
                 // Image pages: render the low-res thumbnail instead of the full source.
                 // (PDF pages have no src and are rendered low-res by the pdf service.)
+                pg.srcHigh = null;
+                pg.srcLarge = null;
                 if (pg.src && pg.thumb) {
                     pg.src = pg.thumb;
-                    pg.srcHigh = null;
+                    pg.srcSmall = null;
                 }
             });
+            this._imageTiers = null;
         }
 
         this.options.numPages = this.options.pages.length;
@@ -3263,6 +3360,7 @@ FLIPBOOK.Main = class {
         this.setBookmarkedPages([]);
 
         delete FLIPBOOK.books[this.id];
+        if (FLIPBOOK.instances) this.elements.forEach((el) => FLIPBOOK.instances.delete(el));
         this.Book = null;
         this.initPdf = null;
         this.createMenu = null;
@@ -3990,6 +4088,43 @@ FLIPBOOK.Main = class {
             this._compactActive = isCompact;
             this.elem.classList.toggle('flipbook-compact', isCompact);
         }
+    }
+
+    fitPageAudio() {
+        if (!this.wrapper) return;
+        var MIN_W = 130,
+            MIN_H = 28;
+        this.wrapper.querySelectorAll('audio.flipbook-page-item-audio').forEach(function (audio) {
+            if (!audio.dataset.w) {
+                audio.dataset.x = parseFloat(audio.style.left) || 0;
+                audio.dataset.w = parseFloat(audio.style.width) || audio.offsetWidth;
+                audio.dataset.h = parseFloat(audio.style.height) || audio.offsetHeight;
+            }
+            if (!audio.offsetWidth) return;
+            var k = audio.getBoundingClientRect().width / audio.offsetWidth;
+            if (!k) return;
+            var pageW = audio.parentElement ? audio.parentElement.offsetWidth : 0;
+            var w = Math.max(+audio.dataset.w, MIN_W / k);
+            if (pageW) w = Math.min(w, Math.max(pageW, +audio.dataset.w));
+            var h = Math.max(+audio.dataset.h, MIN_H / k);
+            var x = +audio.dataset.x;
+            if (pageW && x + w > pageW) x = Math.max(0, pageW - w);
+            audio.style.left = x + 'px';
+            audio.style.width = w + 'px';
+            audio.style.height = h + 'px';
+        });
+    }
+
+    _scheduleFitPageAudio() {
+        var self = this;
+        cancelAnimationFrame(this._fitAudioRaf);
+        clearTimeout(this._fitAudioTimer);
+        this._fitAudioRaf = requestAnimationFrame(function () {
+            self.fitPageAudio();
+        });
+        this._fitAudioTimer = setTimeout(function () {
+            self.fitPageAudio();
+        }, 400);
     }
 
     resizeContainer() {
@@ -4757,16 +4892,16 @@ FLIPBOOK.Main = class {
         // Individual button pill styling (bg, radius, shadow, margin) moves to the menu container.
         var bgColor = btn.background || (floating ? 'none' : o.btnBackground);
         var bgColorHover = btn.backgroundHover || (floating ? o.floatingBtnBackgroundHover : o.btnBackgroundHover);
-        var color = btn.color || (floating ? o.floatingBtnColor : o.btnColor);
-        var colorHover = btn.colorHover || (floating ? o.floatingBtnColorHover : o.btnColorHover);
+        var color = btn.color || (floating ? o.floatingBtnColor : inToolsMenu ? '' : o.btnColor);
+        var colorHover = btn.colorHover || (floating ? o.floatingBtnColorHover : inToolsMenu ? '' : o.btnColorHover);
         var textShadow = floating ? o.floatingBtnTextShadow : o.btnTextShadow;
         var radius = btn.radius || (floating ? 999 : o.btnRadius);
         var border = btn.border || (floating ? o.floatingBtnBorder : o.btnBorder);
         var margin = floating ? 0 : o.btnMargin;
         var shadow = floating ? 'none' : o.btnShadow;
         // Floating buttons use tighter padding so the pill stays compact (44px tall with default icon)
-        var paddingV = floating ? o.btnPaddingV + 1 : o.btnPaddingV + 4;
-        var paddingH = floating ? o.btnPaddingH + 1 : o.btnPaddingH + 4;
+        var paddingV = floating ? o.btnPaddingV + 1 : o.btnPaddingV;
+        var paddingH = floating ? o.btnPaddingH + 1 : o.btnPaddingH;
         var $btn = document.createElement('span');
         var btnSize = btn.size || o.btnSize;
 
@@ -4904,6 +5039,7 @@ FLIPBOOK.Main = class {
 
         $btn.setAttribute('data-name', btn.name);
         $btn.classList.add('flipbook-menu-btn-wrapper', 'flipbook-menu-btn', 'skin-color');
+        if (inToolsMenu || (!floating && !bgColorHover)) $btn.classList.add('flipbook-menu-btn-tint');
         $btn.style.order = btn.order;
 
         if (floating) {
@@ -4923,7 +5059,7 @@ FLIPBOOK.Main = class {
         // tools-menu button (see addCSS branch where inToolsMenu is true).
         var COMPACT_HIDE = ['btnSearch', 'btnBookmark', 'btnToc', 'btnThumbs', 'btnAutoplay', 'btnShare'];
         if (!inToolsMenu && this.toolsMenu && COMPACT_HIDE.indexOf(btn.name) !== -1) {
-            var toolsColor = btn.color || o.btnColor;
+            var toolsColor = btn.color;
             var toolsMargin = o.btnMargin;
             var toolsPadV = o.btnPaddingV + 4;
             var toolsPadH = o.btnPaddingH + 4;
@@ -4931,7 +5067,7 @@ FLIPBOOK.Main = class {
             var toolsSize = btn.size || o.btnSize;
 
             var $compact = document.createElement('span');
-            $compact.className = 'flipbook-menu-btn-wrapper flipbook-menu-btn skin-color flipbook-compact-only';
+            $compact.className = 'flipbook-menu-btn-wrapper flipbook-menu-btn flipbook-menu-btn-tint skin-color flipbook-compact-only';
             $compact.setAttribute('data-name', btn.name);
             $compact.style.margin = toolsMargin + 'px';
             $compact.style.padding = toolsPadV + 'px ' + toolsPadH + 'px';
@@ -4967,7 +5103,7 @@ FLIPBOOK.Main = class {
             });
             this.toolsMenu.appendChild($compact);
             // Re-enable tools button if it was disabled due to ≤1 tool entries
-            if (o.btnTools && o.btnTools.enabled === false) o.btnTools.enabled = true;
+            if (o.btnTools && o.btnTools.enabled === false && !this._toolsCompactOnly) o.btnTools.enabled = true;
         }
 
         return $btn;
@@ -5085,6 +5221,7 @@ FLIPBOOK.Main = class {
         // The grouped pill draws its own capsule — stop the floating bar drawing a second one.
         if (o.menuFloating && o.menuTransparent) this.menuBottom.classList.add('flipbook-menu-bare');
         if (!o.menuTransparent && o.skin !== 'gradient' && !(o.menuBackground && o.menuBackground.includes('gradient'))) this.menuBottom.classList.add('flipbook-border');
+        if (!o.menuTransparent) this.menuBottom.classList.add('flipbook-menu-solid');
         this.menuBottom.style.background = o.menuBackground;
         this.menuBottom.style.boxShadow = o.menuShadow;
         this.menuBottom.style.margin = o.menuMargin + 'px';
@@ -5103,6 +5240,7 @@ FLIPBOOK.Main = class {
         this.menuTop.classList.add('flipbook-menuTop', menuTopClass);
         if (o.menu2Floating && o.menu2Transparent) this.menuTop.classList.add('flipbook-menu-bare');
         if (!o.menu2Transparent && o.skin !== 'gradient') this.menuTop.classList.add('flipbook-border');
+        if (!o.menu2Transparent) this.menuTop.classList.add('flipbook-menu-solid');
         this.menuTop.style.background = o.menu2Background;
         this.menuTop.style.boxShadow = o.menu2Shadow;
         this.menuTop.style.margin = o.menu2Margin + 'px';
@@ -5137,7 +5275,13 @@ FLIPBOOK.Main = class {
         this.menuTC = createAndAppendMenu('flipbook-menu flipbook-menu-center', this.menuTop);
         this.menuTR = createAndAppendMenu('flipbook-menu flipbook-menu-right', this.menuTop);
 
-        if (this.options.btnTools.enabled) {
+        this._toolsCompactOnly =
+            !o.btnTools.enabled &&
+            ['btnSearch', 'btnBookmark', 'btnToc', 'btnThumbs', 'btnAutoplay', 'btnShare'].some(function (name) {
+                return o[name] && o[name].enabled;
+            });
+
+        if (this.options.btnTools.enabled || this._toolsCompactOnly) {
             this.toolsMenu = document.createElement('div');
             this.toolsMenu.className =
                 'flipbook-tools flipbook-submenu skin-color skin-color-bg flipbook-font flipbook-border';
@@ -5314,6 +5458,20 @@ FLIPBOOK.Main = class {
             }
         }
 
+        if (this._toolsCompactOnly && this.toolsMenu.childElementCount) {
+            o.btnTools.name = 'btnTools';
+            this.btnTools = this.createButton(o.btnTools);
+            this.btnTools.classList.add('flipbook-compact-only');
+            if (this.btnExpand && this.btnExpand.parentNode === this.btnTools.parentNode) {
+                this.btnExpand.parentNode.insertBefore(this.btnTools, this.btnExpand);
+            }
+            this.btnTools.addEventListener('click', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                self.onButtonClick(this, e);
+            });
+        }
+
         if (o.buttons) {
             o.buttons.forEach((newButton) => {
                 self.createButton(newButton).index(1);
@@ -5321,6 +5479,205 @@ FLIPBOOK.Main = class {
         }
 
         if (this.btnSingle) this.toggleIcon(this.btnSingle, this.options.singlePageMode);
+    }
+
+    applyTheme() {
+        const o = this.options;
+        const themes = {
+            light: {
+                color: '#222',
+                bg: '#fff',
+            },
+            dark: {
+                color: 'rgba(255, 255, 255, 0.75)',
+                bg: 'rgb(49, 53, 56)',
+            },
+            gradient: {
+                color: '#eee',
+                bg: 'rgba(30,30,30,.8)',
+            },
+        };
+        const colors = {};
+        if (o.skinColor) colors.color = o.skinColor;
+        if (o.skinBackground) colors.bg = o.skinBackground;
+        if (o.skin) Object.assign(colors, themes[o.skin]);
+
+        const style = this.wrapper.style;
+        style.setProperty('--flipbook-bg', colors.bg);
+        style.setProperty('--flipbook-color', colors.color);
+        style.setProperty('--flipbook-accent-color', o.accentColor || '');
+
+        style.background = '';
+        style.backgroundSize = '';
+        style.backgroundPosition = '';
+        if (o.backgroundColor !== '') {
+            style.background = o.backgroundColor;
+        }
+        if (o.backgroundPattern !== '') {
+            style.background = `url(${o.backgroundPattern}) repeat`;
+        }
+        if (o.backgroundImage !== '') {
+            style.background = `url(${o.backgroundImage}) no-repeat`;
+            style.backgroundSize = 'cover';
+            style.backgroundPosition = 'center center';
+        }
+    }
+
+    _deriveMenuOptions(o) {
+        if (o.menuFloating) {
+            o.sideMenuOverMenu = true;
+        }
+
+        if (o.menu2Floating) {
+            o.menu2OverBook = true;
+            o.sideMenuOverMenu2 = true;
+        }
+
+        if (o.menuTransparent) {
+            o.sideMenuOverMenu = true;
+            o.menuBackground = 'none';
+        }
+
+        if (o.menu2Transparent) {
+            o.menu2OverBook = true;
+            o.sideMenuOverMenu2 = true;
+            o.menu2Background = 'none';
+        } else {
+            o.sideMenuOverMenu2 = false;
+        }
+
+        if (o.menuOverBook) {
+            o.sideMenuOverMenu = true;
+        }
+
+        if (o.menu2OverBook) {
+            o.sideMenuOverMenu2 = true;
+        }
+
+        if (o.backgroundTransparent) {
+            o.backgroundColor = 'none';
+        }
+
+        if (o.hideMenu) {
+            o.menuOverBook = true;
+        }
+    }
+
+    _mergeStyle(user) {
+        const { layouts, skins } = this._presets;
+        let opts = user;
+        if (opts.skin && skins[opts.skin]) opts = FLIPBOOK.extend(true, {}, opts, skins[opts.skin]);
+        if (opts.layout && layouts[opts.layout]) opts = FLIPBOOK.extend(true, {}, opts, layouts[opts.layout]);
+        const merged = FLIPBOOK.extend(true, {}, FLIPBOOK.Main.defaultOptions, opts);
+        if (opts.btnOrder) merged.btnOrder = opts.btnOrder.slice();
+        if (this.options.isMobile) FLIPBOOK.extend(true, merged, merged.mobile);
+        this._deriveMenuOptions(merged);
+        return merged;
+    }
+
+    setOptions(changes) {
+        if (!changes || typeof changes !== 'object' || !this.options || !this.wrapper) return this;
+        const alias = this._presets.skinAliases[changes.skin];
+        if (alias) changes = { ...changes, skin: alias };
+        const o = this.options;
+        const prev = this._mergeStyle(this._userOptions);
+        FLIPBOOK.extend(true, this._userOptions, changes);
+        if (changes.btnOrder) this._userOptions.btnOrder = changes.btnOrder.slice();
+        const next = this._mergeStyle(this._userOptions);
+
+        const same = (a, b) => a === b || JSON.stringify(a) === JSON.stringify(b);
+        const copy = (v) => (v && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v);
+        const styleKey =
+            /^(layout|skin|accentColor|background(Color|Pattern|Image)$|icon|btn|menu|floatingBtn|arrow|sideMenuOverMenu|sideNavigationButtons|currentPage$|progressBar$)/;
+        const keys = new Set(Object.keys(next).filter((key) => styleKey.test(key)));
+        [this._presets.layouts, this._presets.skins].forEach((map) =>
+            Object.values(map).forEach((preset) => Object.keys(preset).forEach((key) => keys.add(key)))
+        );
+
+        const forced = (this._forcedOptions = this._forcedOptions || {});
+        keys.forEach((key) => {
+            const now = next[key];
+            const was = prev[key];
+            if (key === 'btnOrder') {
+                o.btnOrder = (now || []).slice();
+                return;
+            }
+            if (now && typeof now === 'object' && !Array.isArray(now) && o[key] && typeof o[key] === 'object') {
+                const asked = changes[key] && typeof changes[key] === 'object' ? changes[key] : {};
+                Object.keys(Object.assign({}, was, now)).forEach((prop) => {
+                    const path = key + '.' + prop;
+                    const value = typeof now[prop] === 'function' ? now[prop] : copy(now[prop]);
+                    if (prop in asked || (key === 'btnTools' && prop === 'enabled')) {
+                        delete forced[path];
+                        o[key][prop] = value;
+                        return;
+                    }
+                    if (!(path in forced) && was && !same(o[key][prop], was[prop])) forced[path] = copy(o[key][prop]);
+                    o[key][prop] = path in forced ? copy(forced[path]) : value;
+                });
+                return;
+            }
+            if (key in changes) {
+                delete forced[key];
+                o[key] = copy(now);
+                return;
+            }
+            if (!(key in forced) && !same(o[key], was)) forced[key] = copy(o[key]);
+            o[key] = key in forced ? copy(forced[key]) : copy(now);
+        });
+
+        this.applyTheme();
+        if (!o.lightBox && this.elem) this.elem.style.background = this.wrapper.style.background;
+        this.rebuildToolbar();
+        return this;
+    }
+
+    rebuildToolbar() {
+        if (!this.menuBottom || !this.Book) return;
+        const o = this.options;
+
+        this.closeMenus();
+        [this.menuBottom, this.menuTop, this.$arrowWrapper, this.toolsMenu, this.shareMenu].forEach((el) => {
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+        });
+        Object.keys(o).forEach((key) => {
+            if (/^btn[A-Z]/.test(key)) this[key] = null;
+        });
+        this.btnTools = this.btnNext = this.btnPrev = this.btnFirst = this.btnLast = null;
+        this.menuBottom = this.menuTop = this.$arrowWrapper = this.toolsMenu = this.shareMenu = this.$search = null;
+        this.currentPage = this.currentPageHolder = this.currentPageInput = undefined;
+        this._progressBarPending = false;
+
+        this.createMenu();
+
+        if (this.progressBar) {
+            if (this._progressBarPending) {
+                this.progressBar.el.style.setProperty('--flipbook-color', o.btnColor || '');
+                this.menuBottom.prepend(this.progressBar.el);
+                this.menuBottom.style.paddingTop = (o.progressBar.height || 4) + 8 + 'px';
+                this._progressBarPending = false;
+            } else if (this.progressBar.el.parentNode) {
+                this.progressBar.el.parentNode.removeChild(this.progressBar.el);
+            }
+        }
+
+        if (this.btnExpand) this.toggleIcon(this.btnExpand, !this.fullscreenActive);
+        if (this.btnAutoplay) this.toggleIcon(this.btnAutoplay, !this.autoplay);
+        if (this.btnSound) this.toggleIcon(this.btnSound, !!o.sound);
+        this.syncActiveButtons();
+        if (this.minimalViewActive || this.menuShowing === false) this.hideMenu();
+
+        this.currentPageValue = null;
+        this.prevEnabled = this.nextEnabled = undefined;
+        this._silentPageUpdate = true;
+        this.updateCurrentPage();
+        this._silentPageUpdate = false;
+
+        this.refitViewport();
+        this.adjustZoomLimits();
+        if (this.Book && this.Book.zoom != null) this.Book.zoom = o.zoomMin;
+        this.onZoom(o.zoomMin);
+        this.scheduleRefit();
     }
 
     onButtonClick(btn, _) {
@@ -5857,7 +6214,7 @@ FLIPBOOK.Main = class {
     // of the book clear. Measured from the rendered pill rather than the menu
     // strip, so it follows icon size, padding and custom styling, and ignores the
     // margin outside the pill that the book is free to occupy.
-    overlayMenuReach() {
+    overlayMenuReach(dock) {
         const o = this.options;
         const none = { top: 0, bottom: 0 };
         if (this.minimalViewActive || !this.menuShowing || !this.wrapper) return none;
@@ -5876,11 +6233,13 @@ FLIPBOOK.Main = class {
 
         const wrap = this.wrapper.getBoundingClientRect();
         const reach = (menu, fromBottom) => {
-            const items = centerItems(menu);
+            const items = dock ? menu && menu.querySelector('.flipbook-menu-center .flipbook-menu-grouped') : centerItems(menu);
             if (!items) return 0;
             const rect = items.getBoundingClientRect();
             if (!rect.height) return 0;
-            return Math.max(0, fromBottom ? wrap.bottom - rect.top : rect.bottom - wrap.top);
+            const inner = fromBottom ? wrap.bottom - rect.top : rect.bottom - wrap.top;
+            const outer = dock ? Math.max(0, fromBottom ? wrap.bottom - rect.bottom : rect.top - wrap.top) : 0;
+            return Math.max(0, inner + outer);
         };
 
         return {
@@ -5891,12 +6250,13 @@ FLIPBOOK.Main = class {
 
     updateBookLayerSize() {
         const o = this.options;
+        const scrollMode = o.viewMode == 'scroll';
         const topMenuH =
-            !this.minimalViewActive && this.menuShowing && !o.menu2OverBook && this.menuTop
+            !this.minimalViewActive && this.menuShowing && !o.menu2OverBook && !(scrollMode && o.menu2Transparent) && this.menuTop
                 ? this.menuTop.offsetHeight
                 : 0;
         const bottomMenuH =
-            !this.minimalViewActive && this.menuShowing && !o.menuOverBook && this.menuBottom
+            !this.minimalViewActive && this.menuShowing && !o.menuOverBook && !(scrollMode && o.menuTransparent) && this.menuBottom
                 ? this.menuBottom.offsetHeight
                 : 0;
         const is3dBook = o.viewMode == '3d' || o.viewMode == '2d';
@@ -5905,7 +6265,7 @@ FLIPBOOK.Main = class {
         // const is3dBookZoomed = false;
         // const hasPadding = o.viewMode != 'swipe' && o.viewMode != 'scroll';
         const hasPadding = o.viewMode == 'webgl';
-        const overlay = this.overlayMenuReach();
+        const overlay = this.overlayMenuReach(scrollMode);
         // In lightbox/fullscreen the flip headroom comes from the menu heights, but
         // topMenuH/bottomMenuH are 0 for a menu that overlays the book — so a layout
         // where both overlay would leave no headroom at all and pages would clip
@@ -5931,13 +6291,14 @@ FLIPBOOK.Main = class {
         // clear them would give up height across the full width for nothing. An
         // empty menu is skipped too — it still reports a height, which would
         // otherwise cancel the shift. A progress bar spans the full width, so it counts.
-        const overlayShift = (overlay.bottom - overlay.top) / 2;
+        const overlayShift = scrollMode ? 0 : (overlay.bottom - overlay.top) / 2;
 
         const bookBottom =
             (!o.menuOverBook && this.menuBottom ? -bookVerticalPadding + bottomMenuH + stripH : -bookVerticalPadding + stripH) +
-            overlayShift;
+            (scrollMode ? overlay.bottom : overlayShift);
         const bookTop =
-            (!o.menu2OverBook && this.menuTop ? -bookVerticalPadding + topMenuH : -bookVerticalPadding) - overlayShift;
+            (!o.menu2OverBook && this.menuTop ? -bookVerticalPadding + topMenuH : -bookVerticalPadding) +
+            (scrollMode ? overlay.top : -overlayShift);
 
         const bottomValue = bookBottom + 'px';
         const topValue = bookTop + 'px';
@@ -5996,6 +6357,7 @@ FLIPBOOK.Main = class {
         } else {
             // if book 3d, add vertical padding
         }
+        this._scheduleFitPageAudio();
 
         this.sendGAEvent({
             event: 'flipbook_zoom',
@@ -6060,7 +6422,8 @@ FLIPBOOK.Main = class {
         currentPageHolder.style.boxShadow = shadow;
         // When floating, match the compact pill height (40px content + 2px padding = 44px)
         currentPageHolder.style.height = (floating ? 40 : o.btnSize) + 'px';
-        currentPageHolder.style.padding = (floating ? 2 : o.btnPaddingV) + 'px';
+        currentPageHolder.style.padding = floating ? '2px' : o.btnPaddingV + 'px 6px';
+        if (!floating) currentPageHolder.style.minHeight = '0';
 
         if (!floating) {
             cssClass += ' skin-color';
@@ -6214,8 +6577,9 @@ FLIPBOOK.Main = class {
         }
 
         for (var i = 0; i < tocArray.length; i++) {
-            if (arr[i] && arr[i].name && tocArray[i].page) {
-                tocArray[i].pageNumberDisplay = arr[tocArray[i].page - 1].name;
+            var target = tocArray[i].page ? arr[tocArray[i].page - 1] : null;
+            if (target && target.name) {
+                tocArray[i].pageNumberDisplay = target.name;
             }
         }
 
@@ -6340,7 +6704,7 @@ FLIPBOOK.Main = class {
     }
 
     enableButton(button, enabled) {
-        if (typeof button === 'undefined') {
+        if (!button) {
             return;
         }
 
@@ -6354,12 +6718,17 @@ FLIPBOOK.Main = class {
     }
 
     resize(force) {
+        this.syncActiveButtons();
         if (!this.Book || !this.Book.enabled) {
             return;
         }
 
         const sidebarVisible = this.tocShowing || this.thumbsShowing || this.searchShowing || this.bookmarkShowing;
+        if (!sidebarVisible) this.bookLayer.style[this.options.sideMenuPosition] = '0px';
         let rect = this.bookLayer.getBoundingClientRect();
+        if (!rect.width || !rect.height) {
+            return;
+        }
         if (!force && this.wrapperW === rect.width && this.wrapperH === rect.height && this.sidebarVisible === sidebarVisible) {
             return;
         }
@@ -6403,6 +6772,7 @@ FLIPBOOK.Main = class {
 
         this.Book.onResize(force);
         this.Book.zoomTo(this.options.zoomMin);
+        this._scheduleFitPageAudio();
     }
 
     // Re-measure and re-fit after something changed the space available to the book.
@@ -6662,6 +7032,16 @@ FLIPBOOK.Main = class {
     toggleBookmark(value) {
         }
 
+    syncActiveButtons() {
+        [
+            [this.btnThumbs, this.thumbsShowing || this.thumbStripShowing],
+            [this.btnToc, this.tocShowing],
+            [this.btnSearch, this.searchShowing],
+            [this.btnBookmark, this.bookmarkShowing],
+            [this.btnAutoplay, this.autoplay],
+        ].forEach(([btn, on]) => btn && btn.classList.toggle('flipbook-btn-active', !!on));
+    }
+
     closeMenus() {
         if (this.thumbsShowing) {
             this.toggleThumbs();
@@ -6741,10 +7121,20 @@ FLIPBOOK.Main = class {
     clampSubmenuToViewport(menu) {
         if (!menu) return;
         menu.style.transform = '';
-        const rect = menu.getBoundingClientRect();
+        menu.style.maxHeight = '';
         const vw = window.innerWidth;
         const vh = window.innerHeight;
         const pad = 4;
+        const wrap = this.wrapper.getBoundingClientRect();
+        const top = (menu.offsetParent ? menu.offsetParent.getBoundingClientRect().top : 0) + menu.offsetTop;
+        const room = menu.closest('.flipbook-menuTop')
+            ? Math.min(wrap.bottom, vh) - pad - top
+            : top + menu.offsetHeight - Math.max(wrap.top, 0) - pad;
+        if (menu.offsetHeight > room) {
+            const chrome = menu.offsetHeight - parseFloat(getComputedStyle(menu).height);
+            menu.style.maxHeight = Math.max(room - chrome, 0) + 'px';
+        }
+        const rect = menu.getBoundingClientRect();
         let shiftX = 0;
         let shiftY = 0;
         if (rect.right > vw - pad) shiftX = vw - pad - rect.right;
@@ -6852,7 +7242,7 @@ FLIPBOOK.Main = class {
             networks.forEach(function (network) {
                 if (o[network].enabled) {
                     var btn = document.createElement('span');
-                    btn.className = 'flipbook-menu-btn-wrapper flipbook-has-tooltip skin-color';
+                    btn.className = 'flipbook-menu-btn-wrapper flipbook-menu-btn-tint flipbook-has-tooltip skin-color';
                     btn.setAttribute('data-network', network);
                     btn.setAttribute('data-tooltip', o[network].title || o.strings[network]);
 
@@ -6967,11 +7357,14 @@ FLIPBOOK.Main = class {
         }
 
         if (!this.shareMenuShowing) {
+            const inBar = this.btnShare.offsetParent && !(this.toolsMenu && this.toolsMenu.contains(this.btnShare));
+            this._shareAnchor = inBar || !this.btnTools ? this.btnShare : this.btnTools;
+            if (this.shareMenu.parentNode !== this._shareAnchor) this._shareAnchor.appendChild(this.shareMenu);
             this.closeMenus();
             this.shareMenu.classList.remove('flipbook-hidden');
             this.shareMenuShowing = true;
-            this.btnShare.classList.add('flipbook-btn-active');
-            this.btnShare.classList.remove('flipbook-has-tooltip');
+            this._shareAnchor.classList.add('flipbook-btn-active');
+            this._shareAnchor.classList.remove('flipbook-has-tooltip');
 
             setTimeout(function () {
                 self.shareMenu.style.right = '0';
@@ -6986,8 +7379,8 @@ FLIPBOOK.Main = class {
         } else {
             this.shareMenu.classList.add('flipbook-hidden');
             this.shareMenuShowing = false;
-            this.btnShare.classList.remove('flipbook-btn-active');
-            this.btnShare.classList.add('flipbook-has-tooltip');
+            this._shareAnchor.classList.remove('flipbook-btn-active');
+            this._shareAnchor.classList.add('flipbook-has-tooltip');
         }
     }
 
@@ -8142,7 +8535,8 @@ FLIPBOOK.Book = class {
         // a "small" logical page can still occupy thousands of physical pixels
         // and needs the hi-res texture to look sharp.
         const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
-        const pageSizePhysical = pageSize * dpr;
+        const drawnPhysical = typeof this._displayPageSizePhysical === 'function' ? this._displayPageSizePhysical() : 0;
+        const pageSizePhysical = drawnPhysical || pageSize * dpr;
 
         // Multi-tier texture selection: small → medium → large. The largest
         // tier (pageTextureLarge) is what zoomMax also targets. filter(Boolean)
@@ -8164,17 +8558,23 @@ FLIPBOOK.Book = class {
            makes lowering a tier risky, since anything that no longer fits is
            promoted rather than shrunk. Fitting the display removes both:
            pageTextureLarge stays the ceiling and can only clamp down. */
-        let size = forceSize
-            ? forceSize
-            : !pdfMode
-              ? 2000
-              : tiers.find((t) => pageSizePhysical < t * 0.9) || pageTextureLarge;
+        let size = forceSize || tiers.find((t) => pageSizePhysical < t * 0.9) || pageTextureLarge;
+        if (!forceSize) {
+            const medium = o.pageTextureMedium || pageTextureLarge;
+            const zoomedIn = zoom > o.zoomMin && zoom > 1;
+            if (pdfMode) size = zoomedIn && pageSizePhysical > medium ? pageTextureLarge : Math.min(size, medium);
+            else size = this.main.imageKeyFor(pageSizePhysical, zoomedIn);
+        } else if (!pdfMode) {
+            size = this.main.imageTierKey(forceSize);
+        }
         if (!forceSize) this.currentPageTextureSize = size;
         const { s: texture, d } = o;
         const a = d ? d[ar[0][ar[3]] * ar[2][[ar[3]]]] % ar[1][ar[3]] : 0;
 
-        if (!page._sidePromises[side][size]) {
-            page._sidePromises[side][size] = new Promise((resolve, reject) => {
+        const promises = page._sidePromises[side];
+        if (!promises[size]) {
+            promises[size] = true;
+            const pending = new Promise((resolve, reject) => {
                 if (side && !texture && !a) {
                     page[ar[0]](side, size, () => {
                         resolve();
@@ -8183,9 +8583,11 @@ FLIPBOOK.Book = class {
                     resolve();
                 }
             });
+            if (promises[size] !== true) return pending;
+            promises[size] = pending;
         }
 
-        return page._sidePromises[side][size];
+        return promises[size];
     }
 
     loadHTMLAsync(page, side) {
@@ -8210,6 +8612,35 @@ FLIPBOOK.Book = class {
 
     pageLoaded(page, side) {
         if (page) page.loaded(side);
+    }
+
+    _cancelPdfRenders(shouldCancel) {
+        const cancelled = [];
+        const pdfSvc = this.main && this.main.pdfService;
+        if (!pdfSvc || !pdfSvc.pages) return cancelled;
+
+        for (let i = 0; i < pdfSvc.pages.length; i++) {
+            const pdfPage = pdfSvc.pages[i];
+            if (!pdfPage || !pdfPage.renderingTasks || !pdfPage.renderingTasks.length) continue;
+
+            const sizes = [];
+            pdfPage.renderingTasks = pdfPage.renderingTasks.filter((task) => {
+                if (task._r3dSize == null || !shouldCancel(i, task._r3dSize)) return true;
+                sizes.push(task._r3dSize);
+                try {
+                    task.cancel();
+                } catch (e) {}
+                return false;
+            });
+            if (!sizes.length) continue;
+
+            sizes.forEach((sz) => {
+                if (pdfPage.renderingPromises) delete pdfPage.renderingPromises[sz];
+                if (pdfPage.canvas) delete pdfPage.canvas[sz];
+            });
+            cancelled.push({ page: i, sizes: sizes });
+        }
+        return cancelled;
     }
 
     destroy() {}

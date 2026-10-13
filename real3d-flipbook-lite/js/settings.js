@@ -271,11 +271,17 @@ function r3d_escAttr(value) {
             selected: typeof val === "undefined",
           }).appendTo(elem);
 
+          const optionValue = (option) => String(option.value || option);
+          const saved = val != null && val !== "" ? String(val) : null;
+          if (saved !== null && !values.some((option) => optionValue(option) === saved)) {
+            values = values.concat([{ value: saved, display: saved }]);
+          }
+
           values.forEach((option) => {
             $("<option>", {
               value: option.value || option, // Fallback if option is not an object
               text: option.display || option, // Fallback if option is not an object
-              selected: val === (option.value || option),
+              selected: saved !== null && optionValue(option) === saved,
             }).appendTo(elem);
           });
           break;
@@ -290,6 +296,20 @@ function r3d_escAttr(value) {
         addOption(key, ...argsArray);
       });
     }
+
+    (function () {
+      var hardCover = $("select[name='hardCover']");
+      var viewMode = $("select[name='viewMode']");
+      function sync() {
+        var on = hardCover.val() == "true";
+        viewMode.find("option").each(function () {
+          $(this).prop("disabled", on && $(this).val() != "webgl");
+        });
+        if (on && viewMode.val() != "webgl") viewMode.val("webgl").trigger("change");
+      }
+      hardCover.on("change", sync);
+      sync();
+    })();
 
     function addMenuButton(name) {
       addOption(name, name + "[enabled]", "checkbox", "Enabled");
@@ -608,7 +628,11 @@ function r3d_escAttr(value) {
       items.forEach(function (item) {
         $('<button type="button" class="r3d-pick-item"></button>')
           .attr("data-value", item.value)
-          .append($("<img>", { src: item.img, alt: "", loading: "lazy" }))
+          .append(
+            item.svg
+              ? $(item.svg)
+              : $("<img>", { src: item.img, alt: "", loading: "lazy" })
+          )
           .append($('<span class="r3d-pick-label"></span>').text(item.label))
           .on("click", function () {
             $select.val(item.value).trigger("change");
@@ -623,6 +647,16 @@ function r3d_escAttr(value) {
       var script = document.querySelector('script[src*="js/settings"]');
       if (!script) return;
       var base = script.src.split("js/settings")[0] + "assets/images/toolbar/";
+      var shapes = {
+        1: '<rect class="p" x="15" y="8" width="14" height="13" rx="1"/><rect x="3" y="23.5" width="38" height="3.5" rx="1"/>',
+        2: '<rect class="p" x="15" y="8" width="14" height="14" rx="1"/><rect x="4" y="4" width="8" height="3.5" rx="1.75"/><rect x="29" y="4" width="11" height="3.5" rx="1.75"/>',
+        3: '<rect class="p" x="15" y="9" width="14" height="13" rx="1"/><rect x="3" y="3" width="38" height="3.5" rx="1"/>',
+        4: '<rect class="p" x="15" y="9" width="14" height="13" rx="1"/><rect x="13" y="3.5" width="18" height="3.5" rx="1.75"/>',
+        5: '<rect class="p" x="15" y="8" width="14" height="14" rx="1"/><rect x="4" y="22.5" width="8" height="3.5" rx="1.75"/><rect x="29" y="22.5" width="11" height="3.5" rx="1.75"/>',
+        6: '<rect class="p" x="15" y="8" width="14" height="14" rx="1"/><rect x="32" y="4" width="8" height="3.5" rx="1.75"/>',
+        7: '<rect class="p" x="15" y="6" width="14" height="13" rx="1"/><rect x="3" y="21" width="38" height="6" rx="1"/><rect class="w" x="5" y="22.2" width="34" height="0.9"/>',
+        8: '<rect class="p" x="15" y="7" width="14" height="13" rx="1"/><rect x="13" y="22.5" width="18" height="3.5" rx="1.75"/>',
+      };
       r3dPicker(
         $("#r3d-pick-layout"),
         "layout",
@@ -639,7 +673,10 @@ function r3d_escAttr(value) {
           return {
             value: layout[0],
             label: layout[1],
-            img: base + "layout-" + layout[0] + ".webp",
+            svg:
+              '<svg viewBox="0 0 44 30" aria-hidden="true"><rect class="f" x="1" y="1" width="42" height="28" rx="4"/>' +
+              shapes[layout[0]] +
+              "</svg>",
           };
         }),
         r3dLayoutNote
@@ -647,10 +684,10 @@ function r3d_escAttr(value) {
       r3dPicker($("#r3d-pick-icons"), "iconSet", [
         {
           value: "fontawesome",
-          label: "FontAwesome",
+          label: "Solid",
           img: base + "icons-fontawesome.webp",
         },
-        { value: "lucide", label: "Lucide", img: base + "icons-lucide.webp" },
+        { value: "lucide", label: "Outline", img: base + "icons-lucide.webp" },
       ]);
 
       var $mbBox = $("#r3d-mb-box");

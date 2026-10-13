@@ -161,23 +161,13 @@
         o.pageDragDisabled = !o.pageDrag;
 
         //options from url parameters
-        function getUrlVars() {
-          var vars = {};
-          var parts = window.location.href.replace(
-            /[?&]+([^=&]+)=([^&]*)/gi,
-            function (m, key, value) {
-              vars[key] = value.split("#")[0];
-            }
-          );
-          return vars;
-        }
-
-        var urlParams = getUrlVars();
-
-        Object.keys(urlParams).forEach(function (key) {
-          if (key.indexOf("r3d-") !== -1)
-            o[key.replace("r3d-", "")] = decodeURIComponent(urlParams[key]);
-        });
+        var urlParams = new URLSearchParams(window.location.search);
+        var urlViewMode = urlParams.get("r3d-viewMode");
+        if (/^(webgl|3d|2d|swipe|scroll|simple)$/.test(urlViewMode))
+          o.viewMode = urlViewMode;
+        var urlStartPage = urlParams.get("r3d-startPage");
+        if (/^\d{1,5}$/.test(urlStartPage))
+          o.startPage = parseInt(urlStartPage, 10);
 
         o.shareImage = o.shareImage || o.lightboxThumbnailUrl;
 
@@ -193,7 +183,7 @@
           for (const page of o.pages) {
             if (!page || typeof page !== "object") continue;
 
-            for (const key of ["src", "thumb", "json"]) {
+            for (const key of ["src", "thumb", "json", "srcSmall", "srcLarge"]) {
               if (!page[key] || typeof page[key] !== "string") continue;
 
               const value = page[key];
@@ -217,11 +207,16 @@
             bookElement.style.width = "100%";
 
             let width = bookContainer.getBoundingClientRect().width;
-            if (width < o.responsiveViewTreshold) {
-              bookContainer.style.height = width / 0.65 + "px";
-            } else {
-              bookContainer.style.height = width / 1.3 + "px";
+            let startRatio = String(o.containerRatio || "").trim().replace("/", ":");
+            startRatio = startRatio.includes(":")
+              ? parseFloat(startRatio.split(":")[0]) / parseFloat(startRatio.split(":")[1])
+              : parseFloat(startRatio);
+            if (!(startRatio > 0)) {
+              startRatio = isMobile && width < o.responsiveViewTreshold ? 0.65 : 1.3;
             }
+            let startHeight = width / startRatio;
+            if (window.innerHeight > 0) startHeight = Math.min(startHeight, window.innerHeight);
+            bookContainer.style.height = startHeight + "px";
 
             book = new FlipBook(bookElement, o);
             break;

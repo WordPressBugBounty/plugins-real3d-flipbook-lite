@@ -140,12 +140,32 @@ vec3 fbCurlNrm(vec3 n, vec3 pos) {
 }
 `;
 
-function _patchBendMaterial(mat, uniforms) {
+const FLIPBOOK_GUTTER_GLSL = /* glsl */ `
+#ifdef FB_GUTTER
+uniform vec4 uGutter;
+vec3 fbLightMap( vec2 uv ) {
+    float d = mix( uv.x, 1.0 - uv.x, uGutter.w );
+    float t = clamp( d / max( uGutter.x, 0.0001 ), 0.0, 1.0 );
+    float soft = ( 1.0 - t ) * ( 1.0 - t );
+    float crease = exp( -d / max( uGutter.x * 0.07, 0.0004 ) );
+    return vec3( 0.8 * ( 1.0 - uGutter.y * soft - uGutter.z * crease ) );
+}
+#else
+#define fbLightMap( uv ) texture2D( lightMap, uv ).xyz
+#endif
+`;
+
+function _patchBendMaterial(mat, uniforms, gutter) {
     /* Only lit materials get per-fragment normals. The edge/preloader basics
        and the depth material have no lighting to improve, and MeshBasicMaterial
        carries no `normal` attribute unless USE_ENVMAP is set — reading it there
        would fail to compile. */
     var perFragment = mat.isMeshStandardMaterial === true;
+    var useGutter = perFragment && !!gutter;
+    if (useGutter) {
+        mat.defines = Object.assign({}, mat.defines, { FB_GUTTER: '' });
+        uniforms = Object.assign({}, uniforms, { uGutter: gutter });
+    }
 
     mat.onBeforeCompile = function (shader) {
         Object.keys(uniforms).forEach(function (k) {
@@ -192,7 +212,16 @@ function _patchBendMaterial(mat, uniforms) {
                 'varying vec3 vFbNrm;',
                 '',
             ].join('\n') +
+            FLIPBOOK_GUTTER_GLSL +
             shader.fragmentShader;
+
+        var maps = THREE.ShaderChunk && THREE.ShaderChunk.lights_fragment_maps;
+        if (maps) {
+            shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <lights_fragment_maps>',
+                maps.replace('texture2D( lightMap, vUv2 ).xyz', 'fbLightMap( vUv2 )')
+            );
+        }
 
         shader.fragmentShader = shader.fragmentShader.replace(
             '#include <normal_fragment_begin>',
@@ -206,7 +235,7 @@ function _patchBendMaterial(mat, uniforms) {
         );
     };
     mat.customProgramCacheKey = function () {
-        return perFragment ? 'flipbook_bend_pf' : 'flipbook_bend';
+        return perFragment ? (useGutter ? 'flipbook_bend_pf_g' : 'flipbook_bend_pf') : 'flipbook_bend';
     };
     mat.needsUpdate = true;
 }
@@ -309,8 +338,15 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         /* Peak curl is 1.35/hardness^1.5, so hardness 1 already wraps 243deg.
            Below that the sheet rolls through itself — a self-intersecting
            surface, which no amount of shadow bias or mesh density can fix. */
+        if (options.hardCover) options.coverHardness = Math.max(options.coverHardness, 10);
         options.pageHardness = Math.max(1, options.pageHardness);
         options.coverHardness = Math.max(1, options.coverHardness);
+        this.coverOverhang =
+            options.cover && options.hardCover
+                ? (this.pageH * Math.max(0, Math.min(20, Number(options.hardCoverOverhang) || 0))) / 100
+                : 0;
+        this.coverDepth = this.coverOverhang ? this.pageH * 0.006 : 0;
+        this.coverColor = new THREE.Color(options.hardCoverColor || '#8a9099');
 
         /* Growth is swept across the flip, so size the wrap limit for the most
            restrictive value it will pass through. Higher growth drives the
@@ -588,6 +624,81 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             min = Math.min(p.container.position.z, min);
         }
         if (shadowPlane) shadowPlane.position.z = min - 20;
+        if (this.blockEdgeL) this._updateBlockEdges(left, right);
+        this._updateGutters(left, right);
+    }
+
+    _updateGutters(left, right) {
+        var base = Math.max(0, Number(this.options.pageMiddleShadowSize) || 0) / 64;
+        var L = left.length;
+        var R = right.length;
+        var set = function (page, side, depth) {
+            var g = page._gutter && page._gutter[side];
+            if (!g) return;
+            var back = side === 'back';
+            var k = page.innerSide === side ? 0 : 1 - Math.exp(-depth / 12);
+            var j = Math.abs(Math.sin((page.index + 1) * (back ? 12.9898 : 78.233)) * 43758.5453) % 1;
+            var w = base * (0.35 + 2.4 * k) * (0.88 + 0.24 * j);
+            var s = back ? 0.13 * (0.5 + 1.2 * k) : -0.054 * (0.6 + 0.4 * k);
+            s *= 0.9 + 0.2 * (1 - j);
+            g.value.set(w, base ? s : 0, base ? 0.09 + 0.07 * k : 0, back ? 1 : 0);
+        };
+        var i;
+        for (i = 0; i < L; i++) {
+            set(left[i], 'back', L - i);
+            set(left[i], 'front', R + 1);
+        }
+        for (i = 0; i < R; i++) {
+            set(right[i], 'front', R - i);
+            set(right[i], 'back', L + 1);
+        }
+        if (this.pageLInner) {
+            this._applyHtmlGutter(this.pageLInner, this.pages[this.flippedleft - 1], 'back');
+            this._applyHtmlGutter(this.pageRInner, this.pages[this.flippedleft], 'front');
+        }
+    }
+
+    /* The settled spread is covered by its DOM copy (the html layer), so its
+       spine shadow is CSS, not the shader. Paint the same curve the shader
+       draws for that face — soft falloff plus the crease — as the gradient
+       behind .flipbook-page-html-only::after, or the shadow jumps when the
+       layer appears after a turn. The shader feeds the gutter into the
+       light-map term of a lit material, so what reaches the screen is weaker
+       than the raw values: measured on blank pages with the default lights,
+       the soft term shows at 0.45x and the crease at 0.19x, decaying twice as
+       fast as its formula. Those are the factors used here. */
+    _applyHtmlGutter(el, page, side) {
+        if (!el) return;
+        var st = el.style;
+        var g = page && page._gutter && page._gutter[side];
+        if (!g) {
+            st.removeProperty('--fb-gutter-w');
+            st.removeProperty('--fb-gutter-bg');
+            return;
+        }
+        var v = g.value;
+        if (!(v.x > 0)) {
+            st.setProperty('--fb-gutter-w', '0%');
+            st.setProperty('--fb-gutter-bg', 'none');
+            return;
+        }
+        var dir = side === 'back' ? 'to left' : 'to right';
+        var dark = [];
+        var light = [];
+        var n = 14;
+        for (var i = 0; i <= n; i++) {
+            var t = (i / n) * (i / n);
+            var soft = 0.45 * (1 - t) * (1 - t);
+            var crease = 0.19 * Math.exp(-t / 0.035);
+            var p = (t * 100).toFixed(1) + '%';
+            dark.push('rgba(0,0,0,' + (Math.max(0, v.y) * soft + v.z * crease).toFixed(3) + ') ' + p);
+            light.push('rgba(255,255,255,' + (Math.max(0, -v.y) * soft).toFixed(3) + ') ' + p);
+        }
+        st.setProperty('--fb-gutter-w', (v.x * 100).toFixed(2) + '%');
+        st.setProperty(
+            '--fb-gutter-bg',
+            'linear-gradient(' + dir + ', ' + dark.join(', ') + '), linear-gradient(' + dir + ', ' + light.join(', ') + ')'
+        );
     }
 
     initHtmlContent() {
@@ -1122,8 +1233,9 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         var w = m.wrapperW;
         var h = m.wrapperH;
         var o = this.options;
-        var pw = o.pageWidth;
-        var ph = o.pageHeight;
+        var oh = this.coverOverhang || 0;
+        var pw = o.pageWidth + oh;
+        var ph = o.pageHeight + 2 * oh;
         var bw = this.bookWidth;
         if (o.scaleCover) pw /= bw;
 
@@ -1152,7 +1264,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             }
         }
 
-        this.sc *= (h - 2 * m.bookVerticalPadding) / h;
+        this.sc *= ((h - 2 * m.bookVerticalPadding) / h) * (o.pageHeight / ph);
 
         this.Camera.aspect = w / h;
         this.Camera.updateProjectionMatrix();
@@ -1241,6 +1353,239 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         dl.shadow.camera.updateProjectionMatrix();
     }
 
+    _createCoverTextures() {
+        var o = this.options;
+        var oh = this.coverOverhang;
+        var cw = o.pageWidth + oh;
+        var ch = o.pageHeight + 2 * oh;
+        var unit = o.pageHeight / 100;
+        var base = this.coverColor;
+        var hex = '#' + base.getHexString();
+
+        var fade = function (x, x0, y0, x1, y1, rgb, a0, a1, rx, ry, rw, rh) {
+            var g = x.createLinearGradient(x0, y0, x1, y1);
+            g.addColorStop(0, 'rgba(' + rgb + ',' + a0 + ')');
+            g.addColorStop(1, 'rgba(' + rgb + ',' + a1 + ')');
+            x.fillStyle = g;
+            x.fillRect(rx, ry, rw, rh);
+        };
+
+        var weave = function () {
+            var n = 64;
+            var c = document.createElement('canvas');
+            c.width = n;
+            c.height = n;
+            var x = c.getContext('2d');
+            var d = x.createImageData(n, n);
+            var seed = 7;
+            for (var i = 0; i < n * n; i++) {
+                seed = (seed * 16807) % 2147483647;
+                var r = seed / 2147483647 - 0.5;
+                var v = ((((i % n) >> 1) + ((i / n) >> 1)) & 1 ? 0.5 : -0.5) + r * 1.4;
+                d.data[i * 4] = d.data[i * 4 + 1] = d.data[i * 4 + 2] = v > 0 ? 255 : 0;
+                d.data[i * 4 + 3] = Math.min(255, Math.abs(v) * 38);
+            }
+            x.putImageData(d, 0, 0);
+            return c;
+        };
+
+        var poly = function (x, pts, x0, y0, x1, y1, rgb, a0, a1) {
+            var g = x.createLinearGradient(x0, y0, x1, y1);
+            g.addColorStop(0, 'rgba(' + rgb + ',' + a0 + ')');
+            g.addColorStop(1, 'rgba(' + rgb + ',' + a1 + ')');
+            x.fillStyle = g;
+            x.beginPath();
+            x.moveTo(pts[0], pts[1]);
+            for (var k = 2; k < pts.length; k += 2) x.lineTo(pts[k], pts[k + 1]);
+            x.closePath();
+            x.fill();
+        };
+
+        var hinge = function (spineLeft) {
+            var SW = 512;
+            var SH = 1024;
+            var c = document.createElement('canvas');
+            c.width = SW;
+            c.height = SH;
+            var x = c.getContext('2d');
+            var ux = SW / cw;
+            var uy = SH / ch;
+            x.fillStyle = '#CCC';
+            x.fillRect(0, 0, SW, SH);
+            var g0 = 3.6 * unit * ux;
+            var gw = 2.4 * unit * ux;
+            var x0 = spineLeft ? g0 : SW - g0 - gw;
+            var g = x.createLinearGradient(x0, 0, x0 + gw, 0);
+            g.addColorStop(0, 'rgba(0,0,0,0)');
+            g.addColorStop(0.36, 'rgba(0,0,0,0.2)');
+            g.addColorStop(0.5, 'rgba(0,0,0,0.08)');
+            g.addColorStop(0.56, 'rgba(255,255,255,0.1)');
+            g.addColorStop(0.72, 'rgba(255,255,255,0.4)');
+            g.addColorStop(1, 'rgba(255,255,255,0)');
+            x.fillStyle = g;
+            x.fillRect(x0, 0, gw, SH);
+            var rx = 0.75 * unit * ux;
+            var ry = 0.75 * unit * uy;
+            var sx = spineLeft ? 0 : SW;
+            var fx = spineLeft ? SW : 0;
+            var fi = spineLeft ? SW - rx : rx;
+            poly(x, [sx, 0, fx, 0, fi, ry, sx, ry], 0, 0, 0, ry, '255,255,255', 0.45, 0.16);
+            poly(x, [sx, SH, fx, SH, fi, SH - ry, sx, SH - ry], 0, SH, 0, SH - ry, '0,0,0', 0.4, 0.2);
+            poly(
+                x, [fx, 0, fx, SH, fi, SH - ry, fi, ry], fx, 0, fi, 0,
+                spineLeft ? '0,0,0' : '255,255,255', spineLeft ? 0.4 : 0.45, spineLeft ? 0.2 : 0.16
+            );
+            var t = new THREE.CanvasTexture(c);
+            t.needsUpdate = true;
+            return t;
+        };
+
+        var cloth = weave();
+
+        var board = function (spineLeft) {
+            var W = 1024;
+            var H = 1024;
+            var c = document.createElement('canvas');
+            c.width = W;
+            c.height = H;
+            var x = c.getContext('2d');
+            var ux = W / cw;
+            var uy = H / ch;
+            var bx = oh * ux;
+            var by = oh * uy;
+            var lit = !spineLeft;
+            x.fillStyle = hex;
+            x.fillRect(0, 0, W, H);
+            x.fillStyle = x.createPattern(cloth, 'repeat');
+            x.fillRect(0, 0, W, H);
+
+            fade(x, 0, 0, 0, by * 0.7, '255,255,255', 0.3, 0, 0, 0, W, by * 0.7);
+            fade(x, 0, H, 0, H - by * 0.8, '0,0,0', 0.34, 0, 0, H - by * 0.8, W, by * 0.8);
+            var ox = spineLeft ? W : 0;
+            var od = spineLeft ? -1 : 1;
+            fade(
+                x, ox, 0, ox + od * bx * 0.75, 0,
+                lit ? '255,255,255' : '0,0,0', lit ? 0.24 : 0.32, 0,
+                spineLeft ? W - bx * 0.75 : 0, 0, bx * 0.75, H
+            );
+
+            var px = spineLeft ? W - bx : bx;
+            fade(x, 0, by, 0, by * 0.5, '0,0,0', 0.2, 0, 0, by * 0.5, W, by * 0.5);
+            fade(x, 0, H - by, 0, H - by * 0.4, '0,0,0', 0.42, 0, 0, H - by, W, by * 0.6);
+            fade(
+                x, px, 0, px - od * bx * 0.6, 0,
+                '0,0,0', lit ? 0.2 : 0.42, 0,
+                spineLeft ? px : px - bx * 0.6, by, bx * 0.6, H - 2 * by
+            );
+
+            var s1 = 1.6 * unit * ux;
+            var hx = spineLeft ? s1 : W - s1;
+            var cx = spineLeft ? 0 : W;
+            x.fillStyle = 'rgba(0,0,0,0.16)';
+            x.fillRect(spineLeft ? 0 : W - s1, 0, s1, H);
+            fade(x, hx, 0, cx, 0, '0,0,0', 0.2, 0, spineLeft ? 0 : W - s1, 0, s1, H);
+            x.fillStyle = 'rgba(0,0,0,0.42)';
+            x.fillRect(hx - 2, 0, 2, H);
+            x.fillStyle = 'rgba(255,255,255,0.26)';
+            x.fillRect(hx, 0, 2, H);
+
+            var t = new THREE.CanvasTexture(c);
+            t.needsUpdate = true;
+            return t;
+        };
+
+        var edges = function (mirror) {
+            var c = document.createElement('canvas');
+            c.width = 256;
+            c.height = 8;
+            var x = c.getContext('2d');
+            x.fillStyle = '#efece4';
+            x.fillRect(0, 0, 256, 8);
+            var seed = 11;
+            for (var i = 0; i < 256; i += 3) {
+                seed = (seed * 16807) % 2147483647;
+                var r = seed / 2147483647;
+                x.fillStyle = 'rgba(70,62,50,' + (0.1 + r * 0.26) + ')';
+                x.fillRect(mirror ? 255 - i : i, 0, 1, 8);
+            }
+            fade(x, mirror ? 256 : 0, 0, mirror ? 0 : 256, 0, '0,0,0', 0, 0.3, 0, 0, 256, 8);
+            fade(x, mirror ? 256 : 0, 0, mirror ? 232 : 24, 0, '0,0,0', 0.3, 0, mirror ? 232 : 0, 0, 24, 8);
+            var t = new THREE.CanvasTexture(c);
+            t.needsUpdate = true;
+            return t;
+        };
+
+        this.specularHingeF = hinge(true);
+        this.specularHingeB = hinge(false);
+        this.boardTexFront = board(true);
+        this.boardTexBack = board(false);
+        this.blockTexR = edges(false);
+        this.blockTexL = edges(true);
+    }
+
+    _createBlockEdges() {
+        var o = this.options;
+        var make = (tex) => {
+            var g = new THREE.PlaneGeometry(1, o.pageHeight * 0.994, 1, 1);
+            g.faceVertexUvs[1] = g.faceVertexUvs[0];
+            var m = o.lights
+                ? new THREE.MeshStandardMaterial({
+                      map: tex,
+                      roughness: o.pageRoughness,
+                      metalness: o.pageMetalness,
+                      lightMap: this.specularFlat,
+                  })
+                : new THREE.MeshBasicMaterial({ map: tex });
+            var mesh = new THREE.Mesh(g, m);
+            mesh.visible = false;
+            if (o.shadows) mesh.receiveShadow = true;
+            this.centerContainer.add(mesh);
+            return mesh;
+        };
+        this.blockEdgeL = make(this.blockTexL);
+        this.blockEdgeR = make(this.blockTexR);
+    }
+
+    _updateBlockEdges(left, right) {
+        var pw = this.options.pageWidth;
+        var maxW = this.coverOverhang * 0.5;
+        var place = (mesh, stack, sign) => {
+            var cover = stack.length ? stack[stack.length - 1] : null;
+            var n = 0;
+            for (var i = 0; i < stack.length; i++) if (!stack[i].innerSide) n++;
+            var w = maxW * (1 - Math.exp(-n / 10));
+            if (!cover || !cover.innerSide || w < 0.4) {
+                mesh.visible = false;
+                return;
+            }
+            var f = w / maxW;
+            mesh.visible = true;
+            mesh.scale.x = w;
+            mesh.position.set(sign * (pw + w / 2), 0, cover.container.position.z + 0.15);
+            mesh.material.map.repeat.x = f;
+            mesh.material.map.offset.x = sign > 0 ? 0 : 1 - f;
+        };
+        place(this.blockEdgeL, left, -1);
+        place(this.blockEdgeR, right, 1);
+    }
+
+    createBoardMaterial(side, uniforms) {
+        var o = this.options;
+        var tex = side === 'front' ? this.boardTexFront : this.boardTexBack;
+        var mat = o.lights
+            ? new THREE.MeshStandardMaterial({
+                  map: tex,
+                  roughness: o.pageRoughness,
+                  metalness: o.pageMetalness,
+                  emissive: 0x000000,
+                  color: 0xffffff,
+                  lightMap: this.specularFlat,
+              })
+            : new THREE.MeshBasicMaterial({ map: tex });
+        _patchBendMaterial(mat, uniforms);
+        return mat;
+    }
+
     createPages() {
         var self = this;
         var hardness;
@@ -1279,6 +1624,20 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         const { z } = e;
         t2.needsUpdate = true;
         self.specularF = t2;
+
+        if (self.coverOverhang) {
+            var c3 = document.createElement('canvas');
+            c3.width = 64;
+            c3.height = 64;
+            var ctx3 = c3.getContext('2d');
+            ctx3.fillStyle = '#CCC';
+            ctx3.fillRect(0, 0, 64, 64);
+            var t3 = new THREE.CanvasTexture(c3);
+            t3.needsUpdate = true;
+            self.specularFlat = t3;
+            self._createCoverTextures();
+            self._createBlockEdges();
+        }
 
         var preloaderMatF;
         var preloaderMatB;
@@ -1380,10 +1739,19 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         this._zOrderDirty = true;
 
         if (this.bg) {
-            this.bg.position.z = -numSheets * th - 5;
+            this.bg.position.z = -numSheets * th - 5 - (this.coverDepth || 0);
         }
 
         self.initialized = true;
+        this._showFirstThumb();
+    }
+
+    _showFirstThumb() {
+        for (let i = 0; i < this.pages.length; i++) {
+            const s = this.pages[i];
+            if (s.indexF === 0) return s.showThumb('front');
+            if (s.indexB === 0) return s.showThumb('back');
+        }
     }
 
     getNumPages() {
@@ -1669,9 +2037,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 // per tap while loadPages (and its unloadPages) bails on
                 // isFlipping until the book settles — so prune the window here,
                 // once per tap, before the incoming spread renders.
+                this._cancelSharpRenders();
                 this.unloadPages();
                 this._requestSpreadLoad('next');
                 onComplete = function (_) {
+                    self._landedAt = performance.now();
                     self.loadPages();
                     self.turnPageComplete();
                 };
@@ -1765,6 +2135,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         var pages = this.pages;
         var main = this.options.main;
 
+        if (!this.enabled) return;
         if (!main.wrapperH) {
             return;
         }
@@ -1780,9 +2151,10 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         var loadMorePages = this.loadMorePages;
 
         pages.forEach((page) => {
-            if (page === rightPage || page === leftPage) {
+            if (page === rightPage || page === leftPage || page.overhang) {
                 page.showMat();
             }
+            if (page.overhang) return;
 
             if (leftPage && page.index < leftPage.index - 2) {
                 page.hideMat();
@@ -1803,9 +2175,45 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         // fire loadPages per tick, and a slow render resolving late must not
         // clobber the newer tier's applied material with its stale one.
         const seq = (this._loadPagesSeq = (this._loadPagesSeq || 0) + 1);
-        const stale = () => seq !== this._loadPagesSeq;
+        const stale = () => seq !== this._loadPagesSeq || !this.enabled;
 
-        main.setLoadingProgress(0.1);
+        const spread = this.flippedleft;
+        Promise.resolve().then(() => {
+            if (stale()) return;
+            const near = [[-1, 'back'], [0, 'front'], [0, 'back'], [1, 'front'], [-1, 'front'], [-2, 'back']];
+            near.forEach(([d, side]) => {
+                const sheet = pages[spread + d];
+                if (sheet) sheet.showThumb(side);
+            });
+        });
+
+        const settle = this._sharpWait();
+        if (settle > 0) {
+            const neighbourSize = this._prefetchSize();
+            const blankL = this._needsPrefetch(leftPage, 'back');
+            const blankR = this._needsPrefetch(rightPage, 'front');
+            if (blankL || blankR) main.setLoadingProgress(0.1);
+            if (blankL) {
+                await this.loadPageAsync(leftPage, 'back', neighbourSize);
+                if (stale()) return;
+                this.pageLoaded(leftPage, 'back');
+            }
+            if (blankR) {
+                await this.loadPageAsync(rightPage, 'front', neighbourSize);
+                if (stale()) return;
+                this.pageLoaded(rightPage, 'front');
+            }
+            main.setLoadingProgress(1);
+            loadMorePages.call(self);
+            await this.loadHTMLAsync(leftPage, 'back');
+            await this.loadHTMLAsync(rightPage, 'front');
+            if (stale()) return;
+            updateHtmlLayer.call(self);
+            await new Promise((resolve) => setTimeout(resolve, settle));
+            if (stale() || this.isFlipping()) return;
+        } else {
+            main.setLoadingProgress(0.1);
+        }
 
         await this.loadPageAsync(leftPage, 'back');
         if (stale()) return;
@@ -1820,6 +2228,12 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         updateHtmlLayer.call(self);
         this.unloadPages();
         loadMorePages.call(self);
+    }
+
+    _sharpWait() {
+        const d = this.options.pageSharpDelay == null ? 300 : this.options.pageSharpDelay;
+        if (!this._landedAt || !(d > 0)) return 0;
+        return Math.max(0, d - (performance.now() - this._landedAt));
     }
 
     /* Would unloadPages keep this sheet? Same predicate, so a render that
@@ -1847,8 +2261,6 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
        Cancel them: pdf.js drops the work, and the caches are cleared so a
        later visit renders the page again. */
     _cancelDistantRenders() {
-        const pdfSvc = this.main && this.main.pdfService;
-        if (!pdfSvc || !pdfSvc.pages) return;
         const o = this.options;
         const doublePage = !!o.doublePage;
         const centres = [];
@@ -1862,26 +2274,42 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         if (!centres.length) return;
 
         const reach = o.pageRenderReach == null ? 4 : o.pageRenderReach;
+        this._cancelRenders(function (i) {
+            for (let c = 0; c < centres.length; c++) {
+                if (Math.abs(i - centres[c]) <= reach) return false;
+            }
+            return true;
+        }, 'reader moved on');
+    }
+
+    _cancelSharpRenders() {
+        const keep = this._prefetchSize();
+        this._cancelRenders(function (i, task) {
+            return task._r3dSize != null && task._r3dSize > keep;
+        }, 'turn started');
+    }
+
+    _cancelRenders(shouldCancel, reason) {
+        const pdfSvc = this.main && this.main.pdfService;
+        if (!pdfSvc || !pdfSvc.pages) return;
+        const o = this.options;
+        const doublePage = !!o.doublePage;
+
         for (let i = 0; i < pdfSvc.pages.length; i++) {
             const pdfPage = pdfSvc.pages[i];
             if (!pdfPage || !pdfPage.renderingTasks || !pdfPage.renderingTasks.length) continue;
-            let near = false;
-            for (let c = 0; c < centres.length; c++) {
-                if (Math.abs(i - centres[c]) <= reach) {
-                    near = true;
-                    break;
-                }
-            }
-            if (near) continue;
 
             const sizes = [];
-            pdfPage.renderingTasks.forEach((task) => {
+            pdfPage.renderingTasks = pdfPage.renderingTasks.filter((task) => {
+                if (!shouldCancel(i, task)) return true;
                 sizes.push(task._r3dSize);
                 try {
                     task.cancel();
                 } catch (e) {}
+                return false;
             });
-            pdfPage.renderingTasks = [];
+            if (!sizes.length) continue;
+
             /* Only the sizes that were still rendering — a finished tier on
                this page keeps its bitmap and stays usable. */
             sizes.forEach((sz) => {
@@ -1890,8 +2318,8 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 if (pdfPage.renderingPromises) delete pdfPage.renderingPromises[sz];
                 if (pdfPage.canvas) delete pdfPage.canvas[sz];
             });
-            if (o.pageTextureLog && sizes.length) {
-                this._texLog('CANCEL', 'pdf page ' + i + ' sizes=' + sizes.join(',') + ' (reader moved on)');
+            if (o.pageTextureLog) {
+                this._texLog('CANCEL', 'pdf page ' + i + ' sizes=' + sizes.join(',') + ' (' + reason + ')');
             }
 
             /* The sheet cached a promise per side+size; drop the ones whose
@@ -2007,6 +2435,25 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
        and "bitmap closed" are no longer the same event. Dropping the cache
        entry is still right; the texture then holds the only ref and the bitmap
        dies with it. */
+    _releaseLargeImages() {
+        const o = this.options;
+        if (o.pdfMode || !o.pages) return;
+        let live = null;
+        const cache = this.main && this.main.imageCache;
+        o.pages.forEach((rec) => {
+            const bmp = rec && rec.imgHigh;
+            if (!bmp) return;
+            live = live || this._liveBitmaps();
+            if (live.has(bmp)) return;
+            rec.imgHigh = null;
+            rec.imgHighLoaded = false;
+            if (cache) cache.delete(rec.srcLarge || rec.srcHigh);
+            try {
+                if (bmp.close) bmp.close();
+            } catch (e) {}
+        });
+    }
+
     _liveBitmaps() {
         const live = new Set();
         this.pages.forEach((sheet) => {
@@ -2128,6 +2575,8 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
                 });
             });
         });
+
+        this._releaseLargeImages();
 
         // Also drop pdfservice's per-pdf-page caches: zoom tiers (> baseSize)
         // for any pdf page that doesn't back the current visible spread, and
@@ -2282,11 +2731,13 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     hibernate() {
         if (this._hibernated) return;
         this._hibernated = true;
+        this._pfQueue = [];
 
         this.pages.forEach((sheet) => {
             sheet.unload('front');
             sheet.unload('back');
         });
+        this._releaseLargeImages();
 
         const pdfSvc = this.main && this.main.pdfService;
         if (pdfSvc && pdfSvc.pages) {
@@ -2335,7 +2786,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     loadPageImage(page, side, callback) {}
 
     focusLeft(time, delay, callback) {
-        var pw = this.options.pageWidth;
+        var pw = this.options.pageWidth + (this.view == 1 ? 0 : this.coverOverhang || 0);
         var newX = pw * 0.5;
         var newY = 0;
 
@@ -2343,7 +2794,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 
     focusRight(time, delay, callback) {
-        var pw = this.options.pageWidth;
+        var pw = this.options.pageWidth + (this.view == 1 ? 0 : this.coverOverhang || 0);
         var newX = -pw * 0.5;
         var newY = 0;
 
@@ -2589,9 +3040,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             var onComplete;
             if (load) {
                 // Same per-tap pruning as nextPage — see comment there.
+                this._cancelSharpRenders();
                 this.unloadPages();
                 this._requestSpreadLoad('prev');
                 onComplete = function (_) {
+                    self._landedAt = performance.now();
                     self.loadPages();
                     self.turnPageComplete();
                 };
@@ -2740,8 +3193,8 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         for (var i = 0; i < pairs.length; i++) {
             var page = pairs[i][0];
             if (!page || !pairs[i][1]) continue;
-            var top = this._pageScreenPoint(page, this.pageW, this.pageH / 2);
-            var bot = this._pageScreenPoint(page, this.pageW, -this.pageH / 2);
+            var top = this._pageScreenPoint(page, page.pW, page.pH / 2);
+            var bot = this._pageScreenPoint(page, page.pW, -page.pH / 2);
             /* Which side of the edge the cursor is on, taken from the spine so
                it holds for either page and for right-to-left books. */
             var spine = this._pageScreenPoint(page, 0, 0);
@@ -2949,6 +3402,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
        this if a book wants something else. */
     _prefetchSize() {
         const o = this.options;
+        if (!o.pdfMode) return this.main.imageTierKey(o.pageTextureNeighbour || o.pageTextureSmall);
         if (o.pageTextureNeighbour) return o.pageTextureNeighbour;
         const medium = o.pageTextureMedium || o.pageTextureSmall;
         return medium;
@@ -2966,10 +3420,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         const run = () => {
             this._spreadLoadAt = performance.now();
             this._spreadLoadTimer = null;
-            if (this._spreadLoadDir === 'prev') this.loadPrevSpread();
-            else this.loadNextSpread();
+            if (this._spreadLoadDir === 'prev') this.loadPrevSpread(this._prefetchDepth());
+            else this.loadNextSpread(this._prefetchDepth());
         };
         this._spreadLoadDir = dir;
+        this._travelDir = dir;
         if (wait <= 0 || !this._spreadLoadAt || performance.now() - this._spreadLoadAt >= wait) {
             run();
             return;
@@ -2997,17 +3452,20 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
        through here: loadPages renders it directly, so it never queues behind
        a neighbour. */
     _queuePrefetch(sheet, side, size) {
-        if (!sheet) return;
+        if (!sheet || !this.enabled) return;
         this._pfQueue = this._pfQueue || [];
+        let waiting = false;
         for (let i = 0; i < this._pfQueue.length; i++) {
             const q = this._pfQueue[i];
-            if (q.sheet === sheet && q.side === side) return; // already waiting
+            if (q.sheet === sheet && q.side === side) waiting = true;
         }
-        this._pfQueue.push({ sheet: sheet, side: side, size: size });
+        if (!waiting) this._pfQueue.push({ sheet: sheet, side: side, size: size });
+        sheet.showThumb(side);
         this._pumpPrefetch();
     }
 
     _pumpPrefetch() {
+        if (!this.enabled) return;
         const max = this.options.pageRenderConcurrency == null ? 2 : this.options.pageRenderConcurrency;
         this._pfActive = this._pfActive || 0;
         while (this._pfActive < max && this._pfQueue && this._pfQueue.length) {
@@ -3032,25 +3490,36 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         }
     }
 
-    async loadPrevSpread() {
-        const left = this.pages[this.flippedleft - 1];
-        const prev = this.pages[this.flippedleft - 2];
-        const neighbourSize = this._prefetchSize();
-        if (this._needsPrefetch(left, 'front')) this._queuePrefetch(left, 'front', neighbourSize);
-        if (this._needsPrefetch(prev, 'back')) this._queuePrefetch(prev, 'back', neighbourSize);
+    _prefetchDepth() {
+        const v = this.options.pagePrefetchSpreads;
+        return v == null ? 3 : Math.max(1, Math.floor(v) || 1);
     }
 
-    async loadNextSpread() {
-        const right = this.pages[this.flippedleft];
-        const next = this.pages[this.flippedleft + 1];
+    async loadPrevSpread(depth) {
         const neighbourSize = this._prefetchSize();
-        if (this._needsPrefetch(right, 'back')) this._queuePrefetch(right, 'back', neighbourSize);
-        if (this._needsPrefetch(next, 'front')) this._queuePrefetch(next, 'front', neighbourSize);
+        for (let d = 0, n = Math.max(1, depth || 1); d < n; d++) {
+            const left = this.pages[this.flippedleft - 1 - d];
+            const prev = this.pages[this.flippedleft - 2 - d];
+            if (this._needsPrefetch(left, 'front')) this._queuePrefetch(left, 'front', neighbourSize);
+            if (this._needsPrefetch(prev, 'back')) this._queuePrefetch(prev, 'back', neighbourSize);
+        }
+    }
+
+    async loadNextSpread(depth) {
+        const neighbourSize = this._prefetchSize();
+        for (let d = 0, n = Math.max(1, depth || 1); d < n; d++) {
+            const right = this.pages[this.flippedleft + d];
+            const next = this.pages[this.flippedleft + 1 + d];
+            if (this._needsPrefetch(right, 'back')) this._queuePrefetch(right, 'back', neighbourSize);
+            if (this._needsPrefetch(next, 'front')) this._queuePrefetch(next, 'front', neighbourSize);
+        }
     }
 
     loadMorePages() {
-        this.loadNextSpread();
-        this.loadPrevSpread();
+        const depth = this._prefetchDepth();
+        const back = (this._travelDir || (this.options.rightToLeft ? 'prev' : 'next')) === 'prev';
+        this.loadNextSpread(back ? 1 : depth);
+        this.loadPrevSpread(back ? depth : 1);
     }
 
     _capturePageScreenshot(pageIndex, onComplete) {
@@ -3131,6 +3600,18 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         this.startPageItems(html[0] || html);
     }
 
+    _scaleHTMLPage(el, page, edge) {
+        var oh = page && page.overhang ? page.overhang : 0;
+        if (!oh) {
+            el.style.transform = '';
+            return;
+        }
+        var o = this.options;
+        el.style.transformOrigin = edge + ' ' + o.pageHeight / 2 + 'px';
+        el.style.transform =
+            'scale(' + (o.pageWidth + oh) / o.pageWidth + ', ' + (o.pageHeight + 2 * oh) / o.pageHeight + ')';
+    }
+
     updateHtmlLayer(force) {
         if (!this.htmlLayer) {
             return;
@@ -3152,6 +3633,11 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
 
         var rightPage = this.pages[this.flippedleft];
         var leftPage = this.pages[this.flippedleft - 1];
+
+        this._scaleHTMLPage(this.pageLInner, leftPage && leftPage.innerSide !== 'back' ? leftPage : null, 'right');
+        this._scaleHTMLPage(this.pageRInner, rightPage && rightPage.innerSide !== 'front' ? rightPage : null, 'left');
+        this._applyHtmlGutter(this.pageLInner, leftPage, 'back');
+        this._applyHtmlGutter(this.pageRInner, rightPage, 'front');
 
         var R = -1,
             L = -1;
@@ -3560,8 +4046,12 @@ FLIPBOOK.PageWebGL = class {
 
         this.book = book;
         this.index = i;
-        this.pW = options.pageWidth;
-        this.pH = options.pageHeight;
+        var sheetCount = Math.ceil(options.pages.length / 2);
+        this.overhang = i === 0 || i === sheetCount - 1 ? book.coverOverhang || 0 : 0;
+        this.innerSide = this.overhang && sheetCount > 1 ? (i === 0 ? 'back' : 'front') : null;
+        this.coverDepth = this.innerSide ? book.coverDepth || 0 : 0;
+        this.pW = options.pageWidth + this.overhang;
+        this.pH = options.pageHeight + 2 * this.overhang;
         this.nfacesw = options.pageSegmentsW;
         this.nfacesh = options.pageSegmentsH;
         this.mats = [];
@@ -3627,13 +4117,26 @@ FLIPBOOK.PageWebGL = class {
         var edgeMat = new THREE.MeshBasicMaterial({ color: 0xededed });
         _patchBendMaterial(edgeMat, this._bendUniforms);
 
+        this._gutter = {
+            front: { value: new THREE.Vector4(0.06, -0.04, 0.1, 0) },
+            back: { value: new THREE.Vector4(0.06, 0.13, 0.1, 1) },
+        };
         this.preloaderMatF = preloaderMatF.clone();
-        _patchBendMaterial(this.preloaderMatF, this._bendUniforms);
+        _patchBendMaterial(this.preloaderMatF, this._bendUniforms, this._gutterFor('front'));
         this.preloaderMatB = preloaderMatB.clone();
-        _patchBendMaterial(this.preloaderMatB, this._bendUniforms);
+        _patchBendMaterial(this.preloaderMatB, this._bendUniforms, this._gutterFor('back'));
+        if (this.overhang && book.specularFlat) {
+            if (this.innerSide !== 'front' && this.preloaderMatF.lightMap) {
+                this.preloaderMatF.lightMap = book.specularHingeF || book.specularFlat;
+            }
+            if (this.innerSide !== 'back' && this.preloaderMatB.lightMap) {
+                this.preloaderMatB.lightMap = book.specularHingeB || book.specularFlat;
+            }
+            edgeMat.color.copy(book.coverColor).multiplyScalar(0.8);
+        }
 
         /* ---- Corner-curl (page 0 only) ---- */
-        if (i == 0 && this.options.cornerCurl) {
+        if (i == 0 && this.options.cornerCurl && !this.overhang) {
             this.nfacesw = 20;
             this.nfacesh = 20;
 
@@ -3697,14 +4200,20 @@ FLIPBOOK.PageWebGL = class {
         }
 
         /* ---- Geometry & mesh ---- */
-        if (this.nfacesw === options.pageSegmentsW && this.nfacesh === options.pageSegmentsH && book._sharedPageGeometry) {
+        if (!this.overhang && this.nfacesw === options.pageSegmentsW && this.nfacesh === options.pageSegmentsH && book._sharedPageGeometry) {
             this.gF = book._sharedPageGeometry;
         } else {
-            this.gF = new THREE.BoxGeometry(this.pW, this.pH, 0.01, this.nfacesw, this.nfacesh, 0);
+            var depth = this.coverDepth || 0.01;
+            this.gF = new THREE.BoxGeometry(this.pW, this.pH, depth, this.nfacesw, this.nfacesh, 0);
+            if (this.coverDepth) this.gF.translate(0, 0, this.innerSide === 'back' ? depth / 2 : -depth / 2);
             this.gF.faceVertexUvs[1] = this.gF.faceVertexUvs[0];
         }
 
         var mats = [edgeMat, edgeMat, edgeMat, edgeMat, this.preloaderMatF, this.preloaderMatB];
+        if (this.innerSide) {
+            this.boardMat = book.createBoardMaterial(this.innerSide, this._bendUniforms);
+            mats[this.innerSide === 'front' ? 4 : 5] = this.boardMat;
+        }
 
         var mats2;
         mats2 = [edgeMat, edgeMat, edgeMat, edgeMat, edgeMat, edgeMat];
@@ -3731,9 +4240,31 @@ FLIPBOOK.PageWebGL = class {
             this.cube.customDepthMaterial = depthMat;
         }
 
+        if (this.innerSide) {
+            var insetGeometry = new THREE.BoxGeometry(
+                options.pageWidth, options.pageHeight, 0.01,
+                this.nfacesw, this.nfacesh, 0
+            );
+            insetGeometry.translate(-this.overhang / 2, 0, this.innerSide === 'back' ? -0.3 : 0.3);
+            insetGeometry.faceVertexUvs[1] = insetGeometry.faceVertexUvs[0];
+            var insetEdge = new THREE.MeshBasicMaterial({ color: 0xededed });
+            _patchBendMaterial(insetEdge, this._bendUniforms);
+            var insetMats = [insetEdge, insetEdge, insetEdge, insetEdge, insetEdge, insetEdge];
+            if (this.innerSide === 'front') insetMats[4] = this.preloaderMatF;
+            else insetMats[5] = this.preloaderMatB;
+            this.inset = new THREE.Mesh(insetGeometry, insetMats);
+            if (this.options.shadows) this.inset.receiveShadow = true;
+            this.cube.add(this.inset);
+        }
+
         this.showMat();
 
-        this.cubeEmpty = new THREE.Mesh(book._sharedEmptyGeometry, mats2);
+        var emptyGeometry = book._sharedEmptyGeometry;
+        if (this.overhang) {
+            emptyGeometry = new THREE.BoxGeometry(this.pW, this.pH, 0.01, 1, 1, 0);
+            emptyGeometry.faceVertexUvs[1] = emptyGeometry.faceVertexUvs[0];
+        }
+        this.cubeEmpty = new THREE.Mesh(emptyGeometry, mats2);
         this.cubeEmpty.position.x = this.pW * 0.5;
 
         this.pageFlippedAngle = (Math.PI * this.options.pageFlippedAngle) / 180;
@@ -3866,22 +4397,25 @@ FLIPBOOK.PageWebGL = class {
 
     load(side, size, callback, _) {
         var main = this.book.main;
-
-        if (!main.wrapperH) {
-            return;
-        }
-        if (!main.zoom) {
-            return;
-        }
-
         var self = this;
+
+        if (!main.wrapperH || !main.zoom) {
+            setTimeout(function () {
+                if (self._sidePromises && self._sidePromises[side]) delete self._sidePromises[side][size];
+                if (callback) callback.call(self);
+            }, 0);
+            return;
+        }
+
         this.disposed = false;
+        this.showThumb(side);
 
         var o = this.book.options;
         const { s: texture } = o;
 
         if (side == 'front') {
             if (!o.cover && this.index == 0) {
+                if (callback) callback.call(this);
                 return;
             }
 
@@ -3891,8 +4425,13 @@ FLIPBOOK.PageWebGL = class {
                 }
             } else {
                 main.loadPage(this.indexF, size, function (page) {
-                    if (self.disposed) return;
+                    if (self.disposed || !self.book.enabled) {
+                        if (self._sidePromises && self._sidePromises.front) delete self._sidePromises.front[size];
+                        if (callback) callback.call(self);
+                        return;
+                    }
                     if (!page || texture) {
+                        if (!page && self._sidePromises && self._sidePromises[side]) delete self._sidePromises[side][size];
                         if (callback) {
                             callback.call(self);
                         }
@@ -3915,6 +4454,7 @@ FLIPBOOK.PageWebGL = class {
                        texture for the same side. Whichever order they finish
                        in, keep only the best. */
                     const haveBetter =
+                        size !== self.book.currentPageTextureSize &&
                         self.materials &&
                         self.materials[side] &&
                         Object.keys(self.materials[side]).some((sz) => +sz >= size);
@@ -3946,6 +4486,10 @@ FLIPBOOK.PageWebGL = class {
                     self.materials = self.materials || {};
                     self.materials[side] = self.materials[side] || {};
                     self.materials[side][size] = mat;
+                    if (self._blank(side)) {
+                        self.setMat(mat, side);
+                        self._dropThumb(side);
+                    }
                     if (self.options.pageTextureLog && mat.map) {
                         self.book._texLog(
                             'LOAD ',
@@ -3961,6 +4505,7 @@ FLIPBOOK.PageWebGL = class {
             }
         } else if (side == 'back') {
             if (!o.cover && this.index == this.book.pages.length - 1) {
+                if (callback) callback.call(this);
                 return;
             }
 
@@ -3970,8 +4515,13 @@ FLIPBOOK.PageWebGL = class {
                 }
             } else {
                 main.loadPage(this.indexB, size, function (page) {
-                    if (self.disposed) return;
+                    if (self.disposed || !self.book.enabled) {
+                        if (self._sidePromises && self._sidePromises.back) delete self._sidePromises.back[size];
+                        if (callback) callback.call(self);
+                        return;
+                    }
                     if (!page || texture) {
+                        if (!page && self._sidePromises && self._sidePromises[side]) delete self._sidePromises[side][size];
                         if (callback) {
                             callback.call(self);
                         }
@@ -3994,6 +4544,7 @@ FLIPBOOK.PageWebGL = class {
                        texture for the same side. Whichever order they finish
                        in, keep only the best. */
                     const haveBetter =
+                        size !== self.book.currentPageTextureSize &&
                         self.materials &&
                         self.materials[side] &&
                         Object.keys(self.materials[side]).some((sz) => +sz >= size);
@@ -4025,6 +4576,10 @@ FLIPBOOK.PageWebGL = class {
                     self.materials = self.materials || {};
                     self.materials[side] = self.materials[side] || {};
                     self.materials[side][size] = mat;
+                    if (self._blank(side)) {
+                        self.setMat(mat, side);
+                        self._dropThumb(side);
+                    }
                     if (self.options.pageTextureLog && mat.map) {
                         self.book._texLog(
                             'LOAD ',
@@ -4041,6 +4596,13 @@ FLIPBOOK.PageWebGL = class {
         }
     }
 
+    _blank(side) {
+        const mesh = this.inset && side === this.innerSide ? this.inset : this.cube;
+        const shown = mesh.material[side == 'front' ? 4 : 5];
+        const thumb = this._thumbs && this._thumbs[side];
+        return shown === (side == 'front' ? this.preloaderMatF : this.preloaderMatB) || (!!thumb && shown === thumb.mat);
+    }
+
     loaded(side) {
         // Prefer the current global tier when this sheet has it cached — on a
         // zoom round trip everything is promise-cached, so no load runs and
@@ -4055,7 +4617,70 @@ FLIPBOOK.PageWebGL = class {
         const size = mats && mats[tier] ? tier : loadedSize;
         if (mats && mats[size]) {
             this.setMat(mats[size], side);
+            this._dropThumb(side);
         }
+    }
+
+    showThumb(side) {
+        const o = this.options;
+        if (!o.thumbPlaceholder) return;
+        this._thumbs = this._thumbs || {};
+        if (this._thumbs[side]) return;
+        const mats = this.materials && this.materials[side];
+        if (mats && Object.keys(mats).length) return;
+        const index = side === 'front' ? this.indexF : this.indexB;
+        const page = o.pages && o.pages[index];
+        if (!page) return;
+        let url = page.thumb;
+        if (!url) return;
+        const bare = (u) => String(u || '').replace(/^https?:/, '');
+        if (bare(url) === bare(page.src)) return;
+        if (o.matchProtocol !== false) url = url.replace(/^https?:/, location.protocol);
+
+        const entry = (this._thumbs[side] = { mat: null });
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            if (this._thumbs[side] !== entry) return;
+            const expected = (o.pageWidth / o.pageHeight) * (page.side === 'left' || page.side === 'right' ? 2 : 1);
+            const mesh = this.inset && side === this.innerSide ? this.inset : this.cube;
+            const preloader = side === 'front' ? this.preloaderMatF : this.preloaderMatB;
+            if (
+                !img.width ||
+                !img.height ||
+                Math.abs(img.width / img.height / expected - 1) > 0.04 ||
+                !mesh ||
+                mesh.material[side === 'front' ? 4 : 5] !== preloader
+            ) {
+                return;
+            }
+            let source = img;
+            const cap = 600;
+            const longSide = Math.max(img.width, img.height);
+            if (longSide > cap) {
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round((img.width * cap) / longSide));
+                canvas.height = Math.max(1, Math.round((img.height * cap) / longSide));
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    source = canvas;
+                }
+            }
+            entry.mat = this.createMaterial(this.createTexture({ image: { 0: source } }, 0, page.side), side);
+            this.setMat(entry.mat, side);
+        };
+        img.src = url;
+    }
+
+    _dropThumb(side, restorePreloader) {
+        const entry = this._thumbs && this._thumbs[side];
+        if (!entry) return;
+        this._thumbs[side] = null;
+        if (!entry.mat) return;
+        if (restorePreloader) this.setMat(side === 'front' ? this.preloaderMatF : this.preloaderMatB, side);
+        if (entry.mat.map) entry.mat.map.dispose();
+        entry.mat.dispose();
     }
 
     createTexture(page, size, side) {
@@ -4094,6 +4719,7 @@ FLIPBOOK.PageWebGL = class {
 
     unload(side) {
         if (this._sidePromises && this._sidePromises[side]) delete this._sidePromises[side];
+        this._dropThumb(side, true);
 
         // Dispose every cached size-tier material for this side, not just the
         // applied one — each texture pins its source ImageBitmap (~15MB per
@@ -4161,10 +4787,20 @@ FLIPBOOK.PageWebGL = class {
         this.disposed = true;
     }
 
+    _gutterFor(side) {
+        if (this.overhang && side !== this.innerSide) return null;
+        return this._gutter[side == 'back' ? 'back' : 'front'];
+    }
+
     createMaterial(map, side) {
         var mat;
         if (this.options.lights) {
             var sTexture = side == 'back' ? this.book.specularB : this.book.specularF;
+            if (this.overhang && side !== this.innerSide) {
+                sTexture =
+                    (side == 'back' ? this.book.specularHingeB : this.book.specularHingeF) ||
+                    this.book.specularFlat;
+            }
             var o = this.options;
             var color = 0xffffff;
 
@@ -4183,7 +4819,7 @@ FLIPBOOK.PageWebGL = class {
         }
 
         /* Patch every new page-content material with bend shader */
-        _patchBendMaterial(mat, this._bendUniforms);
+        _patchBendMaterial(mat, this._bendUniforms, this._gutterFor(side));
 
         return mat;
     }
@@ -4690,10 +5326,11 @@ FLIPBOOK.PageWebGL = class {
 
     setMat(mat, side) {
         const matIndex = side == 'front' ? 4 : 5;
-        if (this.cube.material[matIndex] === mat) {
+        const mesh = this.inset && side === this.innerSide ? this.inset : this.cube;
+        if (mesh.material[matIndex] === mat) {
             return;
         }
-        this.cube.material[matIndex] = mat;
+        mesh.material[matIndex] = mat;
         this.book.needsUpdate = true;
     }
 
