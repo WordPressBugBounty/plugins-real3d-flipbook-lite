@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.7';
+FLIPBOOK.version = '5.7.6';
 
 // page.image / page.imageBitmap are keyed by texture size, but legacy paths hand
 // back a bare Image, an ImageBitmap or a URL string. Resolve the requested tier,
@@ -3592,7 +3592,7 @@ FLIPBOOK.Main = class {
 
         const positionTooltip = (hotspot) => {
             // Use dot if present (hotspot type), otherwise use the element itself (link/spotlight)
-            const ref = hotspot.querySelector('.flipbook-hotspot-dot') || hotspot;
+            const ref = hotspot.querySelector('.flipbook-hotspot-dot, .flipbook-hotspot-pill') || hotspot;
 
             const wrapperRect = self.wrapper.getBoundingClientRect();
             const dotRect = ref.getBoundingClientRect();
@@ -3891,6 +3891,7 @@ FLIPBOOK.Main = class {
         this.wrapper.addEventListener('click', (e) => {
             // Let tooltip action links and qty buttons work
             if (e.target.closest('.flipbook-hotspot-tooltip-btn')) return;
+            if (e.target.closest('a.flipbook-hotspot-buy')) return;
             if (e.target.closest('[data-qty-delta]')) return;
             if (e.target.closest('[data-gallery-nav]')) return;
 
@@ -3931,6 +3932,12 @@ FLIPBOOK.Main = class {
                     return;
                 }
 
+                if (hotspot.classList.contains('flipbook-hotspot--button') && self.pinHotspotCard(hotspot)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+
                 if (self.hotspotTooltipTarget === hotspot) {
                     hideTooltip();
                 } else {
@@ -3956,6 +3963,7 @@ FLIPBOOK.Main = class {
                 return;
             }
             if (e.key !== 'Enter' && e.key !== ' ') return;
+            if (e.target.closest && e.target.closest('a.flipbook-hotspot-buy')) return;
             const hotspot = e.target.closest && e.target.closest('.flipbook-hotspot');
             if (!hotspot || hotspot.classList.contains('flipbook-page-item-link')) return;
             if (e.key === ' ' && hotspot.getAttribute('role') !== 'button') return;
@@ -6359,13 +6367,17 @@ FLIPBOOK.Main = class {
         }
         this._scheduleFitPageAudio();
 
-        this.sendGAEvent({
-            event: 'flipbook_zoom',
-            book_name: this.options.name,
-            page_number: this.currentPageValue,
-            zoom: newZoom,
-            nonInteraction: true,
-        });
+        const zoomedIn = newZoom > 1;
+        if (zoomedIn && !this._gaZoomedIn) {
+            this.sendGAEvent({
+                event: 'flipbook_zoom',
+                book_name: this.options.name,
+                page_number: this.currentPageValue,
+                zoom: newZoom,
+                nonInteraction: true,
+            });
+        }
+        this._gaZoomedIn = zoomedIn;
     }
 
     enableSwipe(val) {

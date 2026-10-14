@@ -1,230 +1,192 @@
-=== Real3D Flipbook – 3D FlipBook, PDF FlipBook, PDF Viewer, PDF Embedder ===
+=== Real3D Flipbook – 3D Flipbook, PDF Flipbook, PDF Viewer, PDF Embedder ===
 Contributors: creativeinteractivemedia
 Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 5.7
+Stable tag: 5.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Upload a PDF or images, get a 3D flipbook. Embed it anywhere with a block or shortcode - a realistic page-flip PDF viewer for WordPress.
+Turn a PDF or images into a realistic 3D flipbook – no watermark, no page limits. Embed with a block or shortcode: a page-flip PDF viewer.
 
 == Description ==
 
-* [Live Demo](https://real3dflipbook.com/wordpress/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-links)
-* [Try Your PDF](https://real3dflipbook.com/wordpress/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-links#try)
+**Real3D Flipbook turns any PDF into a realistic 3D flipbook.** Pages bend, cast shadows and turn like paper – with a mouse, a finger or the keyboard. Add it to any post or page with the Real3D Flipbook block or a shortcode, open it in a lightbox, or switch the same PDF to a plain scrolling PDF viewer by changing one setting.
 
-**Create a 3D flipbook in WordPress in three steps:**
+Your PDFs stay on your own server: no conversion service, no account, no per-book fees and no watermark.
 
-1. Upload a PDF or a set of images.
-2. Choose a viewer mode.
-3. Paste the shortcode, or drop the Real3D Flipbook block into any page or post.
-
-No conversion service, no account, no per-book fees - your PDF files stay on your own server.
-
-Works for magazines, catalogs, brochures, restaurant menus, portfolios, real estate listings, annual reports, newsletters, ebooks and product manuals.
-
-Readers get a realistic, interactive 3D flipbook with a lifelike page-turning effect: pages bend and cast shadows as they turn, and it works on all devices and browsers - swipe to flip on a phone, tap to zoom, open it inline or in a lightbox. Prefer something plainer? The same PDF can be displayed as a scroll, slide or simple PDF viewer instead, by changing one setting.
+[Live demo](https://real3dflipbook.com/wordpress/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-links) · [Try your own PDF](https://real3dflipbook.com/wordpress/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-links#try) · [User manual](https://real3dflipbook.gitbook.io/wp-lite/)
 
 [youtube https://www.youtube.com/watch?v=2oweJfaawao]
 
-### **Why Choose Real 3D Flipbook?**
+### Create a flipbook in three steps
 
-- **Realistic 3D Page Flip Animation**
-  - Experience the most realistic page-flipping effect with advanced 3D animations that captivate your audience.
-  
-- **Scroll Viewer, Slide Viewer, Simple Viewer, CSS 3D FlipBook, CSS 2D FlipBook**
-  - In addition to the realistic WebGL page-flip effect, you’ve got a range of other viewing modes and page-flip animations to pick from.
-  
-- **Fully Responsive and Mobile-Friendly**
-  - Flipbooks adapt perfectly to any screen size—desktops, tablets, or smartphones—ensuring a smooth user experience.
+1. Go to **Real3D Flipbook > Add New** and upload a PDF or a set of images.
+2. Pick a view mode. The live preview updates as you change settings, at desktop and phone size.
+3. Add the **Real3D Flipbook** block to a post or page, or paste the shortcode. The shortcode also works in Elementor, Divi, Bricks, WPBakery and other page builders.
 
-- **Easy Integration with Gutenberg and Shortcodes**
-  - Insert flipbooks effortlessly using Gutenberg blocks or shortcodes. No coding skills required.
+### Everything in the free version
 
-- **Multiple View Modes**
-  - Choose from Lightbox, Normal, and Fullscreen modes to display your flipbooks the way you want.
+No limit on the number of flipbooks, pages or file size, and no watermark.
 
-- **Customizable Design**
-  - Personalize your flipbooks with various settings for toolbar, background, colors, and more to match your brand.
+* **Realistic page flip** – WebGL pages that bend and cast shadows as they turn, with an optional hard cover
+* **Six view modes** – from the realistic 3D flipbook to a plain PDF viewer, switched with one setting (see below)
+* **Lightbox, inline or fullscreen** – open a flipbook from a button, link, thumbnail or image, or show it in the page
+* **Open PDF links as flipbooks** – optionally turn the PDF links already on your site into lightbox flipbooks
+* **Mobile-friendly** – swipe to flip, pinch to zoom, single-page view on phones
+* **Live preview while you edit** – see every change at desktop and phone size
+* **Block and shortcode** – the Real3D Flipbook block for the block editor, and the `[real3dflipbook]` shortcode for the Classic editor and page builders
+* **Organized** – an automatic cover thumbnail and a permalink page for every flipbook, plus flipbook categories
+* **Your toolbar** – zoom, thumbnails, table of contents, share, print, download and fullscreen; show or hide any button
+* **Right-to-left books** for Arabic, Hebrew and Persian
+* **Extras** – page-flip sound, auto-flip, a preview of the first pages only, HTML content on pages, import and export as JSON
+* **Translation-ready** – language packs load from translate.wordpress.org
 
-- **SEO Optimized**
-  - Built with SEO best practices to help your flipbooks rank higher in search results and attract more organic traffic.
+### View modes
 
-- **High Performance**
-  - Optimized page loading and rendering so it works flawless on all devices
+* **Realistic 3D flipbook (WebGL)** – pages curl and cast soft shadows as they turn. Drag a corner or click to flip.
+* **CSS 3D and 2D flipbooks** – a lighter page flip without WebGL.
+* **Swipe viewer** – slide pages sideways, made for phones and tablets.
+* **Scroll viewer** – continuous scrolling, like a classic PDF reader.
+* **Simple viewer** – one page at a time.
 
-- **Most Feature Rich Free Flipbook Plugin**
- - Lightbox flipbook
- - Automatically open PDF links as flipbooks
- - Auto generated flipbook thumbnail form PDF
- - Auto generated flipbook post (permalink)
- - Flipbook categories
- - Enable / disable any toolbar button
- - Zoom in to 100% page resolution
- - Share on all social media
- - Add HTML content to flipbook pages
- - Import / Export flipbooks as JSON and much more
+### What you can publish
 
+* **Digital magazines and newsletters** – an issue readers can page through, zoom and share.
+* **Product catalogs and price lists** – on any page, or on a WooCommerce product page with the WooCommerce add-on.
+* **Brochures, menus and flyers** – restaurant menus, real estate listings, event programs.
+* **Ebooks, manuals and reports** – long documents with a table of contents, zoom, print and download.
+* **Portfolios and lookbooks** – flipbooks made from images instead of a PDF.
 
-### **Documentation**
+### Switching from another PDF plugin?
 
-- **[User Manual](https://real3dflipbook.gitbook.io/wp-lite/)**
+Real3D Flipbook can display the shortcodes of PDF Embedder, DearFlip, 3D FlipBook, Wonder PDF Embed and PDF.js Viewer as flipbooks. Turn it on under **Real3D Flipbook > Settings > Overrides** and your existing posts keep working, with no editing. [Watch how PDF links open as flipbooks](https://youtu.be/MTFyY84o1Ss).
 
-### **Support**
+### Trusted since 2015
 
-- For questions or support, **[open a ticket](https://wordpress.org/support/plugin/real3d-flipbook-lite/)**.
+The viewer behind this plugin has been developed since 2015 and also powers the Real3D Flipbook JavaScript library and the Shopify and Wix apps – trusted by 22,000+ customers.
 
----
+> "Issuu? Forget it! *This* is what you need!"
 
-### **Key Features**
+> "Really Amazing Plugin – Simple and Straight Forward"
 
-#### **1. Realistic 3D Flipbooks**
+> "Great Plugin, easy setup!"
 
-- Bring your content to life with the most realistic 3D page-flipping animations available.
+[Read the reviews on WordPress.org](https://wordpress.org/support/plugin/real3d-flipbook-lite/reviews/)
 
-#### **2. Open PDF Links as Flipbooks**
+### Real3D Flipbook PRO
 
-- Automatically convert PDF links into interactive flipbooks that open in a lightbox. **[Watch Video](https://youtu.be/MTFyY84o1Ss)**
+When you need more, [Real3D Flipbook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-pro-section) adds:
 
-#### **3. Easy Migration from Other Plugins**
+* **4K zoom** – pages stay sharp at any zoom level, fine print included
+* **Faster loading** – page textures sized for each device and zoom level
+* **Clickable PDF links** and **text search and selection**
+* **Toolbar and UI customization** – 7 layouts, 3 skins, custom colors, icons and buttons
+* **Google Analytics and deep links** to any page
+* **Separate settings for phones** and shared defaults for all flipbooks
 
-- Seamlessly convert shortcodes from PDF Embedder, DearFlip, 3D Flipbook, Wonder PDF Embed, and PDF.js Viewer to Real3D Flipbook.
+[See Lite and PRO side by side](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-pro-section) – the same PDF in both, and you can test your own. Plans start at $49/year with a 30-day money-back guarantee, and your flipbooks and settings carry over.
 
-#### **4. Create Flipbooks in 5 Simple Steps**
+### Add-ons
 
-1. **Add New Flipbook:** Go to Real3D Flipbook > Add New.
-2. **Select PDF or Images:** Upload your content.
-3. **Publish:** Save your flipbook.
-4. **Copy Shortcode:** Grab the generated shortcode.
-5. **Embed:** Paste it into any post or page.
+* [Page Editor](https://real3dflipbook.com/page-editor-addon-for-real-3d-flipbook/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons) – add links, videos, sounds, YouTube and Vimeo to pages with a visual editor (requires PRO)
+* [WooCommerce](https://real3dflipbook.com/woocommerce-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons) – show a flipbook on the product page
+* [PDF Tools](https://real3dflipbook.com/pdf-tools-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons) – convert PDFs to images for faster loading (requires PRO)
+* [Elementor](https://real3dflipbook.com/elementor-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons) and [WPBakery](https://real3dflipbook.com/wpbakery-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons) – a flipbook element for your page builder
+* [Bookshelf](https://real3dflipbook.com/real3d-flipbook-bookshelf-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons) – responsive bookshelves of flipbooks
+* [Preview Mode](https://real3dflipbook.com/preview-mode-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons) – show the first pages to visitors and the full book to logged-in users
 
-- **[Watch Tutorial](https://youtu.be/1ljFRYr0Kh8)**
+[See all add-ons](https://real3dflipbook.com/addons/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons)
 
-#### **5. Multiple Display Modes**
+### Support
 
-- **Lightbox Flipbook:** Open flipbooks in a fullscreen overlay triggered by buttons, links, or images.
-- **Embedded Flipbook:** Place flipbooks directly within your posts or pages.
-
-#### **6. Self-Hosted for Speed and Security**
-
-- All files are stored on your server, ensuring fast load times and enhanced security.
-
-#### **7. Customizable Interface**
-
-- Tailor your flipbooks with customizable toolbar buttons, backgrounds, colors, and control settings.
-
-#### **8. Responsive and Touch-Friendly**
-
-- Optimized for touch interactions on mobile devices, providing a seamless experience for all users.
-
----
-
-### **Advanced Features in PRO Version**
-
-Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-pro-section)** to unlock:
-
-- **4K Resolution Zoom:** Pages stay razor sharp at any zoom level — fine print and detailed artwork included. Lite renders standard resolution.
-- **Optimized Page Loading:** Multi-tier page textures — the right size per device and zoom level, for faster loading.
-- **PDF Hyperlinks:** Links inside your PDF stay clickable in the flipbook.
-- **Text Search and Selection:** Readers can search and select the full text of every page.
-- **Toolbar and UI Customization:** 7 layouts, 3 skins, custom colors, icons and buttons.
-- **Google Analytics and Deep Linking:** Track flipbook events and link directly to any page.
-- **Mobile and Global Settings:** Different setup for phones, shared defaults for all flipbooks.
-
-**[See Lite vs PRO side by side](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-pro-section)** — the same PDF rendered by both, and you can test your own PDF with PRO right on that page. Plans from $49/year with a 30-day money-back guarantee. All your existing flipbooks and settings carry over.
-
----
-
-### **Add-Ons**
-
-- **[Page Editor Addon](https://real3dflipbook.com/page-editor-addon-for-real-3d-flipbook/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons):** Add links, videos, sounds, YouTube, Vimeo and more to flipbook pages with a visual editor. Requires PRO.
-- **[WooCommerce Addon](https://real3dflipbook.com/woocommerce-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons):** Display a flipbook on the WooCommerce single product page.
-- **[PDF Tools Addon](https://real3dflipbook.com/pdf-tools-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons):** Convert PDFs to images for faster loading and improved security. Requires PRO.
-- **[Elementor Addon](https://real3dflipbook.com/elementor-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons):** Use Real3D Flipbook with Elementor as an element.
-- **[Bookshelf Addon](https://real3dflipbook.com/real3d-flipbook-bookshelf-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons):** Create responsive book shelves with flipbooks.
-- **[WPBakery Addon](https://real3dflipbook.com/wpbakery-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons):** Use Real3D Flipbook with the WPBakery page builder.
-- **[Preview Mode Addon](https://real3dflipbook.com/preview-mode-addon/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons):** Show only the first N pages based on user login status.
-
-**[See all add-ons](https://real3dflipbook.com/addons/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-addons)**
-
----
+Questions or problems? Open a topic in the [support forum](https://wordpress.org/support/plugin/real3d-flipbook-lite/). If Real3D Flipbook works well for you, a [review](https://wordpress.org/support/plugin/real3d-flipbook-lite/reviews/#new-post) helps other people find it.
 
 == Installation ==
 
-### **Automatic Installation**
+1. In your dashboard go to **Plugins > Add New**, search for **Real3D Flipbook**, click **Install Now** and then **Activate**.
+2. Go to **Real3D Flipbook > Add New**, upload a PDF or images, adjust the settings in the live preview and click **Publish**.
+3. Add the **Real3D Flipbook** block to a post or page, or paste the shortcode shown in the Publish box.
 
-1. **Install Plugin:**
-   - Navigate to **Plugins > Add New** in your WordPress dashboard.
-   - Search for **Real3D Flipbook**.
-   - Click **Install Now** and then **Activate**.
-
-2. **Create a Flipbook:**
-   - Go to **Real3D Flipbook > Add New**.
-   - Upload your **PDF** or **images**.
-   - Customize settings if desired.
-   - Click **Publish**.
-
-3. **Embed Flipbook:**
-   - Copy the generated **shortcode**.
-   - Paste it into any **post** or **page** where you want the flipbook to appear.
-
-### **Manual Installation**
-
-1. **Download Plugin:**
-   - Download the plugin zip file from the WordPress plugin repository.
-
-2. **Upload to WordPress:**
-   - Go to **Plugins > Add New > Upload Plugin**.
-   - Choose the downloaded zip file and click **Install Now**.
-
-3. **Activate Plugin:**
-   - After installation, click **Activate Plugin**.
-
-4. **Create and Embed Flipbook:**
-   - Follow steps under **Automatic Installation** to create and embed your flipbook.
-
----
+To install manually, download the zip and upload it under **Plugins > Add New > Upload Plugin**.
 
 == Frequently Asked Questions ==
 
- **What is the difference between Lite and PRO?**
+= Is the free version limited? =
 
-- Lite covers the basics — PDF and image flipbooks with realistic 3D page flip. PRO adds 4K resolution with deep zoom, optimized page loading, working PDF links, text search, toolbar and UI customization, Google Analytics, deep linking, mobile and global settings. See the **[Lite vs PRO comparison](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-faq)** — the same PDF rendered by both, side by side.
+No. Real3D Flipbook Lite has no watermark and no limit on the number of flipbooks, pages or file size, and it includes the realistic WebGL page flip, every view mode, the lightbox and the block. PRO adds 4K zoom, faster loading, clickable PDF links, text search, UI customization, Google Analytics and deep links – see the [Lite vs PRO comparison](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-faq).
 
- **How do I create a flipbook?**
+= How do I add a flipbook to a post or page? =
 
-- Navigate to **Real3D Flipbook > Add New**, upload your PDF or images, customize settings, and click **Publish**.
+Add the **Real3D Flipbook** block and pick a flipbook, or paste its shortcode, for example `[real3dflipbook id="1"]`. Each flipbook shows its shortcode in the Publish box, with a Copy button.
 
- **How do I embed a flipbook in a post or page?**
+= Does it work with Elementor, Divi, Bricks, WPBakery and other page builders? =
 
-- Copy the **shortcode** from the flipbook list and paste it into your desired post or page.
+Yes. Paste the shortcode into the builder's shortcode or text element. The Elementor and WPBakery add-ons add a dedicated flipbook element.
 
- **Is there a limit to the number of pages or PDF file size?**
+= Can I open a flipbook in a lightbox? =
 
-- No, Real3D Flipbook Lite supports large PDFs with hundreds of pages. It uses smart loading to ensure performance isn't affected.
+Yes. Set the flipbook's **Mode** to Lightbox. It then opens from its cover thumbnail, or from any element with the CSS class you choose, such as a button or a menu link. Fullscreen mode is also available. To show flipbooks on WooCommerce product pages or on a bookshelf, use the WooCommerce or Bookshelf add-on.
 
- **How can I optimize my PDF flipbook for fast loading?**
+= Can I show a PDF without the page-flip effect? =
 
-- Optimize your PDFs by:
-  - Reducing image resolutions to 150 dpi.
-  - Using JPEG compression.
-  - Enabling web optimization settings.
+Yes. Set the view mode to **Scroll** for a continuous PDF viewer, or to **Simple** for one page at a time.
 
- **How can I optimize my image flipbook for fast loading?**
+= Does it work on phones, and in browsers without WebGL? =
 
-- Use web-optimized images with a resolution around 2000px in JPG or WebP formats.
+Yes. Flipbooks are responsive and touch-friendly: swipe to turn pages, pinch to zoom, and a single-page view on narrow screens. The Swipe and Scroll view modes are made for phones. If a browser has no WebGL, the realistic 3D mode switches to the CSS 3D page flip automatically.
+
+= Can the PDF links on my site open as flipbooks? =
+
+Yes. Under **Real3D Flipbook > Settings > Overrides**, turn on PDF link conversion. Links to PDF files then open in a flipbook lightbox, optionally only links with (or without) a CSS class you choose.
+
+= I use PDF Embedder, DearFlip or 3D FlipBook. Can I switch without editing my posts? =
+
+Yes. Under **Real3D Flipbook > Settings > Overrides**, Real3D Flipbook can take over the shortcodes of PDF Embedder, DearFlip, 3D FlipBook, Wonder PDF Embed and PDF.js Viewer, so existing embeds show as flipbooks.
+
+= Are my PDFs uploaded to a third-party service? =
+
+No. Your PDFs stay in your Media Library, on your own server. There is no account to create and no per-book fee, unlike hosted services such as Issuu.
+
+= Can readers download or print the PDF? =
+
+Yes, the toolbar has Download and Print buttons. You can turn them, or any other toolbar button, off for each flipbook.
+
+= Does it support right-to-left books? =
+
+Yes. Turn on **Right to left mode** in the flipbook settings, or add `rtl="true"` to the shortcode, for Arabic, Hebrew or Persian publications.
+
+= Is there a page or file size limit? =
+
+No. Real3D Flipbook handles large PDFs with hundreds of pages and loads them page by page, so readers can start right away. Your server's upload size limit still applies.
+
+= How can I make my flipbook load faster? =
+
+For PDFs, export at about 150 dpi with JPEG image compression and web optimization turned on. For image flipbooks, use web-optimized JPG or WebP images of around 2000 px.
+
+= Is Real3D Flipbook available in my language? =
+
+The plugin is translation-ready and loads translations from translate.wordpress.org. You can [help translate it](https://translate.wordpress.org/projects/wp-plugins/real3d-flipbook-lite/).
+
+= Where can I get help? =
+
+Post in the [support forum](https://wordpress.org/support/plugin/real3d-flipbook-lite/). The [user manual](https://real3dflipbook.gitbook.io/wp-lite/) covers every setting.
 
 == Screenshots ==
 
-1. Realistic page flip with WebGL - pages bend and cast shadows as they turn.
-2. Swipe mode - flip pages by swiping, made for phones and tablets.
-3. Fully customizable flipbook viewer - toolbar buttons, colors, background and more.
-4. CSS 3D flipbook - 3D page flip without WebGL.
-5. Scroll PDF viewer - continuous scrolling instead of page flips.
+1. Realistic 3D page flip (WebGL) – pages bend and cast shadows as they turn.
+2. Swipe viewer – flip pages by swiping on phones and tablets.
+3. Customizable flipbook viewer – toolbar buttons, colors, background and more.
+4. CSS 3D flipbook – a lighter 3D page flip without WebGL.
+5. Scroll PDF viewer – continuous scrolling instead of page flips.
 
 == Changelog ==
+
+= 5.7.1 =
+* Security and stability fixes - update recommended
+* New: the Preview Mode add-on works with Lite - choose who sees only the first pages under Real3D Flipbook > Settings > Preview Mode
+* Change: Lite applies the global Preview Mode settings to every flipbook; preview settings for a single flipbook are part of PRO
 
 = 5.7 =
 * Security and stability fixes - update recommended
@@ -251,450 +213,12 @@ Upgrade to **[Real3D FlipBook PRO](https://real3dflipbook.com/lite-vs-pro/?utm_s
 * Fix: the table of contents did not open when one of its items pointed to a page after the last page of the book
 * Fix: on narrow screens the Share menu did not open from the More menu, and toolbar buttons could be missing when the More button is turned off
 
-= 5.5 =
-* New: live preview in the flipbook editor - the flipbook updates as you change settings, on desktop or phone, with a larger preview in a lightbox
-* New: the Toolbar tab shows every toolbar style and icon set as a picture
-* New: any toolbar button can be moved into the Tools ("More") menu
-* Change: the shortcode is now in the Publish box with a Copy button; the "Preview Flipbook" button is replaced by the live preview
-* Change: removed settings that had no effect
-* Change: the plugin uses its own text domain, real3d-flipbook-lite, so translations from translate.wordpress.org load
-* Improvement: code updates from the WordPress.org Plugin Check
-
-= 5.4 =
-* Security and stability fixes - update recommended
-* Change: Import / Export is available to administrators
-* Change: converting PDF links into flipbooks is now off by default - existing sites keep the setting they have; new sites can turn it on under Real3D Flipbook > Settings > Overrides
-* Improvement: faster loading - the 3D engine downloads while the pages load, and the toolbar appears before the book has finished
-* Improvement: the book now fills the space the toolbar leaves free instead of shrinking more than it needs to
-* Improvement: side navigation arrows are round by default, matching the viewer's buttons
-* Improvement: on phones a vertical swipe over the book now scrolls the page instead of dragging a page sideways
-* Improvement: book height is capped at the browser window height, fixing very tall books on phones in landscape
-* Change: minimal view (toolbar replaced by a single expand button on very small embeds) is now off by default
-* Fix: the book was sized wrong on load, in WebGL and in fullscreen and lightbox
-* Fix: book did not fit the width of narrow containers on the cover page
-* Fix: swipe mode failed to start
-* Fix: page flip sound on iOS - silent for the first flips, then several queued sounds firing at once
-* Fix: on iOS the book kept its old zoom after leaving fullscreen, and changed size after rotating the device and back
-* Fix: a book with a transparent background showed the website through it in fullscreen on iOS
-* Fix: the Help screen greeted sites that already have flipbooks as if it were a fresh install
-
-= 5.3 =
-* New: flip several pages by dragging - grab a page while another one is still flipping
-* New: realistic page flip - the bend follows flip speed and paper hardness
-* New: page corners lift on hover, click flips the page
-* New: pan with two fingers while pinch zooming
-* Improvement: much lower memory use - pages render at the size they are shown at, and pages you flip past load small
-* Improvement: faster flipping - the page you land on renders first, and more pages stay loaded
-* Improvement: search on phones - full width panel, wider results, closes when you pick a result
-* Improvement: maximum zoom now matches the page render resolution, so zoomed pages stay sharp
-* Fix: crash on iOS after flipping many pages
-* Fix: search, bookmarks and thumbnails panels closed right after opening on Android
-* Fix: pages could pass through each other when several were bent at once
-* Fix: book jumped left and right when flipping fast in single page view
-
-= 5.1.3 =
-* Fix: zoom buttons not updating after entering or leaving fullscreen
-* Fix: zoom cursor shown on pages that cannot be zoomed further
-* Improvement: maximum zoom limited to the range where pages still render detail
-
-= 5.1.2 =
-* Fix: pages not loading in smaller flipbooks
-* Fix: PDF rendering issues in the flipbook editor
-* Improvement: internal code hardening
-
-= 5.1.1 =
-* Improvement: PRO feature comparison shown in the flipbook editor
-
-= 5.1.0 =
-* Improvements in zoom — sharper page rendering at every zoom level, deeper zoom
-
-= 5.0.8 =
-* Improvement: renamed plugin to Real3D Flipbook Lite in the plugins list
-
-= 5.0.7 =
-* Improvement: updated Freemius SDK to the latest version (2.13.4)
-
-= 5.0.6 =
-* Improvement: increased max zoom
-
-= 5.0.5 =
-* Fix: PHP fatal error when Real3D Flipbook PRO and Lite are active at the same time
-
-= 5.0.4 =
-* Fix: Table of Contents and side panels open on the right side in right-to-left mode
-* Fix: click and drag to pan when zoomed in 2D and 3D mode
-
-= 5.0.3 =
-* Improvement: updated flipbook viewer engine
-* Improvement: refreshed admin design — badges and dialogs
-
-= 5.0.2 =
-* New: redesigned Toolbar tab — all buttons in one table with icons, inline enable/title/position and drag to reorder
-* Improvement: redesigned Getting Started page
-* Improvement: admin UI improvements
-
-= 5.0.1 =
-* Improvement: redesigned Upgrade to PRO admin page
-* Improvement: redesigned Add-ons admin page
-
-= 5.0 =
-* Improvement: updated flipbook viewer engine
-* Improvement: performance and compatibility updates
-* Fix: various bug fixes
-
-= 4.19.2 =
-* Improvement: Only Administrator can view and edit Real3D Flipbook > Settings
-
-= 4.19.1 =
-* Fix: PHP error in flipbook shortcode
-
-= 4.19 =
-* Fix: Security issue - Broken Access Control
-* Improvement: Book pages are not cut off while flipping in mode "webgl"
-* Improvement: More realistic shadows in modes "3d" and "2d" 
-* Fix: Crashing on mobile in modes "3d" and "2d" 
-* Improvement: Thumbnails loading performance 
-* Improvement: Text search performance 
-* New: Zoom in / out on page click
-* New: Option "Minimal view" - show only fullscreen button when book is small
-* New: Option "Minimal view threshold" - breakpoint for minimal view
-* New: Option "Range chunk size" - partial PDF loading request size in KB
-* New: Zoom with mouse wheel + CTRL
-* New: Zoom in & zoom out on page click instead of double click
-* Fix: Disable zoom in & zoom out while auto flip is active
-* Fix: Flipbok pages not loading in mode "3d" in Firefox
-* Improvement: Table of Contents and search results styling
-* Fix: Error when youtube video is on flipbook page
-* Fix: First page & last page arrows in RTL
-* Fix: Lightbox start page option
-* Fix: Table of Contents sub items stay open after Table of Contents closes
-* Fix: Corner curl stops working after going back to first page 
-* Improvement: Disable zooming when autoplay is active
-
-= 4.16.4 =
-* New: Password protected flipbook posts
-* Fix: Socurity update
-* Fix: Search results for spreads with cover
-* Fix: Search not working if pages are spreads with cover
-* Improvement: Thumbnail view page numbers are in outer conrners
-* Improvemet: Sharper pages when book is small
-* Fix: One page flipbook not loading
-* Fix: RTL mode page loading bug
-* Fix: Page scrolling after opening thumbnails
-* Improvement: Thumbnails show as spreads
-* New: Showtcode parameter rtl="true" for enabling right to left mode
-* Fix: HTML content layer and PDF text layer for "3d" and "2d" view modes 
-* Fix: Text deselect on pages
-* Fix: Bug when sound is diabled and button sound is disabled
-* New: Highlight active thumbnail
-* New: Accent color option for thumbnail hightlight
-* Improvement: Faster page loading
-* Improvement: Flip animation performance
-* Fix: Page resolution for PDF Flipbook
-
-= 4.11.4 =
-* Fix: Broken link on Settings page
-
-= 4.11.3 =
-* Fix: Category shortcode
-
-= 4.11.2 =
-* New: French translation
-
-= 4.11.1 =
-* Fix: PHP error for PHP versions < 7.4
-
-= 4.11 =
-* Fix: No cover in right to left mode
-* Fix: Thumbnails view close button
-* Improvement: Page loading optimizations
-* Fix: Background music not playing
-* Fix: Page HTML not loading when start page not 1
-* Fix: Page items have wrong settings when copy pasting flipbook pages
-* Fix: Preview pages for logged out users
-* Fix: Search on start
-* Fix: Lightbox opens on empty page
-* Improvement: Performance optimization
-
-= 4.10.3 =
-* Fix: Thubmnail image upload location
-* Fix: Fullscreen on iOS
-* Fix: Bug with stopping youtube videos on pages
-* Improvement: Prevent website pinch zoom when flipbook is fullscreen or lightbox 
-* Improvement: Prevent auto hiding address bar on iOS when flipbook is fullscreen or lightbox 
-
-= 4.10.2 =
-* Fix: Thubmnail image upload location
-* Fix: Youtube not stopping after lightbox close
-* Fix: Size of share buttons
-* Fix: Tooltip color and position
-* Improvement: Border for toolbar and popups
-* Improvement: Sharper shadow for WebGL mode
-* Improvement: Faster page loading
-* Improvement: Rendering performance
-
-= 4.9.9 =
-* Fix: Saving flipbook thumbnail image
-
-= 4.9.8 =
-* Fix: Last page not loading when Cover is disabled
-
-= 4.9.7 =
-* Improvement: Higher resolution pages
-* New: Table of Contents from PDF outline
-* New: Share on Pinterest, LinkedIn, WhatsApp, Digg, Reddit, Email, Copy link
-
-= 4.9.6 =
-* Fix: Pages cut off in view modes "3d" and "2d"
-* Fix: Logo image covering the book
-* Fix: Toggle fullscreen with ESC
-* Fix: Preview pages bug
-* Fix: Zoom Pan in mode webgl
-* Fix: Text rendering on RTL websites
-* New: Share copy link
-* New: Scale cover option for "webgl" mode - make double with cover flipbook from pages that are all same size 
-* New: Page caption - if page has caption, the icon for viewing the caption on hover will be displayed on the page 
-* New: Filter flipbooks by category on the Flipbooks page
-* New: Flipbook automatically fits to width or height based on single page or double page view
-* Improvement: Optimized shortcode rendering
-* Improvement: Optimized saving of flipbook options
-* Fix: Thumbail size in grid view
-* Fix: Prevent mouse zoom when flipbook is in iframe and not fullscreen
-* Fix: Lightbox start page
-
-= 4.8 =
-* Fix: Saving flipbooks with large number of pages
-* Fix: Menu button Tools not visible in Firefox
-* Fix: PDF flipbook with 2 pages
-* Improvement: Table of Contents styling
-* Fix: Lightbox start page in Right to left mode
-* Fix: Last page PDF flipbook
-
-= 4.6 =
-* Improvement: Flipbook thumbnail saved as webp
-* Improvement: Keep page editor items after replacing PDF
-* Improvement: Edit flipbook page performance
-
-= 4.5 =
-* Fix: PDF flipbook not loading when RequireJS is used on the page
-* Fix: Toggle fullscreen icon does not change on iOS
-* Fix: Video does not pause in view mode "scroll" when scrolled page goes outside of view
-
-= 4.4.2 =
-* Fix: JS error on Edit flipbook page
-
-= 4.4.1 =
-* Fix: PHP error on flipbook permalink
-* Fix: Flipbook not loading in lightbox
-* Fix: Single page mode can flip beyond last page
-
-= 4.3.9 =
-* Fix: One page JPG flipbook not working
-
-= 4.3.8 =
-* Fix: Bug with creating new flipbooks
-
-= 4.3 =
-* Fix: Lightbox flipbook bug when flipbook is not visible
-* Fix: Bulk edit flipbook posts deletes options from flipbook
-* Fix: Errors caused by cached scripts
-* Fix: Table of Contents from PDF outline
-* Fix: PHP 8.3 warning
-* Fix: iOS fullscreen shows warning
-* Fix: PDF Flipbook rendering bug
-* New: Option to enable / disable Current page on mobile
-* New: Option to enable / disable Tools menu
-
-= 4.1.1 =
-* Improvement: Admin Help page
-
-= 4.1 =
-* Fix: Fullscreen mode flipbook cut off
-* Fix: Broken flipbook permalinks
-
-= 4.0 =
-* Improvement: Updated to PDF.js 3.11.174
-* Fix: Fullscreen on iOS
-* Fix: Double click zoom
-* Fix: Flip pages with touch swipe
-* Other bug fixes
-* Performance improvements
-
-= 3.83 =
-* Improvement: Updated to more recent pdf.js
-* Fix: Multiple flibpooks on the same page not working
-* New: Convert PDF links - Option to convert only PDF links with CSS class 
-* New: Convert PDF links - Option to convert only PDF links witouts CSS class 
-
-= 3.82 =
-* New: Container ratio option
-* New: Editable Flipbook permalink structure
-
-= 3.81 =
-* Fix: Flipbook quick edit post deletes flipbook settings
-
-= 3.80 =
-* Fix: Flipbook thumbnail overwriting
-
-= 3.79 =
-* New: Tools submenu in toolbar
-* Improvement: Share menu redesign
-* Improvement: Better flip animation 
-
-= 3.77 =
-* Fix: View mode "swipe" not working
-
-= 3.76 =
-* Improvement: Performance optimization for JPG flipbooks
-* Fix: Missing "scroll" option in Mobile > View mode
-
-= 3.75 =
-* Improvement: Code optimization
-
-= 3.74 =
-* New: Resize flipbook container to fit double page flipbook on desktop and single page flipbook on mobile
-
-= 3.73.1 =
-* Fix: Right to left mode in view mode "swipe"
-
-= 3.73 =
-* Fix: Right to left mode in view mode "3d", "2d", "simple"
-
-= 3.72 =
-* Fix: Saving HTML content for flipbook pages
-* New: Tooltip for toolbar
-
-= 3.71 =
-* Improvement: Navigation arrows redesign
-* Improvement: Thumbnails view redesign
-
-= 3.70 =
-* New: Support for translation with .po .mo files
-* New: Added Turkish translation
-
-= 3.69 =
-* Fix: Override PDF Embedder shortcode and block
-
-= 3.68.1 =
-* Fix: Conflict with dflip plugin
-
-= 3.68 =
-* Improvement: Updated links for addons
-
-= 3.65 =
-* New: Option to show only first x number of pages 
-* Fix: Scrollbar on Table of Contents and Thumbnails
-
-= 3.63 =
-* Improvement: Flipbook live preview in admin 
-
-= 3.62 =
-* New: Download PDF button
-* New: Enable / Disable any toolbar button
-
-= 3.61.2 =
-* Fix: Import flipbooks from JSON
-
-= 3.61.1 =
-* New: Option to render shortcodes [3d-flip-book pdf="...pdf"], [3d-flip-book id="...pdf"], [dflip id="...pdf"], [pdfjs-viewer url="...pdf"] in Real3D Flipbook
-
-= 3.61 =
-* New: Option to override click on PDF links, all links <a href="...pdf"></a> will open PDF in Real3D Flipbook lightbox
-* New: Option to render shortcodes [pdf-embedder url="...pdf"], [dflip source="...pdf"], [wonderplugin_pdf src="...pdf"] in Real3D Flipbook
-
-= 3.60 =
-* New: Table of Contents from page titles
-* New: Table of Contents builder
-* New: Share on Facebook, X
-
-= 3.59 =
-* Fix: Left page not visible on iOS, when view mode is 2d or 3d
-* Fix: HTML content not working for PDF flipbook
-
-= 3.58 =
-* Fix: Single page mode with odd number of pages
-* Fix: Blurry pages in mode 2D
-* Fix: Right to left mode when book has 1 page
-
-= 3.57 =
-* Fix: Prevent page flip after pinch zoom
-* Fix: Prevent double click zoom during page flip
-
-= 3.56.2 =
-* New: Toolbar button for enabling / disabling flip sound
-
-= 3.56.1 =
-* New: Help admin page
-
-= 3.56 =
-* New: Thumbnails option in toolbar
-* New: Print option in toolbar
-* Improvement: Page resolution for PDF flipbook
-
-= 3.55 =
-* Fix: Creating flipbook from images
-* Fix: Flipping pages with arrows in mode "3d" and "2d"
-
-= 3.54 =
-* Improvement: Updated Getting Started video
-* Improvement: Changed default flipbook container size to A4 double page
-
-= 3.53.1 =
-* New: Help section in Edit flipbook page, with Getting Started video
-* New: Open lightbox flipbook with a "lightbox CSS class" - any element with this CSS class will open the lightbox flipbook
-* New: Set lightbox CSS class via shortcode parameter "class"
-* New: Set PDF URL via shortcode parameter "pdf"
-* New: Set lightbox thumbnail URL via shortcode parameter "thumb"
-
-= 3.53 =
-* Improvement: Added toolbar with Zoom in, Zoom out and Fullscreen options
-
-= 3.50 =
-* Fix: bug with OffscreenCanvas undefined on iOS
-* Fix: disable page scroll on mobile when lightbox is active
-* Fix: disable page flip if another flipbook is in fullscreen or lightbox
-* Improvement: faster page loading in mode "webgl"
-* Improvement: faster page loading for PDF flipbooks
-* Improvement: performance optimizations
-
-= 3.42 =
-* New: flipbook mode "lightbox" and "fullscreen" added
-* Fix: view mode "scroll" not loading first page if viewer is off screen
-* Improvement: disable flipbook when it is off screen 
-
-= 3.41 =
-* New: view mode "scroll"
-* Fix: view mode "3d" performance
-
-= 3.39.1 =
-* Fix: updating from 1.0
-
-= 3.39 =
-* New: more options added under General
-* New: WebGL options
-* Improvement: better performance
-* Improvement: faster page loading time
-* Improvement: optimized script loading
-* Improvement: smaller script sizes
-* Fix : various bug fixes
-
-= 1.0 =
-* initial release
+[Changes in earlier versions](https://plugins.svn.wordpress.org/real3d-flipbook-lite/trunk/changelog.txt)
 
 == Upgrade Notice ==
 
+= 5.7.1 =
+Security and stability fixes - update recommended. The Preview Mode add-on now works with Lite.
+
 = 5.7 =
 Security and stability fixes - update recommended. Also a new Hard cover option, fewer blank pages while flipping, and page thumbnails while image pages load.
-
-= 5.5 =
-Live preview in the flipbook editor - see your flipbook update as you change settings, on desktop and phone.
-
-= 5.4 =
-Security and stability fixes - update recommended. Also faster loading, better use of the space around the toolbar, and fixes for book sizing on load and page flip sound on iOS.
-
-= 5.3 =
-Much lower memory use and faster flipping, plus a more realistic page flip - drag several pages at once, corners lift on hover. Fixes an iOS crash after flipping many pages.
-
-== Upgrade to PRO for More Features ==
-
-PRO adds 4K resolution zoom, working PDF links, text search, full toolbar and UI customization, Google Analytics and more — and all your existing flipbooks carry over. **[See Lite vs PRO side by side](https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=readme&utm_campaign=upgrade&utm_content=readme-bottom)** and test your own PDF with PRO. Plans from $49/year with a 30-day money-back guarantee.

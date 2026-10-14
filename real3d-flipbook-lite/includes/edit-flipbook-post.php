@@ -72,9 +72,8 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 			<a href="#" class="nav-tab" data-tab="tab-lightbox"><?php esc_html_e('Lightbox', 'real3d-flipbook-lite'); ?></a>
 			<a href="#" class="nav-tab" data-tab="tab-webgl"><?php esc_html_e('WebGL', 'real3d-flipbook-lite'); ?></a>
 			<a href="#" class="nav-tab" data-tab="tab-mobile"><?php esc_html_e('Mobile', 'real3d-flipbook-lite'); ?></a>
-			<?php if (defined('R3D_PREVIEW_VERSION')) { ?>
-			<a href="#" class="nav-tab" data-tab="tab-preview"><?php esc_html_e('Preview', 'real3d-flipbook-lite'); ?></a>
-			<?php } ?>
+			<?php
+			?>
 		</h2>
 		<div id="tab-pages" style="display:none;">
 
@@ -181,16 +180,8 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 			</table>
 			<div id="toc-items" tabindex="-1" class="attachments ui-sortable"></div>
 		</div>
-		<?php if (defined('R3D_PREVIEW_VERSION')) { ?>
-		<div id="tab-preview" style="display:none;">
-			<p class="description">
-				<?php esc_html_e('Limit access to this flipbook. A single number cuts it to the first N pages; a range or list (e.g. 1-20 or 1,2,3) shows those pages and locks the rest. Leave blank to use the global Preview Mode settings.', 'real3d-flipbook-lite'); ?>
-			</p>
-			<table class="form-table" id="flipbook-preview-options">
-				<tbody></tbody>
-			</table>
-		</div>
-		<?php } ?>
+		<?php
+		?>
 		<div id="tab-general" style="display:none;">
 			<table class="form-table" id="flipbook-general-options">
 				<tbody></tbody>

@@ -826,52 +826,6 @@ function r3d_escAttr(value) {
       ["", "low", "medium", "high"]
     );
 
-    // Preview (per-flipbook). The #flipbook-preview-options table only exists when the
-    // Preview addon is active, so these are no-ops otherwise. They override the global
-    // Preview Mode settings for this flipbook.
-    addOption(
-      "preview",
-      "previewPages",
-      "text",
-      "Preview pages",
-      "A single number (e.g. 20) cuts this flipbook to the first N pages; a range or list (e.g. 1-20 or 1,2,3) shows those pages and locks the rest. Leave blank to use the global setting."
-    );
-    addOption(
-      "preview",
-      "lockedPageSize",
-      "text",
-      "Locked page resolution",
-      "Resolution of locked pages (range/list mode). Lower = more obscured. Default 150."
-    );
-    addOption(
-      "preview",
-      "previewTitle",
-      "text",
-      "Message title",
-      "Leave blank for the global/default title."
-    );
-    addOption(
-      "preview",
-      "previewDescription",
-      "textarea",
-      "Message text (HTML allowed)",
-      "Leave blank for the global/default text."
-    );
-    addOption(
-      "preview",
-      "previewButtonText",
-      "text",
-      "Button text",
-      "Optional. Leave blank for no button."
-    );
-    addOption(
-      "preview",
-      "previewButtonUrl",
-      "text",
-      "Button URL",
-      "Where the call-to-action button links to."
-    );
-
     //UI
 
     addOption(
@@ -1598,6 +1552,7 @@ function r3d_escAttr(value) {
 
     async function loadPDF(params) {
       let pdfDocument = null;
+      params.isEvalSupported = false;
 
       try {
         pdfDocument = await pdfjsLib.getDocument(params).promise;

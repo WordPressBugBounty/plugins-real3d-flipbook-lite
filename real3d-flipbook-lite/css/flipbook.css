@@ -3735,21 +3735,121 @@
   border-radius: 50%;
   transform: translate(-50%, -50%);
   background: var(--hotspot-dot-color, #2C6ECB);
-  opacity: 0.4;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.9);
+  opacity: 0.5;
   animation: hotspotPulse 2s ease-out infinite;
+}
+
+.flipbook-hotspot--light .flipbook-hotspot-dot::after {
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.8);
+}
+
+.flipbook-hotspot--still .flipbook-hotspot-dot::after {
+  content: none;
 }
 
 @keyframes hotspotPulse {
   0% {
     width: 100%;
     height: 100%;
-    opacity: 0.4;
+    opacity: 0.5;
   }
   100% {
     width: 280%;
     height: 280%;
     opacity: 0;
   }
+}
+
+.flipbook-hotspot-dot--plus::before,
+.flipbook-hotspot-dot--ring::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  border-radius: 50%;
+}
+
+.flipbook-hotspot-dot--plus::before {
+  inset: 0;
+  background:
+    linear-gradient(var(--hotspot-ink, #fff), var(--hotspot-ink, #fff)) center / 50% 2px no-repeat,
+    linear-gradient(var(--hotspot-ink, #fff), var(--hotspot-ink, #fff)) center / 2px 50% no-repeat;
+}
+
+.flipbook-hotspot-dot--ring::before {
+  inset: 33%;
+  background: var(--hotspot-ink, #fff);
+}
+
+.flipbook-hotspot-dot--plus,
+.flipbook-hotspot-dot--icon {
+  box-shadow: 0 0 0 calc(var(--hotspot-dot-size, 18px) * 0.16) rgba(255, 255, 255, 0.92);
+}
+
+.flipbook-hotspot-dot--ring {
+  background: var(--hotspot-dot-soft, var(--hotspot-dot-color, #2C6ECB));
+  box-shadow: none;
+}
+
+.flipbook-hotspot--light .flipbook-hotspot-dot--ring {
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.45);
+}
+
+.flipbook-hotspot--light .flipbook-hotspot-dot--dot {
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.45), 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+.flipbook-hotspot--light .flipbook-hotspot-dot--plus,
+.flipbook-hotspot--light .flipbook-hotspot-dot--icon {
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.45);
+}
+
+.flipbook-hotspot-dot--icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hotspot-ink, #fff);
+}
+
+.flipbook-hotspot-dot--icon svg {
+  position: relative;
+  z-index: 1;
+  width: 68%;
+  height: 68%;
+}
+
+.flipbook-hotspot-pill {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  transform: translate(-50%, -50%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  white-space: nowrap;
+}
+
+.flipbook-hotspot-pill svg {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.flipbook-hotspot-dot--icon svg:not([stroke]),
+.flipbook-hotspot-pill svg:not([stroke]) {
+  fill: currentColor;
+}
+
+.flipbook-hotspot-tag {
+  padding: 0.45em 0.75em;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .flipbook-hotspot-tooltip {
@@ -4006,24 +4106,50 @@
   gap: 6px;
 }
 
-.flipbook-hotspot-tooltip-btn {
-  width: 100%;
+.flipbook-hotspot-tooltip-btn,
+.flipbook-hotspot-buy {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 12px;
-  font-size: 11px;
+  padding: calc(10em / 11) calc(12em / 11);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border-radius: 3px;
+  border-radius: calc(3em / 11);
   border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
   transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.1s ease;
   line-height: 1.2;
   white-space: nowrap;
+}
+
+.flipbook-hotspot-tooltip-btn {
+  width: 100%;
+  font-size: 11px;
+}
+
+.flipbook-hotspot .flipbook-hotspot-buy {
+  gap: 0.6em;
+  background: var(--hotspot-dot-color, #111);
+  border-color: var(--hotspot-dot-color, #111);
+  color: var(--hotspot-ink, #fff);
+  box-shadow: 0 0 0 0.1em var(--hotspot-ring, transparent);
+}
+
+.flipbook-hotspot .flipbook-hotspot-buy:hover {
+  background: color-mix(in srgb, var(--hotspot-dot-color, #111) 82%, #000);
+  border-color: color-mix(in srgb, var(--hotspot-dot-color, #111) 82%, #000);
+}
+
+.flipbook-hotspot .flipbook-hotspot-buy:active {
+  transform: translate(-50%, -50%) scale(0.98);
+}
+
+.flipbook-hotspot .flipbook-hotspot-buy:focus-visible {
+  outline: 2px solid var(--hotspot-dot-color, #111);
+  outline-offset: 2px;
 }
 
 .flipbook-hotspot-tooltip-btn:active {

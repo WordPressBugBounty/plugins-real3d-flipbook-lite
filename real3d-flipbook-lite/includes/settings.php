@@ -60,6 +60,25 @@ $flipbook = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global);
 				?>
 
 				<?php
+				$tabs_html = '';
+				// Use a filter to allow external plugins to add tabs.
+				$tabs_html = apply_filters('r3d_settings_add_nav_tab', $tabs_html);
+
+				$allowed_html = [
+					'a' => [
+						'href' => [],
+						'class' => [],
+						'data-tab' => [],
+					],
+					'span' => [
+						'class' => [],
+					],
+					'div' => [
+						'class' => [],
+					],
+				];
+
+				echo wp_kses($tabs_html, $allowed_html);
 				?>
 			</h2>
 

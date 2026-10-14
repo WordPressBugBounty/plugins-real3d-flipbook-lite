@@ -1580,6 +1580,12 @@ a:hover .link-icon {
 			$id = '0';
 		}
 
+		if (!$this->pro) {
+			foreach (array('previewPages', 'lockedPageSize', 'previewTitle', 'previewDescription', 'previewButtonText', 'previewButtonUrl') as $preview_key) {
+				unset($flipbook[$preview_key]);
+			}
+		}
+
 		$bookId = $id . '_' . uniqid();
 
 		foreach ($args as $key => $val) {

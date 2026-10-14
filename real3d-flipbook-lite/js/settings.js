@@ -139,6 +139,59 @@ function r3d_escAttr(value) {
       ],
       advanced: [
         ],
+      preview: [
+        [
+          "previewMode",
+          "dropdown",
+          "Show preview mode",
+          "Show only first x number of pages in flipbook",
+          [
+            { value: "", display: "Never" },
+            { value: "logged_out", display: "For logged out users" },
+            {
+              value: "woo_purchased_or_subscription",
+              display:
+                "If WooCommerce product not purchased and no active WooCommerce subscription",
+            },
+          ],
+        ],
+        [
+          "previewPages",
+          "text",
+          "Preview pages",
+          "A single number (e.g. 20) cuts the book to the first N pages. A range or list (e.g. 1-20 or 1,2,3) shows those pages in full and locks the rest.",
+        ],
+        [
+          "lockedPageSize",
+          "text",
+          "Locked page resolution",
+          "Resolution of locked pages (range/list mode). Lower = more obscured. Default 150.",
+        ],
+        [
+          "previewTitle",
+          "text",
+          "Message title",
+          "Shown when the preview limit is reached. Leave blank for the default.",
+        ],
+        [
+          "previewDescription",
+          "textarea",
+          "Message text (HTML allowed)",
+          "Body of the preview message. Leave blank for the default.",
+        ],
+        [
+          "previewButtonText",
+          "text",
+          "Button text",
+          "Optional call-to-action button. Leave blank for no button.",
+        ],
+        [
+          "previewButtonUrl",
+          "text",
+          "Button URL",
+          "Where the call-to-action button links to.",
+        ],
+      ],
       };
 
     const proOptions = {
@@ -271,7 +324,8 @@ function r3d_escAttr(value) {
             selected: typeof val === "undefined",
           }).appendTo(elem);
 
-          const optionValue = (option) => String(option.value || option);
+          const optionValue = (option) =>
+            String(option !== null && typeof option === "object" ? option.value : option);
           const saved = val != null && val !== "" ? String(val) : null;
           if (saved !== null && !values.some((option) => optionValue(option) === saved)) {
             values = values.concat([{ value: saved, display: saved }]);
@@ -279,7 +333,7 @@ function r3d_escAttr(value) {
 
           values.forEach((option) => {
             $("<option>", {
-              value: option.value || option, // Fallback if option is not an object
+              value: optionValue(option),
               text: option.display || option, // Fallback if option is not an object
               selected: saved !== null && optionValue(option) === saved,
             }).appendTo(elem);

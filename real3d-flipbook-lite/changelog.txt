@@ -1,0 +1,433 @@
+== Real3D Flipbook Lite – changelog (5.5 and earlier) ==
+
+The latest release is described in readme.txt.
+
+= 5.5 =
+* New: live preview in the flipbook editor - the flipbook updates as you change settings, on desktop or phone, with a larger preview in a lightbox
+* New: the Toolbar tab shows every toolbar style and icon set as a picture
+* New: any toolbar button can be moved into the Tools ("More") menu
+* Change: the shortcode is now in the Publish box with a Copy button; the "Preview Flipbook" button is replaced by the live preview
+* Change: removed settings that had no effect
+* Change: the plugin uses its own text domain, real3d-flipbook-lite, so translations from translate.wordpress.org load
+* Improvement: code updates from the WordPress.org Plugin Check
+
+= 5.4 =
+* Security and stability fixes - update recommended
+* Change: Import / Export is available to administrators
+* Change: converting PDF links into flipbooks is now off by default - existing sites keep the setting they have; new sites can turn it on under Real3D Flipbook > Settings > Overrides
+* Improvement: faster loading - the 3D engine downloads while the pages load, and the toolbar appears before the book has finished
+* Improvement: the book now fills the space the toolbar leaves free instead of shrinking more than it needs to
+* Improvement: side navigation arrows are round by default, matching the viewer's buttons
+* Improvement: on phones a vertical swipe over the book now scrolls the page instead of dragging a page sideways
+* Improvement: book height is capped at the browser window height, fixing very tall books on phones in landscape
+* Change: minimal view (toolbar replaced by a single expand button on very small embeds) is now off by default
+* Fix: the book was sized wrong on load, in WebGL and in fullscreen and lightbox
+* Fix: book did not fit the width of narrow containers on the cover page
+* Fix: swipe mode failed to start
+* Fix: page flip sound on iOS - silent for the first flips, then several queued sounds firing at once
+* Fix: on iOS the book kept its old zoom after leaving fullscreen, and changed size after rotating the device and back
+* Fix: a book with a transparent background showed the website through it in fullscreen on iOS
+* Fix: the Help screen greeted sites that already have flipbooks as if it were a fresh install
+
+= 5.3 =
+* New: flip several pages by dragging - grab a page while another one is still flipping
+* New: realistic page flip - the bend follows flip speed and paper hardness
+* New: page corners lift on hover, click flips the page
+* New: pan with two fingers while pinch zooming
+* Improvement: much lower memory use - pages render at the size they are shown at, and pages you flip past load small
+* Improvement: faster flipping - the page you land on renders first, and more pages stay loaded
+* Improvement: search on phones - full width panel, wider results, closes when you pick a result
+* Improvement: maximum zoom now matches the page render resolution, so zoomed pages stay sharp
+* Fix: crash on iOS after flipping many pages
+* Fix: search, bookmarks and thumbnails panels closed right after opening on Android
+* Fix: pages could pass through each other when several were bent at once
+* Fix: book jumped left and right when flipping fast in single page view
+
+= 5.1.3 =
+* Fix: zoom buttons not updating after entering or leaving fullscreen
+* Fix: zoom cursor shown on pages that cannot be zoomed further
+* Improvement: maximum zoom limited to the range where pages still render detail
+
+= 5.1.2 =
+* Fix: pages not loading in smaller flipbooks
+* Fix: PDF rendering issues in the flipbook editor
+* Improvement: internal code hardening
+
+= 5.1.1 =
+* Improvement: PRO feature comparison shown in the flipbook editor
+
+= 5.1.0 =
+* Improvements in zoom — sharper page rendering at every zoom level, deeper zoom
+
+= 5.0.8 =
+* Improvement: renamed plugin to Real3D Flipbook Lite in the plugins list
+
+= 5.0.7 =
+* Improvement: updated Freemius SDK to the latest version (2.13.4)
+
+= 5.0.6 =
+* Improvement: increased max zoom
+
+= 5.0.5 =
+* Fix: PHP fatal error when Real3D Flipbook PRO and Lite are active at the same time
+
+= 5.0.4 =
+* Fix: Table of Contents and side panels open on the right side in right-to-left mode
+* Fix: click and drag to pan when zoomed in 2D and 3D mode
+
+= 5.0.3 =
+* Improvement: updated flipbook viewer engine
+* Improvement: refreshed admin design — badges and dialogs
+
+= 5.0.2 =
+* New: redesigned Toolbar tab — all buttons in one table with icons, inline enable/title/position and drag to reorder
+* Improvement: redesigned Getting Started page
+* Improvement: admin UI improvements
+
+= 5.0.1 =
+* Improvement: redesigned Upgrade to PRO admin page
+* Improvement: redesigned Add-ons admin page
+
+= 5.0 =
+* Improvement: updated flipbook viewer engine
+* Improvement: performance and compatibility updates
+* Fix: various bug fixes
+
+= 4.19.2 =
+* Improvement: Only Administrator can view and edit Real3D Flipbook > Settings
+
+= 4.19.1 =
+* Fix: PHP error in flipbook shortcode
+
+= 4.19 =
+* Fix: Security issue - Broken Access Control
+* Improvement: Book pages are not cut off while flipping in mode "webgl"
+* Improvement: More realistic shadows in modes "3d" and "2d" 
+* Fix: Crashing on mobile in modes "3d" and "2d" 
+* Improvement: Thumbnails loading performance 
+* Improvement: Text search performance 
+* New: Zoom in / out on page click
+* New: Option "Minimal view" - show only fullscreen button when book is small
+* New: Option "Minimal view threshold" - breakpoint for minimal view
+* New: Option "Range chunk size" - partial PDF loading request size in KB
+* New: Zoom with mouse wheel + CTRL
+* New: Zoom in & zoom out on page click instead of double click
+* Fix: Disable zoom in & zoom out while auto flip is active
+* Fix: Flipbok pages not loading in mode "3d" in Firefox
+* Improvement: Table of Contents and search results styling
+* Fix: Error when youtube video is on flipbook page
+* Fix: First page & last page arrows in RTL
+* Fix: Lightbox start page option
+* Fix: Table of Contents sub items stay open after Table of Contents closes
+* Fix: Corner curl stops working after going back to first page 
+* Improvement: Disable zooming when autoplay is active
+
+= 4.16.4 =
+* New: Password protected flipbook posts
+* Fix: Socurity update
+* Fix: Search results for spreads with cover
+* Fix: Search not working if pages are spreads with cover
+* Improvement: Thumbnail view page numbers are in outer conrners
+* Improvemet: Sharper pages when book is small
+* Fix: One page flipbook not loading
+* Fix: RTL mode page loading bug
+* Fix: Page scrolling after opening thumbnails
+* Improvement: Thumbnails show as spreads
+* New: Showtcode parameter rtl="true" for enabling right to left mode
+* Fix: HTML content layer and PDF text layer for "3d" and "2d" view modes 
+* Fix: Text deselect on pages
+* Fix: Bug when sound is diabled and button sound is disabled
+* New: Highlight active thumbnail
+* New: Accent color option for thumbnail hightlight
+* Improvement: Faster page loading
+* Improvement: Flip animation performance
+* Fix: Page resolution for PDF Flipbook
+
+= 4.11.4 =
+* Fix: Broken link on Settings page
+
+= 4.11.3 =
+* Fix: Category shortcode
+
+= 4.11.2 =
+* New: French translation
+
+= 4.11.1 =
+* Fix: PHP error for PHP versions < 7.4
+
+= 4.11 =
+* Fix: No cover in right to left mode
+* Fix: Thumbnails view close button
+* Improvement: Page loading optimizations
+* Fix: Background music not playing
+* Fix: Page HTML not loading when start page not 1
+* Fix: Page items have wrong settings when copy pasting flipbook pages
+* Fix: Preview pages for logged out users
+* Fix: Search on start
+* Fix: Lightbox opens on empty page
+* Improvement: Performance optimization
+
+= 4.10.3 =
+* Fix: Thubmnail image upload location
+* Fix: Fullscreen on iOS
+* Fix: Bug with stopping youtube videos on pages
+* Improvement: Prevent website pinch zoom when flipbook is fullscreen or lightbox 
+* Improvement: Prevent auto hiding address bar on iOS when flipbook is fullscreen or lightbox 
+
+= 4.10.2 =
+* Fix: Thubmnail image upload location
+* Fix: Youtube not stopping after lightbox close
+* Fix: Size of share buttons
+* Fix: Tooltip color and position
+* Improvement: Border for toolbar and popups
+* Improvement: Sharper shadow for WebGL mode
+* Improvement: Faster page loading
+* Improvement: Rendering performance
+
+= 4.9.9 =
+* Fix: Saving flipbook thumbnail image
+
+= 4.9.8 =
+* Fix: Last page not loading when Cover is disabled
+
+= 4.9.7 =
+* Improvement: Higher resolution pages
+* New: Table of Contents from PDF outline
+* New: Share on Pinterest, LinkedIn, WhatsApp, Digg, Reddit, Email, Copy link
+
+= 4.9.6 =
+* Fix: Pages cut off in view modes "3d" and "2d"
+* Fix: Logo image covering the book
+* Fix: Toggle fullscreen with ESC
+* Fix: Preview pages bug
+* Fix: Zoom Pan in mode webgl
+* Fix: Text rendering on RTL websites
+* New: Share copy link
+* New: Scale cover option for "webgl" mode - make double with cover flipbook from pages that are all same size 
+* New: Page caption - if page has caption, the icon for viewing the caption on hover will be displayed on the page 
+* New: Filter flipbooks by category on the Flipbooks page
+* New: Flipbook automatically fits to width or height based on single page or double page view
+* Improvement: Optimized shortcode rendering
+* Improvement: Optimized saving of flipbook options
+* Fix: Thumbail size in grid view
+* Fix: Prevent mouse zoom when flipbook is in iframe and not fullscreen
+* Fix: Lightbox start page
+
+= 4.8 =
+* Fix: Saving flipbooks with large number of pages
+* Fix: Menu button Tools not visible in Firefox
+* Fix: PDF flipbook with 2 pages
+* Improvement: Table of Contents styling
+* Fix: Lightbox start page in Right to left mode
+* Fix: Last page PDF flipbook
+
+= 4.6 =
+* Improvement: Flipbook thumbnail saved as webp
+* Improvement: Keep page editor items after replacing PDF
+* Improvement: Edit flipbook page performance
+
+= 4.5 =
+* Fix: PDF flipbook not loading when RequireJS is used on the page
+* Fix: Toggle fullscreen icon does not change on iOS
+* Fix: Video does not pause in view mode "scroll" when scrolled page goes outside of view
+
+= 4.4.2 =
+* Fix: JS error on Edit flipbook page
+
+= 4.4.1 =
+* Fix: PHP error on flipbook permalink
+* Fix: Flipbook not loading in lightbox
+* Fix: Single page mode can flip beyond last page
+
+= 4.3.9 =
+* Fix: One page JPG flipbook not working
+
+= 4.3.8 =
+* Fix: Bug with creating new flipbooks
+
+= 4.3 =
+* Fix: Lightbox flipbook bug when flipbook is not visible
+* Fix: Bulk edit flipbook posts deletes options from flipbook
+* Fix: Errors caused by cached scripts
+* Fix: Table of Contents from PDF outline
+* Fix: PHP 8.3 warning
+* Fix: iOS fullscreen shows warning
+* Fix: PDF Flipbook rendering bug
+* New: Option to enable / disable Current page on mobile
+* New: Option to enable / disable Tools menu
+
+= 4.1.1 =
+* Improvement: Admin Help page
+
+= 4.1 =
+* Fix: Fullscreen mode flipbook cut off
+* Fix: Broken flipbook permalinks
+
+= 4.0 =
+* Improvement: Updated to PDF.js 3.11.174
+* Fix: Fullscreen on iOS
+* Fix: Double click zoom
+* Fix: Flip pages with touch swipe
+* Other bug fixes
+* Performance improvements
+
+= 3.83 =
+* Improvement: Updated to more recent pdf.js
+* Fix: Multiple flibpooks on the same page not working
+* New: Convert PDF links - Option to convert only PDF links with CSS class 
+* New: Convert PDF links - Option to convert only PDF links witouts CSS class 
+
+= 3.82 =
+* New: Container ratio option
+* New: Editable Flipbook permalink structure
+
+= 3.81 =
+* Fix: Flipbook quick edit post deletes flipbook settings
+
+= 3.80 =
+* Fix: Flipbook thumbnail overwriting
+
+= 3.79 =
+* New: Tools submenu in toolbar
+* Improvement: Share menu redesign
+* Improvement: Better flip animation 
+
+= 3.77 =
+* Fix: View mode "swipe" not working
+
+= 3.76 =
+* Improvement: Performance optimization for JPG flipbooks
+* Fix: Missing "scroll" option in Mobile > View mode
+
+= 3.75 =
+* Improvement: Code optimization
+
+= 3.74 =
+* New: Resize flipbook container to fit double page flipbook on desktop and single page flipbook on mobile
+
+= 3.73.1 =
+* Fix: Right to left mode in view mode "swipe"
+
+= 3.73 =
+* Fix: Right to left mode in view mode "3d", "2d", "simple"
+
+= 3.72 =
+* Fix: Saving HTML content for flipbook pages
+* New: Tooltip for toolbar
+
+= 3.71 =
+* Improvement: Navigation arrows redesign
+* Improvement: Thumbnails view redesign
+
+= 3.70 =
+* New: Support for translation with .po .mo files
+* New: Added Turkish translation
+
+= 3.69 =
+* Fix: Override PDF Embedder shortcode and block
+
+= 3.68.1 =
+* Fix: Conflict with dflip plugin
+
+= 3.68 =
+* Improvement: Updated links for addons
+
+= 3.65 =
+* New: Option to show only first x number of pages 
+* Fix: Scrollbar on Table of Contents and Thumbnails
+
+= 3.63 =
+* Improvement: Flipbook live preview in admin 
+
+= 3.62 =
+* New: Download PDF button
+* New: Enable / Disable any toolbar button
+
+= 3.61.2 =
+* Fix: Import flipbooks from JSON
+
+= 3.61.1 =
+* New: Option to render shortcodes [3d-flip-book pdf="...pdf"], [3d-flip-book id="...pdf"], [dflip id="...pdf"], [pdfjs-viewer url="...pdf"] in Real3D Flipbook
+
+= 3.61 =
+* New: Option to override click on PDF links, all links <a href="...pdf"></a> will open PDF in Real3D Flipbook lightbox
+* New: Option to render shortcodes [pdf-embedder url="...pdf"], [dflip source="...pdf"], [wonderplugin_pdf src="...pdf"] in Real3D Flipbook
+
+= 3.60 =
+* New: Table of Contents from page titles
+* New: Table of Contents builder
+* New: Share on Facebook, X
+
+= 3.59 =
+* Fix: Left page not visible on iOS, when view mode is 2d or 3d
+* Fix: HTML content not working for PDF flipbook
+
+= 3.58 =
+* Fix: Single page mode with odd number of pages
+* Fix: Blurry pages in mode 2D
+* Fix: Right to left mode when book has 1 page
+
+= 3.57 =
+* Fix: Prevent page flip after pinch zoom
+* Fix: Prevent double click zoom during page flip
+
+= 3.56.2 =
+* New: Toolbar button for enabling / disabling flip sound
+
+= 3.56.1 =
+* New: Help admin page
+
+= 3.56 =
+* New: Thumbnails option in toolbar
+* New: Print option in toolbar
+* Improvement: Page resolution for PDF flipbook
+
+= 3.55 =
+* Fix: Creating flipbook from images
+* Fix: Flipping pages with arrows in mode "3d" and "2d"
+
+= 3.54 =
+* Improvement: Updated Getting Started video
+* Improvement: Changed default flipbook container size to A4 double page
+
+= 3.53.1 =
+* New: Help section in Edit flipbook page, with Getting Started video
+* New: Open lightbox flipbook with a "lightbox CSS class" - any element with this CSS class will open the lightbox flipbook
+* New: Set lightbox CSS class via shortcode parameter "class"
+* New: Set PDF URL via shortcode parameter "pdf"
+* New: Set lightbox thumbnail URL via shortcode parameter "thumb"
+
+= 3.53 =
+* Improvement: Added toolbar with Zoom in, Zoom out and Fullscreen options
+
+= 3.50 =
+* Fix: bug with OffscreenCanvas undefined on iOS
+* Fix: disable page scroll on mobile when lightbox is active
+* Fix: disable page flip if another flipbook is in fullscreen or lightbox
+* Improvement: faster page loading in mode "webgl"
+* Improvement: faster page loading for PDF flipbooks
+* Improvement: performance optimizations
+
+= 3.42 =
+* New: flipbook mode "lightbox" and "fullscreen" added
+* Fix: view mode "scroll" not loading first page if viewer is off screen
+* Improvement: disable flipbook when it is off screen 
+
+= 3.41 =
+* New: view mode "scroll"
+* Fix: view mode "3d" performance
+
+= 3.39.1 =
+* Fix: updating from 1.0
+
+= 3.39 =
+* New: more options added under General
+* New: WebGL options
+* Improvement: better performance
+* Improvement: faster page loading time
+* Improvement: optimized script loading
+* Improvement: smaller script sizes
+* Fix : various bug fixes
+
+= 1.0 =
+* initial release
