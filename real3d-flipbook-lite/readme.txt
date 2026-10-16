@@ -4,7 +4,7 @@ Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 5.7.1
+Stable tag: 5.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -183,6 +183,13 @@ Post in the [support forum](https://wordpress.org/support/plugin/real3d-flipbook
 
 == Changelog ==
 
+= 5.8 =
+* New: reader actions are sent as an r3d-event browser event on the page - page views, zoom, share, PDF downloads and lightbox opens - so analytics tools can track them
+* Change: the side navigation arrows use the same thin chevron as the toolbar icons
+* Fix: a flipbook with a single image page opened on the loading spinner in the 3D view mode
+* Fix: a new flipbook did not appear in the Real3D Flipbook block or in Insert Flipbook until it was saved a second time
+* Fix: importing flipbooks skipped flipbooks that had been saved only once
+
 = 5.7.1 =
 * Security and stability fixes - update recommended
 * New: the Preview Mode add-on works with Lite - choose who sees only the first pages under Real3D Flipbook > Settings > Preview Mode
@@ -216,6 +223,9 @@ Post in the [support forum](https://wordpress.org/support/plugin/real3d-flipbook
 [Changes in earlier versions](https://plugins.svn.wordpress.org/real3d-flipbook-lite/trunk/changelog.txt)
 
 == Upgrade Notice ==
+
+= 5.8 =
+New flipbooks show up in the block and in Insert Flipbook right after the first save, imports keep every flipbook, and reader actions are sent as browser events that analytics tools can track.
 
 = 5.7.1 =
 Security and stability fixes - update recommended. The Preview Mode add-on now works with Lite.

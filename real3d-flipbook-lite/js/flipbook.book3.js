@@ -1570,6 +1570,15 @@ FLIPBOOK.Page3 = class {
         o.main.loadPage(index, size, function (page) {
             if (page && page.image) {
                 var img = FLIPBOOK.tierSource(page.image, size);
+                if (img && !img.tagName && typeof img.close === 'function') {
+                    var cv = document.createElement('canvas');
+                    cv.width = img.width;
+                    cv.height = img.height;
+                    cv.getContext('2d').drawImage(img, 0, 0);
+                    var el = new Image();
+                    el.src = cv.toDataURL('image/jpeg', 0.92);
+                    img = el;
+                }
                 var page = o.pages[index];
                 if (
                     (isFront && page && page.side == 'right') ||

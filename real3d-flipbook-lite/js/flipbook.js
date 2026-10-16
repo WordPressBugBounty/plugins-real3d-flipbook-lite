@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.7.6';
+FLIPBOOK.version = '5.8';
 
 // page.image / page.imageBitmap are keyed by texture size, but legacy paths hand
 // back a bare Image, an ImageBitmap or a URL string. Resolve the requested tier,
@@ -11,6 +11,39 @@ FLIPBOOK.tierSource = function (store, size) {
     if (store[size]) return store[size];
     var tiers = Object.keys(store);
     return tiers.length ? store[tiers[tiers.length - 1]] : null;
+};
+
+FLIPBOOK.polyContains = function (pts, x, y) {
+    var inside = false;
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        var xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
+        if (yi > y !== yj > y && x < xj + ((y - yj) / (yi - yj)) * (xi - xj)) inside = !inside;
+    }
+    return inside;
+};
+
+FLIPBOOK.polyMarkerPoint = function (pts) {
+    var a = 0, cx = 0, cy = 0, i, j, f;
+    for (i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        f = pts[j][0] * pts[i][1] - pts[i][0] * pts[j][1];
+        a += f;
+        cx += (pts[j][0] + pts[i][0]) * f;
+        cy += (pts[j][1] + pts[i][1]) * f;
+    }
+    if (Math.abs(a) < 1e-9) return [0.5, 0.5];
+    cx /= 3 * a;
+    cy /= 3 * a;
+    if (FLIPBOOK.polyContains(pts, cx, cy)) return [cx, cy];
+    var xs = [];
+    for (i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        var x1 = pts[j][0], y1 = pts[j][1], x2 = pts[i][0], y2 = pts[i][1];
+        if (y1 > cy !== y2 > cy) xs.push(x1 + ((cy - y1) / (y2 - y1)) * (x2 - x1));
+    }
+    xs.sort(function (p, q) { return p - q; });
+    var best = null;
+    for (var k = 0; k + 1 < xs.length; k += 2)
+        if (!best || xs[k + 1] - xs[k] > best[1] - best[0]) best = [xs[k], xs[k + 1]];
+    return best ? [(best[0] + best[1]) / 2, cy] : [cx, cy];
 };
 
 FLIPBOOK.pageThumb = function (o, index, ratio, onShow) {
@@ -833,6 +866,7 @@ FLIPBOOK.Main = class {
             camera: [24, 24, '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>'],
             cart: [24, 24, '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>'],
             view: [24, 24, '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>'],
+            tag: [24, 24, '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5"/>'],
             copyLink: [24, 24, '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'],
         },
 
@@ -990,6 +1024,10 @@ FLIPBOOK.Main = class {
             o.viewMode = 'webgl';
         }
 
+        if (Array.isArray(o.pages) && o.pages.length == 1 && !o.pdfUrl && !o.pdfBase64) {
+            o.viewMode = '3d';
+        }
+
         
         var c = { a: 3, b: 10, c: 2 };
             var q = o.opt;
@@ -1082,6 +1120,7 @@ FLIPBOOK.Main = class {
         this.wrapper.classList.add('flipbook-main-wrapper');
 
         this.applyTheme();
+        this.applyHotspotFont();
 
         this.tooltip2 = new FLIPBOOK.Tooltip2(this.wrapper);
 
@@ -1597,6 +1636,12 @@ FLIPBOOK.Main = class {
             targetPage = this.numPages;
         }
         if (targetPage) {
+            const owner = FLIPBOOK._hashOwner;
+            if (owner && owner !== this && !owner.disposed && owner.options.deeplinkingPrefix === o.deeplinkingPrefix) {
+                return;
+            }
+            FLIPBOOK._hashOwner = this;
+
             if (!this.started) {
                 o.startPage = startPage;
 
@@ -1768,6 +1813,7 @@ FLIPBOOK.Main = class {
         }
 
         if (this.options.deeplinkingEnabled && this.Book.enabled && this.hash != page) {
+            FLIPBOOK._hashOwner = this;
             window.location.hash = '#' + this.options.deeplinkingPrefix + String(page);
             this.historyStateChange();
             this.hash = page;
@@ -1788,7 +1834,17 @@ FLIPBOOK.Main = class {
         return page;
     }
 
+    dispatchReaderEvent(params) {
+        const { nonInteraction, ...detail } = params;
+        detail.name = this.options.name;
+        detail.id = this.options.id;
+        try {
+            window.dispatchEvent(new CustomEvent('r3d-event', { detail }));
+        } catch (e) {}
+    }
+
     async sendGAEvent(params) {
+        this.dispatchReaderEvent(params);
         }
 
     lightboxEnd() {
@@ -3418,6 +3474,40 @@ FLIPBOOK.Main = class {
         }
     }
 
+    applyHotspotFont() {
+        const f = this.options.hotspotFont;
+        if (!f || typeof f !== 'object') return;
+        const rules = [];
+        const setFont = (key, cssVar, weightVar) => {
+            const v = f[key];
+            if (!v || typeof v.family !== 'string') return;
+            const stack = v.family.replace(/[^\w\s,"'-]/g, '').trim();
+            if (!stack) return;
+            const name = 'r3d-hs-' + key + '-' + (FLIPBOOK._hsFontSeq = (FLIPBOOK._hsFontSeq || 0) + 1);
+            let faces = 0;
+            (Array.isArray(v.faces) ? v.faces.slice(0, 12) : []).forEach((face) => {
+                const src = face && typeof face.src === 'string' ? face.src : '';
+                if (!/^https:\/\/[^\s"'()\\]+$/.test(src)) return;
+                const weight = /^\d{1,3}( \d{1,3})?$/.test(face.weight) ? face.weight : '400';
+                const style = face.style === 'italic' ? 'italic' : 'normal';
+                const fmt = /\.woff2(\?|$)/i.test(src) ? ' format("woff2")' : /\.woff(\?|$)/i.test(src) ? ' format("woff")' : '';
+                rules.push(`@font-face{font-family:"${name}";src:url("${src}")${fmt};font-weight:${weight};font-style:${style};font-display:swap}`);
+                faces++;
+            });
+            const value = (faces ? `"${name}", ` : '') + stack;
+            this.wrapper.style.setProperty(cssVar, value);
+            if (key === 'body') this._hsFontStack = value;
+            if (weightVar && /^\d{3}$/.test(v.weight)) this.wrapper.style.setProperty(weightVar, v.weight);
+        };
+        setFont('body', '--flipbook-hotspot-font');
+        setFont('heading', '--flipbook-hotspot-heading-font', '--flipbook-hotspot-heading-weight');
+        if (rules.length) {
+            const style = document.createElement('style');
+            style.textContent = rules.join('\n');
+            document.head.appendChild(style);
+        }
+    }
+
     initHotspotTooltip() {
         const self = this;
         const strings = this.options.strings || {};
@@ -3450,6 +3540,14 @@ FLIPBOOK.Main = class {
 
             // Rich card tooltip
             tooltip.className = 'flipbook-hotspot-tooltip flipbook-hotspot-tooltip-card';
+            if (self._hsFontStack && !self._hsFontChecked) {
+                self._hsFontChecked = true;
+                const flat = (v) => String(v).replace(/["'\s]/g, '').toLowerCase();
+                if (flat(getComputedStyle(tooltip).fontFamily) !== flat(self._hsFontStack)) {
+                    tooltip.style.setProperty('--flipbook-hotspot-heading-font', 'initial');
+                    tooltip.style.setProperty('--flipbook-hotspot-heading-weight', 'initial');
+                }
+            }
             tooltip.setAttribute('role', 'dialog');
             tooltip.setAttribute('aria-label', String(data.title || '').replace(/<[^>]*>/g, '') || 'Details');
 
@@ -3500,13 +3598,13 @@ FLIPBOOK.Main = class {
                 : '';
 
             // Variant selector — one <select> with all variants. On change,
-            // the listener below rewrites the cart link's variant id and the
-            // displayed price/compare-at.
+            // the listener below rewrites the cart link's variant id, the
+            // displayed price/compare-at and the image.
             let variantsHtml = '';
             if (isShown('variants') && Array.isArray(data.variants) && data.variants.length > 1) {
                 const opts = data.variants.map((v) => {
                     const selected = v.id === data.variantId ? ' selected' : '';
-                    return `<option value="${v.id}" data-price="${v.price || ''}" data-compare="${v.comparePrice || ''}"${selected}>${v.title}</option>`;
+                    return `<option value="${v.id}" data-price="${v.price || ''}" data-compare="${v.comparePrice || ''}" data-image="${v.image || ''}"${selected}>${v.title}</option>`;
                 }).join('');
                 variantsHtml = `<select class="flipbook-hotspot-tooltip-variant-select" aria-label="Variant">${opts}</select>`;
             }
@@ -3567,6 +3665,7 @@ FLIPBOOK.Main = class {
                     const newId = opt.value;
                     const newPrice = opt.getAttribute('data-price') || '';
                     const newCompare = opt.getAttribute('data-compare') || '';
+                    const newImage = opt.getAttribute('data-image') || '';
                     const cartBtn = tooltip.querySelector('.flipbook-hotspot-tooltip-btn-primary[data-variant-id]');
                     if (cartBtn) {
                         cartBtn.setAttribute('data-variant-id', newId);
@@ -3586,6 +3685,9 @@ FLIPBOOK.Main = class {
                     if (priceEl && newPrice) {
                         priceEl.innerHTML = `${newPrice}${newCompare ? `<span class="compare-price">${newCompare}</span>` : ''}`;
                     }
+                    const imgEl = tooltip._galleryImages ? null : tooltip.querySelector('.flipbook-hotspot-tooltip-image');
+                    const shownImage = newImage || data.images?.[0] || data.image;
+                    if (imgEl && shownImage) imgEl.src = shownImage;
                 });
             }
         };
@@ -3917,6 +4019,17 @@ FLIPBOOK.Main = class {
                 // Hotspot with URL — navigate on click
                 const hsUrl = hotspot.dataset.url;
                 const hsPage = hotspot.dataset.page;
+                if (hsUrl || hsPage || self.hotspotTooltipTarget !== hotspot) {
+                    self.sendGAEvent({
+                        event: 'flipbook_hotspot_click',
+                        book_name: self.options.name,
+                        page_number: self.currentPageValue,
+                        url: hsUrl || undefined,
+                        target_page: hsPage ? parseInt(hsPage) : undefined,
+                        label: hotspot.getAttribute('aria-label') || undefined,
+                        nonInteraction: true,
+                    });
+                }
                 if (hsUrl) {
                     const target = hotspot.dataset.linkTarget || '_blank';
                     window.open(hsUrl, target);
@@ -5184,6 +5297,13 @@ FLIPBOOK.Main = class {
         });
         if (isLucide) {
             svg.style.stroke = o.arrowColor;
+            // Lucide strokes are in 24-unit viewBox space, so a 40px arrow
+            // would draw them at 3.3px. Draw them at iconStrokeWidth in screen
+            // pixels instead (2px by default) at every arrow size.
+            if (svg._isLucide) {
+                const strokeWidth = ((o.iconStrokeWidth || 2) * 24) / buttonHeight;
+                svg.setAttribute('stroke-width', strokeWidth.toFixed(3));
+            }
         } else {
             svg.style.fill = o.arrowColor;
         }

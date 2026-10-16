@@ -611,6 +611,7 @@ class Real3DFlipbook
 
 				$flipbook['name'] = $title;
 				$flipbook['post_id'] = $post_ID;
+				$flipbook['id'] = (int) $flipbook_id;
 
 				$webgl = isset($flipbook['webgl']) ? $flipbook['webgl'] : false;
 				$viewMode = isset($flipbook['viewMode']) ? $flipbook['viewMode'] : null;
@@ -859,8 +860,8 @@ class Real3DFlipbook
 
 			$real3dflipbooks_ids = array();
 
-			foreach ($newFlipbooks as $b) {
-				$id = $b['id'];
+			foreach ($newFlipbooks as $key => $b) {
+				$id = isset($b['id']) ? $b['id'] : $key;
 
 				if (isset($b['post_id'])) {
 					unset($b['post_id']);
@@ -869,6 +870,7 @@ class Real3DFlipbook
 				if ($id == 'global') {
 					update_option('real3dflipbook_global', $b);
 				} else {
+					$b['id'] = $id;
 					add_option('real3dflipbook_' . (string)$id, $b, '', 'no');
 
 					array_push($real3dflipbooks_ids, (string)$id);
@@ -912,6 +914,7 @@ class Real3DFlipbook
 						$book['date'] = get_the_date('Y-m-d H:i:s', $post->ID);
 					}
 					$book['post_status'] = get_post_status($post->ID);
+					$book['id'] = (int) $flipbook_id;
 					$flipbooks[$flipbook_id] = $book;
 				}
 			}
@@ -923,6 +926,7 @@ class Real3DFlipbook
 			if (!isset($flipbooks[$id])) {
 				$book = get_option('real3dflipbook_' . $id);
 				if ($book) {
+					$book['id'] = (int) $id;
 					$flipbooks[$id] = $book;
 				}
 			}
@@ -1058,12 +1062,12 @@ class Real3DFlipbook
 			}
 			$flipbooks = array();
 			foreach ($real3dflipbooks_ids as $id) {
-
+				$id = (int) $id;
 				$b = get_option('real3dflipbook_' . $id);
-				if ($b && isset($b['id'])) {
+				if (is_array($b)) {
 					$book = array(
-						"id" => $b['id'],
-						"name" => $b['name']
+						"id" => $id,
+						"name" => $b['name'] ?? ''
 					);
 					array_push($flipbooks, $book);
 				}
@@ -1195,11 +1199,12 @@ class Real3DFlipbook
 
 		if (!empty($r3dfb_ids)) {
 			foreach ($r3dfb_ids as $id) {
+				$id = (int) $id;
 				$fb = get_option('real3dflipbook_' . $id);
-				if (is_array($fb) && isset($fb['id'])) {
+				if (is_array($fb)) {
 					$book = [];
-					$book["id"] = $fb["id"];
-					$book["name"] = $fb["name"];
+					$book["id"] = $id;
+					$book["name"] = $fb["name"] ?? '';
 					if (isset($fb["mode"]))
 						$book["mode"] = $fb["mode"];
 					if (isset($fb["pdfUrl"]))
