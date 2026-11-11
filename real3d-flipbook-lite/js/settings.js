@@ -1072,7 +1072,7 @@ function r3d_escAttr(value) {
       var $input = $(this).parent().find("input");
       var $img = $(this).parent().find("img");
 
-      var pdf_uploader = wp
+      var pdf_uploader = window.wp
         .media({
           title: "Select file",
           button: {

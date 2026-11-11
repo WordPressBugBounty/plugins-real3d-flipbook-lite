@@ -143,10 +143,114 @@
 .r3d-order-btn.is-danger { border-color: #b91c1c; color: #b91c1c; }
 .r3d-order-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* Request mode: prices per line, totals and the contact step. */
+.r3d-order-price { font-size: 13px; color: #1a1a1a; }
+.r3d-order-price.is-muted { color: #6b7280; }
+.r3d-order-summary { margin-bottom: 10px; font-size: 13px; }
+.r3d-order-summary:empty { display: none; }
+.r3d-order-sum-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+.r3d-order-sum-row.is-total { font-weight: 600; font-size: 15px; border-top: 1px solid #e5e5e5; margin-top: 4px; padding-top: 6px; }
+.r3d-order-sum-note { color: #6b7280; font-size: 12px; margin-top: 4px; white-space: pre-line; }
+.r3d-order-pricenote:empty { display: none; }
+.r3d-order-form { display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
+.r3d-order-field { display: flex; flex-direction: column; gap: 4px; }
+.r3d-order-field-label { font-size: 13px; color: #374151; }
+.r3d-order-input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #c9c9c9;
+    border-radius: 6px;
+    background: #fff;
+    color: #1a1a1a;
+    font: inherit;
+}
+.r3d-order-input[aria-invalid="true"] { border-color: #b91c1c; }
+.r3d-order-panel select:focus-visible,
+.r3d-order-panel textarea:focus-visible { outline: 2px solid #1a1a1a; outline-offset: 2px; }
+.is-request .r3d-order-qty-wrap { width: 84px; }
+
 /* While ordering is active the pad is the editor: hide the tooltip's own
    variant select and stepper so a buyer chooses once. */
-.r3d-ordering .flipbook-hotspot-tooltip-variant-select,
-.r3d-ordering .flipbook-hotspot-tooltip-qty { display: none !important; }
+.r3d-ordering:not(.r3d-order-inline) .flipbook-hotspot-tooltip-variant-select,
+.r3d-ordering:not(.r3d-order-inline) .flipbook-hotspot-tooltip-qty { display: none !important; }
+
+.r3d-slot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 40px;
+    display: flex;
+    gap: 4px;
+    background: var(--cat-paper, #fff);
+    -webkit-user-select: none;
+    user-select: none;
+}
+.r3d-slot-btn,
+.r3d-slot-step {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 4px;
+    background: var(--cat-ink, #1a1a1a);
+    color: var(--cat-paper, #fff);
+    font: 500 12px/40px var(--cat-font-body, inherit);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+.r3d-slot-step { flex: none; width: 40px; padding: 0; font-size: 18px; letter-spacing: 0; }
+.r3d-slot-btn:disabled { opacity: .6; cursor: default; }
+.r3d-slot-qty {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    height: 40px;
+    border: 1px solid var(--cat-ink, #1a1a1a);
+    border-radius: 4px;
+    background: var(--cat-paper, #fff);
+    color: var(--cat-ink, #1a1a1a);
+    font: 600 14px/38px var(--cat-font-body, inherit);
+    text-align: center;
+    -webkit-user-select: text;
+    user-select: text;
+}
+.r3d-slot button:focus-visible,
+.r3d-slot input:focus-visible { outline: 2px solid var(--cat-ink, #1a1a1a); outline-offset: 2px; }
+.r3d-order-inline .cat-order-thumb.is-on { outline: 2px solid var(--cat-ink, #1a1a1a); outline-offset: 1px; }
+
+.r3d-order-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 72px;
+    transform: translateX(-50%);
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: calc(100% - 32px);
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #fff;
+    font: 14px/1.3 system-ui, -apple-system, sans-serif;
+}
+.r3d-order-toast-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #fff;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
 
 @media (max-width: 600px) {
     .r3d-order-panel { width: 100%; }
@@ -156,5 +260,5 @@
     .r3d-order-panel, .r3d-order-fab { transition: none; }
 }
 @media print {
-    .r3d-order-panel, .r3d-order-fab { display: none !important; }
+    .r3d-order-panel, .r3d-order-fab, .r3d-order-toast, .r3d-slot { display: none !important; }
 }

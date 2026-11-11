@@ -266,7 +266,14 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
            _hoverTargetAt for why. Bound on the wrapper so it still reads while
            the HTML overlay is down. */
         var self = this;
+        this._hoverPointerType = 'mouse';
+        this._onHoverPointer = function (e) {
+            self._hoverPointerType = e.pointerType || 'mouse';
+        };
+        el.addEventListener('pointerdown', this._onHoverPointer, true);
+        el.addEventListener('pointermove', this._onHoverPointer, true);
         this._onHoverMove = function (e) {
+            if (self._hoverPointerType === 'touch') return;
             /* Kept for re-evaluation when the book changes under a still
                cursor — a click-flip should lift the next page without
                waiting for the mouse to move. */
@@ -4013,6 +4020,8 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         });
         if (this.wrapper && this._onHoverMove) {
             this.wrapper.removeEventListener('mousemove', this._onHoverMove);
+            this.wrapper.removeEventListener('pointerdown', this._onHoverPointer, true);
+            this.wrapper.removeEventListener('pointermove', this._onHoverPointer, true);
             this.wrapper.removeEventListener('mouseleave', this._onHoverOut);
             document.documentElement.removeEventListener('mouseleave', this._onHoverOut);
             if (this._onVisHidden) document.removeEventListener('visibilitychange', this._onVisHidden);

@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var ver = encodeURIComponent(q.get("ver") || "");
+  if (q.get("phone"))
+    Object.defineProperty(navigator, "userAgent", {
+      get: function () {
+        return "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+      },
+    });
+  document.write(
+    '<link rel="stylesheet" href="../css/flipbook.min.css?ver=' + ver + '">' +
+      '<script src="../js/flipbook.min.js?ver=' + ver + '"><\/script>'
+  );
+})();
+</script>
+<script>
+window.r3dBuild = function (o) {
+  if (window.r3dBook) return window.r3dBook;
+  window.r3dBook = new FlipBook(document.getElementById("b"), o);
+  return window.r3dBook;
+};
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") parent.postMessage({ r3dPreview: "esc" }, "*");
+});
+</script>
+</head>
+<body></body>
+</html>

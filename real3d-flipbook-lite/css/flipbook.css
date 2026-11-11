@@ -4092,7 +4092,7 @@
   gap: 0;
   margin-bottom: 10px;
   border: 1px solid #ececec;
-  border-radius: 3px;
+  border-radius: var(--flipbook-hs-btn-radius, 3px);
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
@@ -4150,9 +4150,9 @@
   justify-content: center;
   padding: calc(10em / 11) calc(12em / 11);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  border-radius: calc(3em / 11);
+  letter-spacing: var(--flipbook-hs-btn-spacing, 0.06em);
+  text-transform: var(--flipbook-hs-btn-transform, uppercase);
+  border-radius: var(--flipbook-hs-btn-radius, calc(3em / 11));
   border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
@@ -4193,25 +4193,25 @@
 }
 
 .flipbook-hotspot-tooltip-btn-primary {
-  background: #111;
-  color: #fff;
-  border-color: #111;
+  background: var(--flipbook-hs-btn-bg, #111);
+  color: var(--flipbook-hs-btn-color, #fff);
+  border-color: var(--flipbook-hs-btn-bg, #111);
 }
 
 .flipbook-hotspot-tooltip-btn-primary:hover {
-  background: #000;
-  border-color: #000;
+  background: var(--flipbook-hs-btn-bg-hover, #000);
+  border-color: var(--flipbook-hs-btn-bg-hover, #000);
 }
 
 .flipbook-hotspot-tooltip-btn-secondary {
   background: #fff;
-  color: #111;
-  border-color: #111;
+  color: var(--flipbook-hs-btn-bg, #111);
+  border-color: var(--flipbook-hs-btn-bg, #111);
 }
 
 .flipbook-hotspot-tooltip-btn-secondary:hover {
-  background: #111;
-  color: #fff;
+  background: var(--flipbook-hs-btn-bg, #111);
+  color: var(--flipbook-hs-btn-color, #fff);
 }
 
 /* Free plan branding watermark */

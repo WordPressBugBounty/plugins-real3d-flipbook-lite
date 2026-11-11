@@ -1,6 +1,6 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.8';
+FLIPBOOK.version = '5.8.9';
 
 // page.image / page.imageBitmap are keyed by texture size, but legacy paths hand
 // back a bare Image, an ImageBitmap or a URL string. Resolve the requested tier,
@@ -1121,6 +1121,7 @@ FLIPBOOK.Main = class {
 
         this.applyTheme();
         this.applyHotspotFont();
+        this.applyHotspotButtons();
 
         this.tooltip2 = new FLIPBOOK.Tooltip2(this.wrapper);
 
@@ -3474,6 +3475,26 @@ FLIPBOOK.Main = class {
         }
     }
 
+    applyHotspotButtons() {
+        const b = this.options.hotspotButtons;
+        if (!b || typeof b !== 'object') return;
+        const st = this.wrapper.style;
+        const hex = (v) => (typeof v === 'string' && /^#[0-9a-f]{3,8}$/i.test(v) ? v : '');
+        const r = Number(b.radius);
+        if (Number.isFinite(r) && r >= 0) st.setProperty('--flipbook-hs-btn-radius', Math.min(r, 100) + 'px');
+        const bg = hex(b.background);
+        if (bg) {
+            st.setProperty('--flipbook-hs-btn-bg', bg);
+            st.setProperty('--flipbook-hs-btn-bg-hover', `color-mix(in srgb, ${bg} 85%, #000)`);
+        }
+        const color = hex(b.color);
+        if (color) st.setProperty('--flipbook-hs-btn-color', color);
+        if (b.uppercase === false) {
+            st.setProperty('--flipbook-hs-btn-transform', 'none');
+            st.setProperty('--flipbook-hs-btn-spacing', 'normal');
+        }
+    }
+
     applyHotspotFont() {
         const f = this.options.hotspotFont;
         if (!f || typeof f !== 'object') return;
@@ -3526,6 +3547,31 @@ FLIPBOOK.Main = class {
         // region or the card closes them.
         this.hotspotTooltipPinned = false;
 
+        const sameImage = (a, b) => {
+            const key = (u) => String(u || '').split(/[?#]/)[0].replace(/^https?:/, '');
+            return !!a && !!b && (key(a) === key(b) || key(a).split('/').pop() === key(b).split('/').pop());
+        };
+
+        const showGalleryImage = (src, isVariant) => {
+            const gallery = tooltip.querySelector('.flipbook-hotspot-tooltip-gallery');
+            const images = tooltip._galleryImages;
+            if (!gallery || !images || !src) return;
+            let idx = images.findIndex((u) => sameImage(u, src));
+            if (idx < 0) {
+                if (!isVariant) return;
+                if (tooltip._galleryExtra) images[0] = src;
+                else images.unshift(src);
+                tooltip._galleryExtra = true;
+                idx = 0;
+                gallery.querySelector('.flipbook-hotspot-tooltip-gallery-dots').innerHTML =
+                    images.map(() => '<span class="flipbook-hotspot-tooltip-gallery-dot"></span>').join('');
+            }
+            gallery.dataset.galleryIndex = idx;
+            gallery.querySelector('.flipbook-hotspot-tooltip-image').src = images[idx];
+            gallery.querySelectorAll('.flipbook-hotspot-tooltip-gallery-dot')
+                .forEach((d, i) => d.classList.toggle('active', i === idx));
+        };
+
         const buildContent = (data, target, tooltipWidth) => {
             tooltip.style.width = tooltipWidth + 'px';
 
@@ -3558,16 +3604,27 @@ FLIPBOOK.Main = class {
 
             const galleryImages = (isShown('image') && isShown('gallery') &&
                 Array.isArray(data.images) && data.images.length > 1)
-                ? data.images : null;
+                ? data.images.slice() : null;
             tooltip._galleryImages = galleryImages;
+            tooltip._galleryExtra = false;
             let imgHtml = '';
             if (galleryImages) {
+                const selVariant = Array.isArray(data.variants)
+                    ? data.variants.find((v) => v.id === data.variantId) : null;
+                const startImage = (selVariant && selVariant.image) || data.image;
+                let start = galleryImages.findIndex((u) => sameImage(u, startImage));
+                if (start < 0 && selVariant && selVariant.image) {
+                    galleryImages.unshift(selVariant.image);
+                    tooltip._galleryExtra = true;
+                    start = 0;
+                }
+                if (start < 0) start = 0;
                 // Preload the rest so arrow clicks swap instantly
-                galleryImages.slice(1).forEach((src) => { const im = new Image(); im.src = src; });
+                galleryImages.forEach((src, i) => { if (i !== start) { const im = new Image(); im.src = src; } });
                 const dots = galleryImages.map((_, i) =>
-                    `<span class="flipbook-hotspot-tooltip-gallery-dot${i === 0 ? ' active' : ''}"></span>`).join('');
-                imgHtml = `<div class="flipbook-hotspot-tooltip-gallery" data-gallery-index="0">
-                    <img class="flipbook-hotspot-tooltip-image" src="${galleryImages[0]}" alt="${data.title || ''}">
+                    `<span class="flipbook-hotspot-tooltip-gallery-dot${i === start ? ' active' : ''}"></span>`).join('');
+                imgHtml = `<div class="flipbook-hotspot-tooltip-gallery" data-gallery-index="${start}">
+                    <img class="flipbook-hotspot-tooltip-image" src="${galleryImages[start]}" alt="${data.title || ''}">
                     <button type="button" class="flipbook-hotspot-tooltip-gallery-btn flipbook-hotspot-tooltip-gallery-prev" data-gallery-nav="-1" aria-label="${strings.previousImage || 'Previous image'}">&lsaquo;</button>
                     <button type="button" class="flipbook-hotspot-tooltip-gallery-btn flipbook-hotspot-tooltip-gallery-next" data-gallery-nav="1" aria-label="${strings.nextImage || 'Next image'}">&rsaquo;</button>
                     <div class="flipbook-hotspot-tooltip-gallery-dots">${dots}</div>
@@ -3685,9 +3742,13 @@ FLIPBOOK.Main = class {
                     if (priceEl && newPrice) {
                         priceEl.innerHTML = `${newPrice}${newCompare ? `<span class="compare-price">${newCompare}</span>` : ''}`;
                     }
-                    const imgEl = tooltip._galleryImages ? null : tooltip.querySelector('.flipbook-hotspot-tooltip-image');
-                    const shownImage = newImage || data.images?.[0] || data.image;
-                    if (imgEl && shownImage) imgEl.src = shownImage;
+                    if (tooltip._galleryImages) {
+                        showGalleryImage(newImage || data.images[0], !!newImage);
+                    } else {
+                        const imgEl = tooltip.querySelector('.flipbook-hotspot-tooltip-image');
+                        const shownImage = newImage || data.images?.[0] || data.image;
+                        if (imgEl && shownImage) imgEl.src = shownImage;
+                    }
                 });
             }
         };
@@ -3896,8 +3957,14 @@ FLIPBOOK.Main = class {
             return true;
         };
 
+        let lastPointerType = 'mouse';
+        const notePointer = (e) => { lastPointerType = e.pointerType || 'mouse'; };
+        this.wrapper.addEventListener('pointerdown', notePointer, true);
+        this.wrapper.addEventListener('pointermove', notePointer, true);
+
         // Mouse hover
         this.wrapper.addEventListener('mouseover', (e) => {
+            if (lastPointerType === 'touch') return;
             const hotspot = e.target.closest('.flipbook-hotspot');
             if (hotspot) {
                 // Hovering a different region takes over from a pinned card.
@@ -3914,6 +3981,7 @@ FLIPBOOK.Main = class {
         });
 
         this.wrapper.addEventListener('mouseout', (e) => {
+            if (lastPointerType === 'touch') return;
             const hotspot = e.target.closest('.flipbook-hotspot');
             const isTooltip = e.target.closest('.flipbook-hotspot-tooltip');
             if (!hotspot && !isTooltip) return;
@@ -4289,6 +4357,10 @@ FLIPBOOK.Main = class {
             this.scheduleRefit();
         };
         this.handleKeydown = (e) => {
+            if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')) {
+                return;
+            }
+
             if (!this.Book.enabled) {
                 return;
             }

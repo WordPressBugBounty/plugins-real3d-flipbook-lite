@@ -16,6 +16,7 @@ if (empty($current_id)) {
 	if (!is_array($flipbook)) {
 		$flipbook = array();
 	}
+	$flipbook = $this->sanitize_flipbook_strings($flipbook);
 	$flipbook['id'] =  $flipbook_id;
 }
 
@@ -134,6 +135,9 @@ function r3d_postbox($r3d_postbox_title, $r3d_name)
 			#r3d-pro-hints .r3d-pro-cta:hover, #r3d-pro-hints .r3d-pro-cta:focus { background: #719504; color: #fff; }
 			#r3d-pro-hints .r3d-pro-cta:focus { outline: 0; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #5e7c03; }
 			#r3d-lp-lightbox.is-try .r3d-lp-box { width: min(1400px, 100%); height: 100%; }
+			#r3d-lp-lightbox .r3d-lp-buy { flex: none; padding: 9px 18px; border-radius: 8px; background: #84af05; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.2; text-decoration: none; }
+			#r3d-lp-lightbox .r3d-lp-buy:hover, #r3d-lp-lightbox .r3d-lp-buy:focus { background: #719504; color: #fff; }
+			#r3d-lp-lightbox .r3d-lp-buy:focus { outline: 0; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #5e7c03; }
 			#r3d-lp-lightbox.is-try iframe { flex: 1; width: 100%; border: 0; background: #fff; }
 			#r3d-lp-lightbox .r3d-try-loading { position: absolute; top: 56px; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px; background: #fff; color: #1d2327; font-size: 14px; text-align: center; }
 			#r3d-lp-lightbox .r3d-try-loading p { margin: 0; }
@@ -398,7 +402,6 @@ add_thickbox();
 
 wp_enqueue_script("real3d-flipbook-iscroll");
 wp_enqueue_script("real3d-flipbook-pdfjs");
-wp_enqueue_script("real3d-flipbook-pdfworkerjs");
 wp_enqueue_script("real3d-flipbook-pdfservice");
 wp_enqueue_script("real3d-flipbook-threejs");
 wp_enqueue_script("real3d-flipbook-book3");

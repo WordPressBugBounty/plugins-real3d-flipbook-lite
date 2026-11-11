@@ -1717,8 +1717,6 @@ function r3d_escAttr(value) {
       var WIDE = window.matchMedia("(min-width: 851px)");
       var DESKTOP = { w: 1000, h: 707 };
       var PHONE = { w: 390, h: 760 };
-      var IPHONE_UA =
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
       var state = {
         dev: "desktop",
         phoneView: null,
@@ -1741,11 +1739,7 @@ function r3d_escAttr(value) {
         "src",
         pluginDir + "js/flipbook.min.js"
       );
-      var viewerCss = assetUrl(
-        'link[href*="css/flipbook.min.css"]',
-        "href",
-        pluginDir + "css/flipbook.min.css"
-      );
+      var viewerVer = (viewerJs.split("ver=")[1] || "").split("&")[0];
 
       function svg(inner) {
         return (
@@ -1984,7 +1978,6 @@ function r3d_escAttr(value) {
       }
 
       function frameDoc(variant) {
-        var phone = variant !== "desktop";
         var css =
           "html,body{margin:0;height:100%;overflow:hidden;background:#fff}#b{position:relative;width:100%;height:100%}";
         var body = '<div id="b"></div>';
@@ -2003,30 +1996,7 @@ function r3d_escAttr(value) {
             '<div id="b"></div>' +
             '<div class="l"></div><div class="l" style="width:90%"></div><div class="l" style="width:96%"></div><div class="l" style="width:58%"></div></main>';
         }
-        return (
-          '<!doctype html><html><head><meta charset="utf-8">' +
-          (phone
-            ? '<script>Object.defineProperty(navigator,"userAgent",{get:function(){return ' +
-              JSON.stringify(IPHONE_UA) +
-              ";}});<\/script>"
-            : "") +
-          '<link rel="stylesheet" href="' +
-          viewerCss +
-          '">' +
-          "<style>" +
-          css +
-          "</style>" +
-          '<script src="' +
-          viewerJs +
-          '"><\/script>' +
-          "<script>" +
-          'window.r3dBuild=function(o){if(window.r3dBook)return window.r3dBook;window.r3dBook=new FlipBook(document.getElementById("b"),o);return window.r3dBook;};' +
-          'document.addEventListener("keydown",function(e){if(e.key==="Escape")parent.postMessage({r3dPreview:"esc"},"*");});' +
-          "<\/script></head><body>" +
-          body +
-          "<script>setTimeout(function(){var f=frameElement;if(f&&f.r3dReady)f.r3dReady(f);});<\/script>" +
-          "</body></html>"
-        );
+        return { css: css, body: body };
       }
 
       function currentPage(frameEl) {
@@ -2045,10 +2015,20 @@ function r3d_escAttr(value) {
         if (frameEl.dataset.fill) fresh.dataset.fill = frameEl.dataset.fill;
         fresh.r3dReady = frameEl.r3dReady;
         frameEl.parentNode.replaceChild(fresh, frameEl);
-        var doc = fresh.contentDocument;
-        doc.open();
-        doc.write(frameDoc(variant));
-        doc.close();
+        var content = frameDoc(variant);
+        fresh.onload = function () {
+          var doc = fresh.contentDocument;
+          var style = doc.createElement("style");
+          style.textContent = content.css;
+          doc.head.appendChild(style);
+          doc.body.innerHTML = content.body;
+          if (fresh.r3dReady) fresh.r3dReady(fresh);
+        };
+        fresh.src =
+          pluginDir +
+          "assets/preview.html?ver=" +
+          encodeURIComponent(viewerVer) +
+          (variant === "desktop" ? "" : "&phone=1");
         return fresh;
       }
 
@@ -2424,6 +2404,8 @@ function r3d_escAttr(value) {
 
       
       var TRY_ORIGIN = "https://real3dflipbook.com";
+      var BUY_URL =
+        "https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=try-preview-buy#pricing";
       var IMAGE_TYPES = {
         jpg: "image/jpeg",
         jpeg: "image/jpeg",
@@ -2532,6 +2514,9 @@ function r3d_escAttr(value) {
             '<div class="r3d-lp-box-head">' +
             '<div class="r3d-lp-title"><span class="r3d-lp-eyebrow">Real3D Flipbook PRO</span><h1>Your flipbook in PRO</h1></div>' +
             '<span class="r3d-lp-hint">Opens on real3dflipbook.com. Your file stays in your browser.</span>' +
+            '<a class="r3d-lp-buy" href="' +
+            BUY_URL +
+            '" target="_blank" rel="noopener">Buy PRO</a>' +
             '<button type="button" class="r3d-lp-close" aria-label="Close" title="Close (Esc)">' +
             icons.close +
             "</button>" +
@@ -3079,7 +3064,7 @@ function r3d_escAttr(value) {
       e.preventDefault();
       const addMorePages = this.classList.contains("add-more-pages");
 
-      var media_uploader_1 = wp
+      var media_uploader_1 = window.wp
         .media({
           title: "Select single PDF or multiple images",
           button: {
@@ -3123,7 +3108,7 @@ function r3d_escAttr(value) {
       var $input = $(this).parent().find("input");
       var $img = $(this).parent().find("img");
 
-      var pdf_uploader_2 = wp
+      var pdf_uploader_2 = window.wp
         .media({
           title: "Select file",
           button: {
@@ -3509,7 +3494,7 @@ function r3d_escAttr(value) {
     }
 
     function replacePage() {
-      var pdf_uploader_3 = wp
+      var pdf_uploader_3 = window.wp
         .media({
           title: "Select image",
           button: {

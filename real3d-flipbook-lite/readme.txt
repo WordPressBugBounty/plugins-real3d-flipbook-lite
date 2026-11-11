@@ -4,7 +4,7 @@ Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 5.8
+Stable tag: 5.8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -182,6 +182,16 @@ Post in the [support forum](https://wordpress.org/support/plugin/real3d-flipbook
 5. Scroll PDF viewer – continuous scrolling instead of page flips.
 
 == Changelog ==
+
+= 5.8.2 =
+* New: Buy PRO button in the PRO preview
+* Fix: the editor live preview stayed blank in WordPress Playground
+
+= 5.8.1 =
+* Security and stability fixes - update recommended
+* Change: activation no longer opens the opt-in screen
+* Change: fewer upgrade notices in the flipbook editor
+* Fix: PDF thumbnails in the editor are generated in a background thread
 
 = 5.8 =
 * New: reader actions are sent as an r3d-event browser event on the page - page views, zoom, share, PDF downloads and lightbox opens - so analytics tools can track them

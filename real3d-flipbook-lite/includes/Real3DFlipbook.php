@@ -217,7 +217,7 @@ class Real3DFlipbook
 		}
 		$flipbook_global_defaults = r3dfb_getDefaults();
 
-		$this->flipbook_global = r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global_options);
+		$this->flipbook_global = $this->sanitize_flipbook_strings(r3d_array_merge_deep($flipbook_global_defaults, $flipbook_global_options));
 		$this->enqueue_scripts();
 
 		add_filter('widget_text', 'do_shortcode');
@@ -437,11 +437,7 @@ class Real3DFlipbook
 			$val['key'] = get_option($optionName);
 		}
 
-		if (!defined('R3D_PDF_TOOLS_VERSION')) {
-			add_action('admin_notices', array($this, 'admin_notice_get_pdf_tools'));
-			return;
 		}
-	}
 
 	public function admin_notice_get_pdf_tools()
 	{
@@ -657,6 +653,8 @@ class Real3DFlipbook
 			$flipbook['lightboxThumbnailUrl'] = $this->sanitize_asset_url($flipbook['lightboxThumbnailUrl']);
 		}
 
+		$flipbook = $this->sanitize_flipbook_strings($flipbook);
+
 		if (isset($flipbook['tableOfContent']) && is_array($flipbook['tableOfContent'])) {
 			$flipbook['tableOfContent'] = $this->sanitize_toc_items($flipbook['tableOfContent']);
 		}
@@ -713,6 +711,28 @@ class Real3DFlipbook
 
 		if (isset($flipbook['previewDescription']) && is_string($flipbook['previewDescription']) && !current_user_can('unfiltered_html')) {
 			$flipbook['previewDescription'] = wp_kses_post($flipbook['previewDescription']);
+		}
+
+		return $flipbook;
+	}
+
+	public function sanitize_flipbook_strings($flipbook)
+	{
+		if (!is_array($flipbook) || !array_key_exists('strings', $flipbook)) {
+			return $flipbook;
+		}
+
+		if (!is_array($flipbook['strings'])) {
+			unset($flipbook['strings']);
+			return $flipbook;
+		}
+
+		foreach ($flipbook['strings'] as $key => $value) {
+			if (is_string($value) || is_numeric($value)) {
+				$flipbook['strings'][$key] = str_replace(array('"', '`'), '', sanitize_text_field((string) $value));
+			} else {
+				unset($flipbook['strings'][$key]);
+			}
 		}
 
 		return $flipbook;
@@ -1004,7 +1024,9 @@ class Real3DFlipbook
 		add_submenu_page(
 			'real3d_flipbook_admin',
 			'Addons',
-			'<span style="font-weight: 700; color: #33FF22">Add-ons</span>',
+			
+			esc_html__('Add-ons', 'real3d-flipbook-lite'),
+			
 			$capability,
 			'real3d_flipbook_addons',
 			array($this, "addons"),
@@ -1016,7 +1038,7 @@ class Real3DFlipbook
 			add_submenu_page(
 				'real3d_flipbook_admin',
 				'Upgrade',
-				'<span style="font-weight: 700; color: #33FF22">Upgrade to PRO</span>',
+				esc_html__('Upgrade to PRO', 'real3d-flipbook-lite'),
 				$capability,
 				'real3d_flipbook_upgrade',
 				array($this, "upgrade"),
@@ -1267,15 +1289,6 @@ class Real3DFlipbook
 
 		
 		add_meta_box('r3d_post_meta_box_help', esc_html__('Help', 'real3d-flipbook-lite'), array($this, 'create_meta_box_help'), 'r3d', 'side', 'default');
-
-		add_meta_box(
-			'real3d_pro_features',
-			esc_html__('Upgrade to PRO', 'real3d-flipbook-lite'), // Title of the metabox
-			array($this, 'pro_features_metabox_content'), // Callback function that will echo the content of the metabox
-			'r3d',
-			'normal',
-			'high'
-		);
 		
 
 	}
@@ -1310,52 +1323,6 @@ class Real3DFlipbook
 
 
 	
-	public function pro_features_metabox_content($post)
-	{
-		?>
-<div style="padding:4px 8px 10px;">
-	<style>
-	#real3d_pro_features { border: 1px solid #1d2327; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
-	#real3d_pro_features .postbox-header { border-bottom: 0; background: #1d2327; }
-	#real3d_pro_features .postbox-header .hndle { color: #fff; font-size: 15px; }
-	#real3d_pro_features .postbox-header .handle-actions button, #real3d_pro_features .postbox-header .handle-actions button::before, #real3d_pro_features .postbox-header .handle-actions span::before { color: #c3c4c7; }
-	.r3d-pro-mb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px 24px; margin: 12px 0 20px; padding: 0; list-style: none; }
-	.r3d-pro-mb-grid li { position: relative; margin: 0; padding-left: 28px; color: #1d2327; font-size: 14px; font-weight: 500; line-height: 20px; }
-	.r3d-pro-mb-grid li::before { content: ""; position: absolute; left: 0; top: 1px; width: 18px; height: 18px; border-radius: 50%; background: #84af05 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 12px no-repeat; }	.r3d-pro-mb-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-	.wp-core-ui .r3d-pro-mb-actions .button-primary { display: inline-flex; align-items: center; box-sizing: border-box; min-height: 40px; padding: 0 20px; line-height: 1.4; border-color: #84af05; border-radius: 8px; background: #84af05; color: #fff; font-weight: 600; transition: background .2s, border-color .2s; }
-	.wp-core-ui .r3d-pro-mb-actions .button-primary:hover, .wp-core-ui .r3d-pro-mb-actions .button-primary:focus { border-color: #719504; background: #719504; color: #fff; }
-	.wp-core-ui .r3d-pro-mb-actions .button-primary:focus { box-shadow: 0 0 0 1px #fff, 0 0 0 3px #5e7c03; }
-	.r3d-pro-mb-actions .r3d-pro-mb-secondary { display: inline-flex; align-items: center; box-sizing: border-box; min-height: 40px; padding: 0 20px; line-height: 1.4; border: 1.5px solid #84af05; border-radius: 8px; background: transparent; color: #5c7a04; font-size: 13px; font-weight: 600; text-decoration: none; transition: all .2s; }
-	.r3d-pro-mb-actions .r3d-pro-mb-secondary:hover, .r3d-pro-mb-actions .r3d-pro-mb-secondary:focus { background: #84af05; color: #fff; }
-	.r3d-pro-mb-actions .r3d-pro-mb-secondary:focus { outline: 0; box-shadow: 0 0 0 1px #fff, 0 0 0 3px #5e7c03; }
-	.r3d-pro-mb-note { color: #787c82; font-size: 12px; margin-top: 10px; }
-	</style>
-	<ul class="r3d-pro-mb-grid">
-		<li><?php esc_html_e('Deeper zoom', 'real3d-flipbook-lite'); ?></li>
-		<li><?php esc_html_e('Sharper pages', 'real3d-flipbook-lite'); ?></li>
-		<li><?php esc_html_e('PDF links and text search', 'real3d-flipbook-lite'); ?></li>
-		<li><?php esc_html_e('Bookmarks, autoplay and page downloads', 'real3d-flipbook-lite'); ?></li>
-		<li><?php esc_html_e('Toolbar and UI customization', 'real3d-flipbook-lite'); ?></li>
-		<li><?php esc_html_e('Lightbox customization', 'real3d-flipbook-lite'); ?></li>
-		<li><?php esc_html_e('Analytics and deep linking', 'real3d-flipbook-lite'); ?></li>
-		<li><?php esc_html_e('Mobile and global settings', 'real3d-flipbook-lite'); ?></li>
-	</ul>
-	<div class="r3d-pro-mb-actions">
-		<a class="button button-primary" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=metabox'); ?>" target="_blank">
-			<?php esc_html_e('Upgrade to PRO', 'real3d-flipbook-lite'); ?>
-		</a>
-		<a class="r3d-pro-mb-secondary" data-r3d-try data-label-book="<?php esc_attr_e('Preview this flipbook in PRO', 'real3d-flipbook-lite'); ?>" data-label-empty="<?php esc_attr_e('Try your PDF or images in PRO', 'real3d-flipbook-lite'); ?>" href="<?php echo esc_url('https://real3dflipbook.com/lite-vs-pro/?utm_source=wp-lite&utm_medium=plugin&utm_campaign=upgrade&utm_content=metabox-try#try'); ?>" target="_blank"><?php esc_html_e('Preview this flipbook in PRO', 'real3d-flipbook-lite'); ?></a>
-		<a href="<?php echo esc_url(admin_url('admin.php?page=real3d_flipbook_upgrade')); ?>">
-			<?php esc_html_e('View all PRO features', 'real3d-flipbook-lite'); ?>
-		</a>
-	</div>
-	<div class="r3d-pro-mb-note"><?php esc_html_e('Plans from $49/year · 30-day money-back guarantee · Your flipbooks carry over', 'real3d-flipbook-lite'); ?></div>
-</div>
-<?php
-	}
-
-
-
 	public function create_meta_box_help($post)
 	{
 	?>
@@ -1810,6 +1777,8 @@ a:hover .link-icon {
 		}
 
 		$output = '<div class="real3dflipbook" id="' . esc_attr($bookId) . '" style="position:absolute;"></div>';
+
+		$flipbook = $this->sanitize_flipbook_strings($flipbook);
 
 		$this->flipbook_options[$bookId] = $flipbook;
 
