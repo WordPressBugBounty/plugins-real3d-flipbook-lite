@@ -19,10 +19,9 @@ function r3d_sanitize_array($input)
 {
 	foreach ($input as $key => $value) {
 		if (is_array($value)) {
-			$input[$key] = sanitize_my_options($value);
+			$input[$key] = r3d_sanitize_array($value);
 		} else {
 			$input[$key] = sanitize_text_field($value);
-			$input[$key] = wp_kses_post($value);
 		}
 	}
 	return $input;
@@ -265,4 +264,138 @@ function r3dfb_pdf_links_notice()
 		esc_url(wp_nonce_url(add_query_arg('r3d_dismiss_pdf_links', '1'), 'r3d_dismiss_pdf_links')),
 		esc_html__('Dismiss', 'real3d-flipbook-lite')
 	);
+}
+
+
+add_action('admin_notices', 'r3dfb_newsletter_notice');
+
+
+function r3dfb_newsletter_notice()
+{
+	global $pagenow, $post_type;
+
+	if (!current_user_can('manage_options') || !in_array($pagenow, array('edit.php', 'post.php'), true) || 'r3d' !== $post_type) {
+		return;
+	}
+
+	if (!isset($_GET['r3d_nl']) && (in_array(get_option('r3d_newsletter'), array('subscribed', 'dismissed'), true) || (int) (wp_count_posts('r3d')->publish ?? 0) < 1)) {
+		return;
+	}
+
+	echo '<div class="notice">';
+	r3dfb_newsletter_card();
+	echo '</div>';
+}
+
+add_action('admin_post_r3d_newsletter', 'r3dfb_newsletter_submit');
+
+function r3dfb_newsletter_submit()
+{
+	if (!current_user_can('manage_options')) {
+		wp_die();
+	}
+
+	check_admin_referer('r3d_newsletter');
+
+	$back = remove_query_arg(array('r3d_nl', 'r3d_welcome'), wp_get_referer() ?: admin_url('admin.php?page=real3d_flipbook_help'));
+
+	if (($_POST['r3d_nl_action'] ?? '') !== 'subscribe') {
+		update_option('r3d_newsletter', 'skip' === ($_POST['r3d_nl_action'] ?? '') ? 'skipped' : 'dismissed', false);
+		wp_safe_redirect($back);
+		exit;
+	}
+
+	$email = sanitize_email(wp_unslash($_POST['email'] ?? ''));
+	if (!is_email($email)) {
+		wp_safe_redirect(add_query_arg('r3d_nl', 'error', $back));
+		exit;
+	}
+
+	$response = wp_remote_post('https://check.real3dflipbook.net/newsletter.php', array(
+		'timeout' => 10,
+		'body'    => array(
+			'email'  => $email,
+			'source' => false !== strpos(REAL3D_FLIPBOOK_FILE, 'real3d-flipbook-lite') ? 'lite' : (function_exists('rf_fs') ? 'freemius' : 'codecanyon'),
+			'v'      => defined('REAL3D_FLIPBOOK_VERSION') ? REAL3D_FLIPBOOK_VERSION : '',
+			'lang'   => get_user_locale(),
+			'c'      => 'nl2',
+		),
+	));
+
+	if (is_wp_error($response) || 'ok' !== trim(wp_remote_retrieve_body($response))) {
+		wp_safe_redirect(add_query_arg('r3d_nl', 'fail', $back));
+		exit;
+	}
+
+	update_option('r3d_newsletter', 'subscribed', false);
+	wp_safe_redirect(add_query_arg('r3d_nl', 'ok', $back));
+	exit;
+}
+
+function r3dfb_newsletter_card($welcome = false)
+{
+	if (!current_user_can('manage_options')) {
+		return;
+	}
+
+	$state = isset($_GET['r3d_nl']) ? sanitize_key($_GET['r3d_nl']) : '';
+
+	$answer = get_option('r3d_newsletter');
+	if ('ok' !== $state && $answer && ('skipped' !== $answer || !doing_action('admin_notices'))) {
+		return;
+	}
+	?>
+	<style>
+	.r3d-newsletter { background: #fff; border: 1px solid #dcdcde; border-left: 4px solid #84af05; border-radius: 8px; padding: 20px 24px; margin: 30px 0 0; }
+	.notice .r3d-newsletter { border: 0; padding: 4px 0; margin: 0; }
+	.r3d-newsletter h3 { margin: 0 0 6px; font-size: 1.1em; }
+	.r3d-newsletter p { margin: 0 0 12px; color: #50575e; }
+	.r3d-newsletter-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 0 0 10px; }
+	.r3d-newsletter-row input[type=email] { min-width: 260px; }
+	.r3d-newsletter .r3d-newsletter-note { font-size: 12px; margin: 0; }
+	.r3d-newsletter .r3d-newsletter-error { color: #b32d2e; }
+	</style>
+	<?php if ('ok' === $state) { ?>
+	<div class="r3d-newsletter">
+		<h3><?php esc_html_e('Almost done: check your inbox', 'real3d-flipbook-lite'); ?></h3>
+		<p class="r3d-newsletter-note"><?php esc_html_e('We sent you an email. Click the link in it to confirm your subscription.', 'real3d-flipbook-lite'); ?></p>
+	</div>
+	<?php } else {
+		$email = wp_get_current_user()->user_email;
+		$edit = in_array($state, array('edit', 'error', 'fail'), true) || !is_email($email);
+		?>
+	<form class="r3d-newsletter" method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+		<input type="hidden" name="action" value="r3d_newsletter">
+		<?php wp_nonce_field('r3d_newsletter'); ?>
+		<h3><?php esc_html_e('Get the most out of Real3D Flipbook', 'real3d-flipbook-lite'); ?></h3>
+		<p><?php esc_html_e('See what each new version adds and how to use it, get practical tips for better flipbooks, and be first to hear about subscriber-only offers.', 'real3d-flipbook-lite'); ?></p>
+		<?php if ('error' === $state) { ?>
+		<p class="r3d-newsletter-error"><?php esc_html_e('Please enter a valid email address.', 'real3d-flipbook-lite'); ?></p>
+		<?php } elseif ('fail' === $state) { ?>
+		<p class="r3d-newsletter-error"><?php esc_html_e('Could not subscribe right now. Please try again later.', 'real3d-flipbook-lite'); ?></p>
+		<?php } ?>
+		<div class="r3d-newsletter-row">
+			<?php if ($edit) { ?>
+			<input type="email" name="email" required value="<?php echo esc_attr($email); ?>" aria-label="<?php esc_attr_e('Email', 'real3d-flipbook-lite'); ?>">
+			<?php } else { ?>
+			<input type="hidden" name="email" value="<?php echo esc_attr($email); ?>">
+			<?php } ?>
+			<button type="submit" name="r3d_nl_action" value="subscribe" class="button button-primary"><?php esc_html_e('Sign me up', 'real3d-flipbook-lite'); ?></button>
+			<button type="submit" name="r3d_nl_action" value="<?php echo $welcome ? 'skip' : 'dismiss'; ?>" class="button-link" formnovalidate><?php echo $welcome ? esc_html__('Skip', 'real3d-flipbook-lite') : esc_html__('No thanks', 'real3d-flipbook-lite'); ?></button>
+		</div>
+		<p class="r3d-newsletter-note">
+			<?php if (!$edit) {
+				printf(
+					/* translators: %s: email address */
+					esc_html__('Emails go to %s.', 'real3d-flipbook-lite'),
+					'<strong>' . esc_html($email) . '</strong>'
+				);
+				?>
+			<a href="<?php echo esc_url(add_query_arg('r3d_nl', 'edit')); ?>"><?php esc_html_e('Use another email', 'real3d-flipbook-lite'); ?></a><br>
+			<?php } ?>
+			<?php esc_html_e('By clicking Sign me up you agree to get news, tips and offers from Real3D Flipbook by email. Unsubscribe anytime. Never sold or passed on.', 'real3d-flipbook-lite'); ?>
+			<a href="https://real3dflipbook.com/privacy-policy/" target="_blank" rel="noopener"><?php esc_html_e('Privacy policy', 'real3d-flipbook-lite'); ?></a>
+		</p>
+	</form>
+	<?php }
 }

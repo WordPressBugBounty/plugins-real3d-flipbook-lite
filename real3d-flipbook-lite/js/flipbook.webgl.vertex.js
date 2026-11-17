@@ -556,13 +556,15 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
     }
 
     updateRendererSize(w, h) {
-        if (this.rendererW != w || this.renderH != h) {
+        if (this.rendererW != w || this.rendererH != h) {
             this.renderer.setSize(w, h);
             this.rendererW = w;
             this.rendererH = h;
 
             this.updatePixelRatio();
+            return true;
         }
+        return false;
     }
 
     updatePixelRatio() {
@@ -1277,7 +1279,7 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         this.Camera.updateProjectionMatrix();
         this.updateCameraPosition();
 
-        this.updateRendererSize(w, h);
+        const cleared = this.updateRendererSize(w, h);
 
         if (!doNotUpdatePosition) this.updateBookPosition();
 
@@ -1285,6 +1287,8 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
             this.cssRenderer.setSize(w, h);
             this.htmlLayer.scale.set(this.sc, this.sc, this.sc);
         }
+
+        if (cleared) this.renderer.render(this.Scene, this.Camera);
 
         if (!this.isFlipping()) this.options.main.turnPageComplete();
 
@@ -3312,11 +3316,27 @@ FLIPBOOK.BookWebGL = class extends FLIPBOOK.Book {
         if (tilt != null) page._setAngle((page.angle * 180) / Math.PI);
     }
 
+    turnHint() {
+        const o = this.options;
+        const dir = o.rightToLeft ? 'prev' : 'next';
+        if (this.isFlipping() || this._hoverDir || !(dir === 'prev' ? this.canFlipPrev() : this.canFlipNext())) return;
+        const deg = o.pageHoverLift;
+        const ms = o.pageHoverLiftDuration;
+        o.pageHoverLift = 40;
+        o.pageHoverLiftDuration = 550;
+        this.hoverLift(dir, true);
+        o.pageHoverLift = deg;
+        o.pageHoverLiftDuration = ms;
+        setTimeout(() => {
+            if (!this._hoverDir) this.hoverLift(dir, false);
+        }, 950);
+    }
+
     /* Cursor entered or left a page edge: raise the page it would turn, as if
        a drag had just started, and let it settle back on the way out. */
     hoverLift(dir, on) {
         var deg = this.options.pageHoverLift;
-        if (!deg) return;
+        if (!deg && on) return;
         /* No new lifts while a sheet is in the air — a lift under an
            incoming flip overlaps it (dropping an existing lift is fine). */
         if (on && this.isFlipping()) return;
@@ -5093,6 +5113,7 @@ FLIPBOOK.PageWebGL = class {
                     this._releaseForce = null;
                     this._dragBendScale = null;
                     this._edgeBend = 0;
+                    this._fromDrag = true;
                 }
                 /* Reference speed = the AVERAGE speed of a full flip, not the
                    easeInSine peak it used to be — with linear rotation the
@@ -5102,7 +5123,7 @@ FLIPBOOK.PageWebGL = class {
                    classic depth regardless of the easing choice. */
                 var wRef = Math.PI / (this._rotTRef || 600 * this.duration);
                 var tauV =
-                    ((this.options.pageBendResponse == null ? 200 : this.options.pageBendResponse) *
+                    ((this.options.pageBendResponse == null ? 400 : this.options.pageBendResponse) *
                         Math.sqrt(this.pageHardness || 1)) /
                     2;
                 /* Always the trailing sign — the reversed curls a signed
@@ -5112,6 +5133,10 @@ FLIPBOOK.PageWebGL = class {
                    path only ever produced. */
                 var tMag = Math.min(1.2, Math.abs(wNow) / wRef);
                 var vTargetF = unit * tMag;
+                if (!this._fromDrag) {
+                    var gFall = this.options.pageGravity == null ? 1 : this.options.pageGravity;
+                    vTargetF *= 1 - gFall * 0.5 * (1 + Math.cos(travel));
+                }
                 /* ONE state, eased from the CURRENT bend — whatever the
                    finger, a previous flip or the other path left — toward
                    the velocity target. Split carry+velocity components
@@ -5225,7 +5250,7 @@ FLIPBOOK.PageWebGL = class {
                 this._bendUniforms.uBendForce.value = force;
             }
 
-            if (this.book.htmlLayerVisible && Math.abs(angle) > 0.03) {
+            if (this.book.htmlLayerVisible && Math.abs(angle - (this.isFlippedLeft ? Math.PI : 0)) > 0.03) {
                 this.book._hideHTMLPage(this.book.pageL);
                 this.book._hideHTMLPage(this.book.pageR);
                 this.book._hideHTMLPage(this.book.pageC);
@@ -5252,6 +5277,22 @@ FLIPBOOK.PageWebGL = class {
         if (this._bendT1) this._bendT1.stop();
         if (this._bendT2) this._bendT2.stop();
         this._bendMain = this._bendT1 = this._bendT2 = null;
+
+        var u = this._bendUniforms;
+        if (this._bendT3) this._bendT3.stop();
+        if (u.uBendOffset.value) {
+            this._bendT3 = FLIPBOOK.animate({
+                from: u.uBendOffset.value,
+                to: 0,
+                duration: 150 * (this.options.pageBendInForceFactor == null ? 2 : this.options.pageBendInForceFactor),
+                easing: 'easeOutSine',
+                step: (value) => {
+                    u.uBendOffset.value = value;
+                    this.book.needsUpdate = true;
+                },
+            });
+            this.animations.push(this._bendT3);
+        }
 
         if (this.flippingLeft) {
             this.flippingLeft = false;
@@ -5635,6 +5676,7 @@ FLIPBOOK.PageWebGL = class {
     }
 
     bendOut() {
+        if (this._bendT3) this._bendT3.stop();
         var force = this._bendUniforms.uBendForce.value;
         var offset = this._bendUniforms.uBendOffset.value;
         var time = this.options.pageBendOutFactor * this.duration * Math.pow(Math.abs(force), 0.5) * 800;
@@ -5715,6 +5757,7 @@ FLIPBOOK.PageWebGL = class {
         this._bendMomentum = null;
         this._bendAnchor = null;
         this._velPrevTravel = null;
+        this._fromDrag = false;
         this._envFlip = false;
         this._settling = false;
         this._captureForce = null;

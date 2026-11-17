@@ -1255,12 +1255,18 @@ FLIPBOOK.PdfService = function (main, options) {
         var matches = [];
 
         var str = '';
+        var snippet = '';
+        var lastY = null;
 
         arr.forEach(function (item) {
             str += item.str;
+            if (lastY !== null && item.transform && item.transform[5] !== lastY) snippet += ' ';
+            snippet += item.str;
+            if (item.transform && item.str) lastY = item.transform[5];
         });
 
         str = str.replace(/\s+/g, ' ').trim();
+        snippet = snippet.replace(/\s+/g, ' ').trim();
         self.searchingString = self.searchingString.replace(/\s+/g, ' ').trim();
 
         let regex = new RegExp(self.searchingString, 'ig'); // case insensitive, return array of matches
@@ -1272,16 +1278,20 @@ FLIPBOOK.PdfService = function (main, options) {
                 matches.push({ page: index });
             });
 
-            let i = str.search(regexSingle);
+            let i = snippet.search(regexSingle);
 
             if (i !== -1) {
-                str = str.substring(i);
+                let from = Math.max(0, i - 24);
+                if (from) from = snippet.indexOf(' ', from) + 1;
+                str = snippet.substring(from > i ? i : from);
+            } else {
+                str = str.substring(Math.max(0, str.search(regexSingle)));
             }
         }
 
         var callback = this.findInPageCallbacks[index];
         if (callback) {
-            callback.call(this, matches, page.htmlContent, page._pageIndex, str.substring(0, 60) + '...');
+            callback.call(this, matches, page.htmlContent, page._pageIndex, str.substring(0, 110) + '...');
         }
 
         this.findInPageCallbacks[index] = null;

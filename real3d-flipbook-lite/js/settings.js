@@ -217,6 +217,11 @@ function r3d_escAttr(value) {
       ],
     };
 
+    if (options.skin === "glass") {
+      options.skin = "light";
+      options.glass = true;
+    }
+
     function addOption(section, name, type, desc, help, values) {
       function getNestedValue(obj, path) {
         return path.reduce(
@@ -710,6 +715,8 @@ function r3d_escAttr(value) {
         6: '<rect class="p" x="15" y="8" width="14" height="14" rx="1"/><rect x="32" y="4" width="8" height="3.5" rx="1.75"/>',
         7: '<rect class="p" x="15" y="6" width="14" height="13" rx="1"/><rect x="3" y="21" width="38" height="6" rx="1"/><rect class="w" x="5" y="22.2" width="34" height="0.9"/>',
         8: '<rect class="p" x="15" y="7" width="14" height="13" rx="1"/><rect x="13" y="22.5" width="18" height="3.5" rx="1.75"/>',
+        9: '<rect class="p" x="18" y="8" width="14" height="14" rx="1"/><rect x="3" y="3" width="4" height="24" rx="1"/>',
+        10: '<rect class="p" x="12" y="8" width="14" height="14" rx="1"/><rect x="37" y="3" width="4" height="24" rx="1"/>',
       };
       r3dPicker(
         $("#r3d-pick-layout"),
@@ -723,6 +730,8 @@ function r3d_escAttr(value) {
           ["6", "Minimal"],
           ["7", "Player"],
           ["8", "Pill"],
+          ["9", "Left rail"],
+          ["10", "Right rail"],
         ].map(function (layout) {
           return {
             value: layout[0],

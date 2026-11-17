@@ -135,6 +135,18 @@ FLIPBOOK.BookSwipe = class extends FLIPBOOK.Book {
         return -i * this._slideW();
     }
 
+    turnHint() {
+        if (this._outerAnimating || this.flipping || this.nextEnabled === false || this.zoom > this.options.zoomMin) return;
+        const x = this._xForSlide(this.currentSlide);
+        this._setOuterTransition(true, 350);
+        this._setOuterX(x - this._slideW() * 0.15);
+        setTimeout(() => {
+            if (this._outerAnimating || this.flipping) return;
+            this._setOuterTransition(true, 350);
+            this._setOuterX(x);
+        }, 400);
+    }
+
     _animateToSlide(i, ms, done) {
         if (this._outerAnimating) return;
 

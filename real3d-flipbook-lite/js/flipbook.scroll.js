@@ -394,6 +394,15 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
         return this.rightIndex % 2 === 1;
     }
 
+    turnHint() {
+        const v = this.viewport;
+        if (v.scrollTop > 0 || v.scrollHeight <= v.clientHeight) return;
+        v.scrollTo({ top: 80, behavior: 'smooth' });
+        setTimeout(() => {
+            if (v.scrollTop <= 80) v.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 500);
+    }
+
     canFlipNext() {
         return this.rightIndex + 1 < this.options.numPages;
     }
@@ -501,6 +510,15 @@ FLIPBOOK.BookScroll = class extends FLIPBOOK.Book {
         this.scroller.style.transform = '';
         this._applyScale();
         this._committedScale = this.scale;
+    }
+
+    _panBy(dx, dy) {
+        const x = (this._panRestX || 0) + dx;
+        const y = (this._panRestY || 0) + dy;
+        this.viewport.scrollLeft -= Math.trunc(x);
+        this.viewport.scrollTop -= Math.trunc(y);
+        this._panRestX = x - Math.trunc(x);
+        this._panRestY = y - Math.trunc(y);
     }
 
     zoomIn(value, time, e) {

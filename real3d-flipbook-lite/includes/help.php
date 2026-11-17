@@ -2,6 +2,7 @@
 if (!defined('ABSPATH')) {
 	exit; // Exit if accessed directly
 }
+
 ?>
 <div class="wrap r3d_wrap r3d-help">
 
@@ -53,6 +54,12 @@ if (!defined('ABSPATH')) {
 		</a>
 		<?php } ?>
 	</div>
+
+	<?php
+	
+	r3dfb_newsletter_card();
+	
+	?>
 
 	<div class="r3d-steps">
 		<div class="r3d-step">

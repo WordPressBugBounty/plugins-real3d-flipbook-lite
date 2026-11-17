@@ -141,6 +141,7 @@ if (!function_exists("r3dfb_getDefaults")) {
 			'zoomReset' => 'false',
 			'doubleClickZoom' => 'true',
 			'pageDrag' => 'true',
+			'turnHint' => 'true',
 			'singlePageMode' => 'false',
 			'pageFlipDuration' => '1',
 			'sound' => 'true',
@@ -199,8 +200,9 @@ if (!function_exists("r3dfb_getDefaults")) {
 				'bitmapResizeHeight' => '',
 				'bitmapResizeQuality' => '',
 				'currentPage' => array(
-					'enabled' => 'false'
+					'enabled' => 'true'
 				),
+				'sideNavigationButtons' => 'false',
 				'pdfUrl' => '',
 				'minimalViewBreakpoint' => '280',
 				'zoomMin' => '',
@@ -328,6 +330,10 @@ if (!function_exists("r3dfb_getDefaults")) {
 				'enabled' => 'true',
 				'title' => __('Sound', 'real3d-flipbook-lite')
 			),
+			'btnDarkMode' => array(
+				'enabled' => 'false',
+				'title' => __('Dark mode', 'real3d-flipbook-lite')
+			),
 			'btnExpand' => array(
 				'enabled' => 'true',
 				'title' => __('Toggle fullscreen', 'real3d-flipbook-lite')
@@ -396,6 +402,7 @@ if (!function_exists("r3dfb_getDefaults")) {
 				'enabled' => 'false',
 			),
 			'skin' => 'light',
+			'glass' => 'false',
 			'useFontAwesome5' => 'true',
 			'sideNavigationButtons' => 'true',
 			'menuNavigationButtons' => 'false',
@@ -424,6 +431,7 @@ if (!function_exists("r3dfb_getDefaults")) {
 			'skinBackground' => '',
 
 			'hideMenu' => 'false',
+			'menuAutoHide' => 'false',
 			'menuAlignHorizontal' => 'center',
 			'btnColor' => '',
 			'btnColorHover' => '',
@@ -444,7 +452,7 @@ if (!function_exists("r3dfb_getDefaults")) {
 			'arrowMargin' => '12',
 			'arrowSize' => '40',
 			'arrowPadding' => '10',
-			'arrowTextShadow' => '0px 0px 1px rgba(0, 0, 0, 1)',
+			'arrowTextShadow' => '0px 0px 2px rgba(0, 0, 0, .9)',
 			'arrowBorder' => '',
 			'closeBtnColorHover' => '#FFF',
 			'closeBtnBackground' => 'rgba(0,0,0,.4)',

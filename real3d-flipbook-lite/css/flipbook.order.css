@@ -17,6 +17,10 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     cursor: pointer;
 }
+.r3d-order-inline .r3d-order-fab { top: 15px; bottom: auto; right: auto; left: 50%; transform: translateX(-50%); }
+@media (max-width: 600px) {
+    .r3d-order-inline .r3d-order-fab { top: auto; bottom: 72px; left: auto; right: 16px; transform: none; }
+}
 .r3d-order-fab:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
 .r3d-order-fab-count {
     min-width: 22px;

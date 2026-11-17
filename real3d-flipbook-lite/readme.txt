@@ -4,7 +4,7 @@ Donate link: https://real3dflipbook.com/wordpress/
 Tags: flipbook, flip book, pdf viewer, pdf embed, pdf embedder
 Requires at least: 5.0
 Tested up to: 7.1
-Stable tag: 5.8.2
+Stable tag: 5.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -149,6 +149,10 @@ Yes. Under **Real3D Flipbook > Settings > Overrides**, Real3D Flipbook can take 
 
 No. Your PDFs stay in your Media Library, on your own server. There is no account to create and no per-book fee, unlike hosted services such as Issuu.
 
+= Does the plugin send any data to an external service? =
+
+Only if you subscribe to the newsletter. The Help page, and a notice on the flipbook screens after your first flipbook is published, offer an optional sign-up for Real3D Flipbook news, tips and offers. Nothing is sent unless you click Sign me up. Then your email address, the plugin edition and version, and your admin language are sent to check.real3dflipbook.net and used only for these emails. You can unsubscribe at any time. See the [privacy policy](https://real3dflipbook.com/privacy-policy/).
+
 = Can readers download or print the PDF? =
 
 Yes, the toolbar has Download and Print buttons. You can turn them, or any other toolbar button, off for each flipbook.
@@ -182,6 +186,22 @@ Post in the [support forum](https://wordpress.org/support/plugin/real3d-flipbook
 5. Scroll PDF viewer – continuous scrolling instead of page flips.
 
 == Changelog ==
+
+= 5.9 =
+* Security and stability fixes - update recommended
+* New: the toolbar follows common PDF viewer conventions - the page counter sits between Previous and Next, and search, bookmarks and table of contents open in side panels with one shared look
+* New: "Page turn hint" option (General tab when you edit a flipbook) - first-time readers are shown once that the page can be turned
+* New: on phones the thumbnails open as a full-screen Pages sheet, and the page number field works with a Go button
+* New: optional newsletter sign-up on the Help page
+* Change: activation shows the opt-in screen again; you can skip it
+* Change: no side arrows on phones
+* Change: the book keeps its size next to the corner controls and the page counter
+* Improvement: steadier pinch zoom on phones in the Scroll view mode
+* Improvement: entering and leaving fullscreen resizes the book once, without a jump
+* Improvement: every page turn bends in more gently, and turns made with the buttons bend like a released drag
+* Fix: on phones and tablets a link near a page corner opens on the first tap
+* Fix: keys typed in form fields on the page no longer turn the flipbook pages
+* Fix: a page grabbed while it settles, or released against the turn, bends correctly in the WebGL view mode
 
 = 5.8.2 =
 * New: Buy PRO button in the PRO preview
@@ -233,6 +253,9 @@ Post in the [support forum](https://wordpress.org/support/plugin/real3d-flipbook
 [Changes in earlier versions](https://plugins.svn.wordpress.org/real3d-flipbook-lite/trunk/changelog.txt)
 
 == Upgrade Notice ==
+
+= 5.9 =
+Security and stability fixes - update recommended. Also a toolbar laid out like a PDF viewer, a page turn hint and a Pages sheet on phones.
 
 = 5.8 =
 New flipbooks show up in the block and in Insert Flipbook right after the first save, imports keep every flipbook, and reader actions are sent as browser events that analytics tools can track.

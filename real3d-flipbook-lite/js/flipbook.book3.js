@@ -1159,6 +1159,22 @@ FLIPBOOK.Book3 = class extends FLIPBOOK.Book {
         cl.toggle('r3d-grabbing', mode === 'grabbing');
     }
 
+    turnHint() {
+        const o = this.options;
+        const dir = o.rightToLeft ? 'prev' : 'next';
+        if (this.flipping || this.dragging || this._hoverDir || !(dir === 'prev' ? this.canFlipPrev() : this.canFlipNext())) return;
+        const deg = o.pageHoverLift;
+        const ms = o.pageHoverLiftDuration;
+        o.pageHoverLift = 25;
+        o.pageHoverLiftDuration = 450;
+        this._hoverLift(dir);
+        o.pageHoverLift = deg;
+        o.pageHoverLiftDuration = ms;
+        setTimeout(() => {
+            if (!this._hoverDir && !this.flipping && !this.dragging) this._hoverLift(null);
+        }, 750);
+    }
+
     _setHoverTarget(dir) {
         if (this._hoverDir === dir) return;
         this._hoverDir = dir;

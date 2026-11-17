@@ -1,6 +1,12 @@
 'use strict';
 var FLIPBOOK = FLIPBOOK || {};
-FLIPBOOK.version = '5.8.9';
+FLIPBOOK.version = '5.9';
+
+window.addEventListener('message', function (e) {
+    if (e.source === window.parent && e.data && e.data.type === 'pageCanScroll') {
+        FLIPBOOK.parentCanScroll = e.data.value !== false;
+    }
+});
 
 // page.image / page.imageBitmap are keyed by texture size, but legacy paths hand
 // back a bare Image, an ImageBitmap or a URL string. Resolve the requested tier,
@@ -92,10 +98,47 @@ FLIPBOOK.pageThumb = function (o, index, ratio, onShow) {
     };
 })(window, document);
 
+FLIPBOOK.menuGroups = {
+    btnFirst: 0,
+    btnPrev: 0,
+    btnNext: 0,
+    btnLast: 0,
+    btnZoomOut: 0,
+    btnZoomIn: 0,
+    btnThumbs: 1,
+    btnToc: 1,
+    btnSearch: 1,
+    btnBookmark: 1,
+    btnAutoplay: 1,
+    btnRotateLeft: 1,
+    btnRotateRight: 1,
+};
+
+FLIPBOOK.compactHide = [
+    'btnZoomOut',
+    'btnZoomIn',
+    'btnBookmark',
+    'btnToc',
+    'btnAutoplay',
+    'btnShare',
+    'btnDownloadPages',
+    'btnPrint',
+    'btnDownloadPdf',
+    'btnSound',
+    'btnDarkMode',
+];
+
+FLIPBOOK.flatModes = Object.assign(Object.create(null), {
+    calendar: ['flipBookCalendarSrc', 'BookCalendar'],
+    stack: ['flipBookStackSrc', 'BookStack'],
+});
+
 FLIPBOOK.getBook = function (target) {
     const el = typeof target === 'string' ? document.getElementById(target) : target && target.jquery ? target[0] : target;
     return (el && FLIPBOOK.instances && FLIPBOOK.instances.get(el)) || null;
 };
+
+FLIPBOOK.darkTheme = { skin: 'dark', backgroundColor: '#1f2123' };
 
 FLIPBOOK.Main = class {
     static defaultOptions = {
@@ -134,6 +177,7 @@ FLIPBOOK.Main = class {
         autoplayInterval: 3000,
         autoplayLoop: true,
         skin: '', // dark, light, gradient
+        glass: false,
         menuOverBook: false,
         menuFloating: false,
         menuBackground: '',
@@ -141,6 +185,9 @@ FLIPBOOK.Main = class {
         menuMargin: 0,
         menuPadding: 0,
         menuTransparent: false,
+        menuRail: false,
+        menuAutoHide: false,
+        menuAutoHideDelay: 3000,
         menu2OverBook: true,
         menu2Floating: false,
         menu2Background: '',
@@ -153,7 +200,7 @@ FLIPBOOK.Main = class {
         skinColorHover: '#111',
         skinBackground: '#FFF',
         floatingBtnColor: '#FFF',
-        floatingBtnBackground: '#00000055',
+        floatingBtnBackground: 'rgba(0, 0, 0, 0.6)',
         btnColor: '',
         btnBackground: 'none',
         iconSet: 'fontawesome',
@@ -179,7 +226,7 @@ FLIPBOOK.Main = class {
         arrowRadius: 999,
         arrowMargin: 12,
         arrowPadding: 10,
-        arrowTextShadow: '0px 0px 1px rgba(0, 0, 0, 1)',
+        arrowTextShadow: '0px 0px 2px rgba(0, 0, 0, .9)',
         arrowBorder: '',
         floatingBtnColorHover: '#FFF',
         floatingBtnBackgroundHover: 'rgba(255, 255, 255, 0.15)',
@@ -206,6 +253,7 @@ FLIPBOOK.Main = class {
             'btnPrint',
             'btnDownloadPdf',
             'btnSound',
+            'btnDarkMode',
             'btnTools',
             'btnSingle',
             'btnExpand',
@@ -333,6 +381,13 @@ FLIPBOOK.Main = class {
             svgAlt: 'mute',
             toolsMenu: true,
         },
+        btnDarkMode: {
+            enabled: false,
+            title: 'Dark mode',
+            svg: 'moon',
+            svgAlt: 'sun',
+            toolsMenu: true,
+        },
         btnTools: {
             enabled: true,
             title: 'More',
@@ -355,6 +410,7 @@ FLIPBOOK.Main = class {
             size: 20,
         },
         sideNavigationButtons: true,
+        turnHint: true,
         hideMenu: false,
         shareUrl: null,
         shareTitle: null,
@@ -436,6 +492,7 @@ FLIPBOOK.Main = class {
         // keep a full-resolution texture. Beyond this only the small tier
         // survives, and the sharp render returns when the page does.
         viewMode: 'webgl',
+        calendarWebgl: true,
         singlePageMode: false,
         singlePageModeIfMobile: false,
         bookMargin: 20,
@@ -566,7 +623,7 @@ FLIPBOOK.Main = class {
         // view wants it. Tripled while more than one sheet is in the air, so
         // fast flipping drifts instead of seesawing. 0 pins the book to the
         // fold exactly (and brings the shake back).
-        pageBendResponse: 200, // ms the paper takes to answer a speed change
+        pageBendResponse: 400, // ms the paper takes to answer a speed change
         // (velocity bend): higher = the bend builds through more of the turn
         // and relaxes later. Scaled by sqrt(hardness) — soft paper flops at
         // once, stiff card resists changing its bow.
@@ -701,12 +758,15 @@ FLIPBOOK.Main = class {
             findInDocument: 'Find in document',
             pagesFoundContaining: 'pages found containing',
             noMatches: 'No matches',
+            noMatchesHint: 'Check the spelling or try a shorter word.',
+            noBookmarks: 'No bookmarks yet',
+            noBookmarksHint: 'Save the page you are on and it shows up here.',
             matchesFound: 'matches found',
             page: 'Page',
             matches: 'matches',
             match: 'match',
             thumbnails: 'Thumbnails',
-            tableOfContent: 'Table of Contents',
+            tableOfContent: 'Contents',
             share: 'Share',
             notes: 'Notes',
             pressEscToClose: 'Press ESC to close',
@@ -733,7 +793,7 @@ FLIPBOOK.Main = class {
             // moved them out — no room for extra side arrows there.
             btnFirst: { toolsMenu: true },
             btnLast: { toolsMenu: true },
-            currentPage: { enabled: false },
+            sideNavigationButtons: false,
             pagePrefetchSpreads: 2,
             pagesInMemory: 16, // a flip-past texture costs ~3MB now instead of
             // ~14MB, so a phone can hold twice the window for less memory and
@@ -768,6 +828,11 @@ FLIPBOOK.Main = class {
                 512,
                 'M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z',
             ],
+            check: [
+                448,
+                512,
+                'M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z',
+            ],
             next: [
                 320,
                 512,
@@ -798,6 +863,8 @@ FLIPBOOK.Main = class {
                 512,
                 'M533.6 32.5C598.5 85.3 640 165.8 640 256s-41.5 170.8-106.4 223.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C557.5 398.2 592 331.2 592 256s-34.5-142.2-88.7-186.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM473.1 107c43.2 35.2 70.9 88.9 70.9 149s-27.7 113.8-70.9 149c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C475.3 341.3 496 301.1 496 256s-20.7-85.3-53.2-111.8c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zm-60.5 74.5C434.1 199.1 448 225.9 448 256s-13.9 56.9-35.4 74.5c-10.3 8.4-25.4 6.8-33.8-3.5s-6.8-25.4 3.5-33.8C393.1 284.4 400 271 400 256s-6.9-28.4-17.7-37.3c-10.3-8.4-11.8-23.5-3.5-33.8s23.5-11.8 33.8-3.5zM301.1 34.8C312.6 40 320 51.4 320 64V448c0 12.6-7.4 24-18.9 29.2s-25 3.1-34.4-5.3L131.8 352H64c-35.3 0-64-28.7-64-64V224c0-35.3 28.7-64 64-64h67.8L266.7 40.1c9.4-8.4 22.9-10.4 34.4-5.3z',
             ],
+            moon: [384, 512, 'M223.5 32C100 32 0 132.3 0 256S100 480 223.5 480c60.6 0 115.5-24.2 155.8-63.4c5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6c-96.9 0-175.5-78.8-175.5-176c0-65.8 36-123.1 89.3-153.3c6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z'],
+            sun: [512, 512, 'M361.5 1.2c5 2.1 8.6 6.6 9.6 11.9L391 121l107.9 19.8c5.3 1 9.8 4.6 11.9 9.6s1.5 10.7-1.6 15.2L446.9 256l62.3 90.3c3.1 4.5 3.7 10.2 1.6 15.2s-6.6 8.6-11.9 9.6L391 391 371.1 498.9c-1 5.3-4.6 9.8-9.6 11.9s-10.7 1.5-15.2-1.6L256 446.9l-90.3 62.3c-4.5 3.1-10.2 3.7-15.2 1.6s-8.6-6.6-9.6-11.9L121 391 13.1 371.1c-5.3-1-9.8-4.6-11.9-9.6s-1.5-10.7 1.6-15.2L65.1 256 2.8 165.7c-3.1-4.5-3.7-10.2-1.6-15.2s6.6-8.6 11.9-9.6L121 121 140.9 13.1c1-5.3 4.6-9.8 9.6-11.9s10.7-1.5 15.2 1.6L256 65.1 346.3 2.8c4.5-3.1 10.2-3.7 15.2-1.6zM160 256a96 96 0 1 1 192 0 96 96 0 1 1 -192 0zm224 0a128 128 0 1 0 -256 0 128 128 0 1 0 256 0z'],
             mute: [
                 576,
                 512,
@@ -841,12 +908,15 @@ FLIPBOOK.Main = class {
             close: [24, 24, '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'],
             chevronDown: [24, 24, '<path d="m6 9 6 6 6-6"/>'],
             chevronUp: [24, 24, '<path d="m18 15-6-6-6 6"/>'],
+            check: [24, 24, '<path d="M20 6 9 17l-5-5"/>'],
             next: [24, 24, '<path d="m9 18 6-6-6-6"/>'],
             expand: [24, 24, '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>'],
             compress: [24, 24, '<path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>'],
             thumbs: [24, 24, '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'],
             print: [24, 24, '<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/>'],
             sound: [24, 24, '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>'],
+            moon: [24, 24, '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>'],
+            sun: [24, 24, '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>'],
             mute: [24, 24, '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M22 9l-6 6"/><path d="M16 9l6 6"/>'],
             share: [24, 24, '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98"/><path d="M15.41 6.51l-6.82 3.98"/>'],
             search: [24, 24, '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.34-4.34"/>'],
@@ -907,6 +977,16 @@ FLIPBOOK.Main = class {
         ],
     };
     constructor(options, elem) {
+        if (options.skin === 'glass') options = { ...options, skin: 'light', glass: true };
+        if (options.btnDarkMode && options.btnDarkMode.enabled) {
+            const d = FLIPBOOK.Main.defaultOptions;
+            this._lightTheme = {};
+            Object.keys(FLIPBOOK.darkTheme).forEach((k) => (this._lightTheme[k] = k in options ? options[k] : d[k]));
+            try {
+                this.darkMode = localStorage.getItem('r3d-dark-mode') === '1';
+            } catch (e) {}
+            if (this.darkMode) options = { ...options, ...FLIPBOOK.darkTheme };
+        }
         if (elem.length) {
             this.elem = elem[0];
             this.elements = Array.from(elem);
@@ -942,7 +1022,6 @@ FLIPBOOK.Main = class {
         // simply misses and no preset is applied.
         const layouts = {
             };
-
         // Skins are Pro-only too — same pattern as layouts above.
         const skins = {
             };
@@ -951,13 +1030,19 @@ FLIPBOOK.Main = class {
         if (skinAliases[options.skin]) options = { ...options, skin: skinAliases[options.skin] };
 
         this._userOptions = FLIPBOOK.extend(true, {}, { ...options, pages: null, tableOfContent: null });
-        this._presets = { layouts, skins, skinAliases };
+        const isMobile =
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+            (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform));
 
-        if (options.skin && skins[options.skin]) {
-            options = FLIPBOOK.extend(true, {}, options, skins[options.skin]);
+        this._presets = { layouts, skins, skinAliases, isMobile };
+
+        const skinPreset = this._skinPreset(options);
+        if (skinPreset) {
+            options = FLIPBOOK.extend(true, {}, options, skinPreset);
         }
-        if (options.layout && layouts[options.layout]) {
-            options = FLIPBOOK.extend(true, {}, options, layouts[options.layout]);
+        const layout = this._layoutPreset(options.layout);
+        if (layout) {
+            options = FLIPBOOK.extend(true, {}, options, layout);
         }
 
         this.options = FLIPBOOK.extend(true, {}, FLIPBOOK.Main.defaultOptions, options);
@@ -970,9 +1055,7 @@ FLIPBOOK.Main = class {
 
         this.uniqueID = FLIPBOOK.count;
 
-        this.options.isMobile =
-            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-            (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform));
+        this.options.isMobile = isMobile;
 
         if (this.options.isMobile) {
             FLIPBOOK.extend(true, this.options, this.options.mobile);
@@ -1035,6 +1118,12 @@ FLIPBOOK.Main = class {
             o[q[5] + q[6]] = Math.pow(c.c, c.b);
             
 
+        if (FLIPBOOK.flatModes[o.viewMode]) {
+            o.rightToLeft = false;
+            o.cover = true;
+            if (o.viewMode == 'stack') o.singlePageMode = true;
+        }
+
         if (o.viewMode == '3dSinglePage') {
             o.singlePageMode = true;
         }
@@ -1044,7 +1133,7 @@ FLIPBOOK.Main = class {
         }
 
         if (o.singlePageMode) {
-            if (o.viewMode != '2d' && o.viewMode != 'swipe') {
+            if (o.viewMode != '2d' && o.viewMode != 'swipe' && !FLIPBOOK.flatModes[o.viewMode]) {
                 o.viewMode = '3d';
             }
 
@@ -1078,15 +1167,13 @@ FLIPBOOK.Main = class {
 
         Object.assign(o, { e: 'toString', f: 'padStart', g: 'decodeURIComponent', h: 97, i: 16 });
 
-        o.sideMenuPosition = o.rightToLeft ? 'right' : 'left';
-
         if (o.viewMode == 'webgl') {
             if (!this.hasWebGl) {
                 o.viewMode = '3d';
             }
         }
 
-        if (o.viewMode == 'webgl' || o.viewMode == 'scroll' || o.viewMode == 'swipe' || o.rightToLeft)
+        if (o.viewMode == 'webgl' || o.viewMode == 'scroll' || o.viewMode == 'swipe' || FLIPBOOK.flatModes[o.viewMode] || o.rightToLeft)
             o.btnSingle.enabled = false;
 
         this.webgl = o.viewMode == 'webgl';
@@ -1358,6 +1445,10 @@ FLIPBOOK.Main = class {
             { key: 'flipbookBook3Src', value: 'flipbook.book3' },
             { key: 'flipBookSwipeSrc', value: 'flipbook.swipe' },
             { key: 'flipBookScrollSrc', value: 'flipbook.scroll' },
+            { key: 'flipBookFlatSrc', value: 'flipbook.flat' },
+            { key: 'flipBookCalendarSrc', value: 'flipbook.calendar' },
+            { key: 'flipBookCalendarWebglSrc', value: 'flipbook.calendar.webgl' },
+            { key: 'flipBookStackSrc', value: 'flipbook.stack' },
             { key: 'pdfjsSrc', value: 'libs/pdf' },
             { key: 'pdfServiceSrc', value: 'flipbook.pdfservice' },
             { key: 'pdfjsworkerSrc', value: 'libs/pdf.worker' },
@@ -1389,7 +1480,7 @@ FLIPBOOK.Main = class {
 
             this.lightbox = new FLIPBOOK.Lightbox(this, this.wrapper, o);
             this.lightboxStartedTimes = 0;
-            this.wrapper.style.background = 'none';
+            if (!this.darkMode) this.wrapper.style.background = 'none';
             this.bookLayer.style.background = 'none';
             this.book.style.background = 'none';
 
@@ -1566,7 +1657,7 @@ FLIPBOOK.Main = class {
         var rtl = this.options.rightToLeft;
         var self = this;
 
-        if (pageClickAreaWdith && !scrollMode) {
+        if (pageClickAreaWdith && !scrollMode && this.options.viewMode != 'calendar') {
             this.options.pages.forEach(function (page, index) {
                 page.htmlContent = page.htmlContent || '';
                 if (singlePageMode) {
@@ -1612,6 +1703,9 @@ FLIPBOOK.Main = class {
 
         await this.createBook();
         this.hideFirstPagePreloader();
+        this._bookShown = true;
+        if (this.autoHideActive()) this.wakeMenu(5000);
+        this.scheduleTurnHint();
         this.createTooltip();
         if (this.options.btnNotes.enabled) {
             this.initNotes();
@@ -1731,6 +1825,13 @@ FLIPBOOK.Main = class {
             });
         } else if (o.viewMode === 'scroll') {
             this.loadScript(FLIPBOOK.flipBookScrollSrc, 'FLIPBOOK.BookScroll');
+        } else if (FLIPBOOK.flatModes[o.viewMode]) {
+            const m = FLIPBOOK.flatModes[o.viewMode];
+            this.loadScript(FLIPBOOK.flipBookFlatSrc, 'FLIPBOOK.BookFlat').then(() => {
+                this.loadScript(FLIPBOOK[m[0]], 'FLIPBOOK.' + m[1]).then(() => {
+                    if (this._calendarGl()) this.loadScript(FLIPBOOK.threejsSrc, 'THREE');
+                });
+            });
         } else {
             this.loadScript(FLIPBOOK.flipbookPanZoomSrc, 'FLIPBOOK.PanZoom').then(() => {
                 this.loadScript(FLIPBOOK.flipbookBook3Src, 'FLIPBOOK.Book3');
@@ -1750,6 +1851,17 @@ FLIPBOOK.Main = class {
 
     bodyHasVerticalScrollbar() {
         return document.body.scrollHeight > window.innerHeight;
+    }
+
+    pageCanScroll() {
+        try {
+            for (let w = window; ; w = w.parent) {
+                if (w.document.body.scrollHeight > w.innerHeight) return true;
+                if (w === w.top) return false;
+            }
+        } catch (e) {
+            return FLIPBOOK.parentCanScroll !== false;
+        }
     }
 
     isIframe() {
@@ -1886,6 +1998,7 @@ FLIPBOOK.Main = class {
         if (this.mediaElements)
             this.mediaElements.forEach((media) => {
                 if (media.tagName.toLowerCase() === 'video' || media.tagName.toLowerCase() === 'audio') {
+                    if (!media.paused) media._r3dAutoPause = true;
                     media.pause();
                 } else if (media.tagName.toLowerCase() === 'iframe') {
                     const src = media.src || media.getAttribute('src') || '';
@@ -2915,6 +3028,14 @@ FLIPBOOK.Main = class {
         this.toggleIcon(this.btnSound, o.sound);
     }
 
+    toggleDarkMode(on) {
+        this.darkMode = on === undefined ? !this.darkMode : on;
+        try {
+            localStorage.setItem('r3d-dark-mode', this.darkMode ? '1' : '0');
+        } catch (e) {}
+        this.setOptions(this.darkMode ? FLIPBOOK.darkTheme : this._lightTheme);
+    }
+
     toggleIcon(btn, val) {
         if (!btn) return;
         if (btn.$iconAlt) {
@@ -3040,6 +3161,11 @@ FLIPBOOK.Main = class {
     // engine without competing with the PDF's range requests — pdf.js fetches byte
     // ranges on demand while rendering, so there is no reliable idle window to aim
     // for; the browser scheduler arbitrates better than we can.
+    _calendarGl() {
+        const o = this.options;
+        return o.viewMode === 'calendar' && o.calendarWebgl !== false && !!FLIPBOOK.hasWebGl;
+    }
+
     loadScript(src, globalVariable, opts) {
         if (src.indexOf('?ver') === -1) src += `?ver=${FLIPBOOK.version}`;
 
@@ -3154,6 +3280,16 @@ FLIPBOOK.Main = class {
             ]);
         } else if (this.options.viewMode === 'scroll') {
             await this.loadScript(FLIPBOOK.flipBookScrollSrc, 'FLIPBOOK.BookScroll');
+        } else if (FLIPBOOK.flatModes[this.options.viewMode]) {
+            const m = FLIPBOOK.flatModes[this.options.viewMode];
+            await this.loadScript(FLIPBOOK.flipBookFlatSrc, 'FLIPBOOK.BookFlat');
+            await this.loadScript(FLIPBOOK[m[0]], 'FLIPBOOK.' + m[1]);
+            if (this._calendarGl()) {
+                try {
+                    await this.loadScript(FLIPBOOK.threejsSrc, 'THREE');
+                    await this.loadScript(FLIPBOOK.flipBookCalendarWebglSrc, 'FLIPBOOK.BookCalendarWebGL');
+                } catch (e) {}
+            }
         } else {
             await Promise.all([
                 this.loadScript(FLIPBOOK.flipbookPanZoomSrc, 'FLIPBOOK.PanZoom'),
@@ -3322,6 +3458,11 @@ FLIPBOOK.Main = class {
         } else if (this.options.viewMode == 'scroll') {
             this.options.singlePageMode = true;
             this.Book = new FLIPBOOK.BookScroll(this.book, this.bookLayer, this, options);
+        } else if (FLIPBOOK.flatModes[this.options.viewMode]) {
+            let engine = FLIPBOOK.flatModes[this.options.viewMode][1];
+            if (this._calendarGl() && FLIPBOOK.BookCalendarWebGL) engine = 'BookCalendarWebGL';
+            this.Book = new FLIPBOOK[engine](this.book, this.bookLayer, this, options);
+            this.initSound();
         } else {
             if (this.options.viewMode != '2d') {
                 this.options.viewMode = '3d';
@@ -3356,6 +3497,7 @@ FLIPBOOK.Main = class {
         this.createMenu();
 
         if (!this.options.sound) this.toggleSound(false);
+        if (this.btnDarkMode) this.toggleIcon(this.btnDarkMode, !this.darkMode);
 
         this.resize();
 
@@ -3387,6 +3529,7 @@ FLIPBOOK.Main = class {
     }
 
     async destroy() {
+        clearTimeout(this._menuIdleTimer);
         if (this.pdfService) {
             if (this.pdfService.pages) {
                 this.pdfService.pages.forEach(function (page) {
@@ -3424,7 +3567,8 @@ FLIPBOOK.Main = class {
         this.createBook = null;
         this.options = null;
         this.resizeObserver.disconnect();
-        this.resizeObserver.disconnect();
+        if (this.resizeObserver2) this.resizeObserver2.disconnect();
+        if (this._menuObserver) this._menuObserver.disconnect();
         this.removeEventListeners();
     }
 
@@ -4271,12 +4415,34 @@ FLIPBOOK.Main = class {
     updateCompactMode() {
         if (!this.elem) return;
         var threshold = this.options.compactBreakpoint || 600;
-        var width = this.elem.getBoundingClientRect().width;
-        var isCompact = width > 0 && width < threshold;
+        var width = (this.wrapper || this.elem).getBoundingClientRect().width;
+        var isCompact = (width > 0 && width < threshold) || !!(this._railCompact && this.options.menuRail);
         if (isCompact !== this._compactActive) {
             this._compactActive = isCompact;
             this.elem.classList.toggle('flipbook-compact', isCompact);
+            if (this.wrapper) this.wrapper.classList.toggle('flipbook-compact', isCompact);
+            this.updateMenuSeparators();
         }
+        this.fitCompactMenus();
+    }
+
+    fitCompactMenus() {
+        const el = this.wrapper;
+        if (!el) return;
+        el.classList.remove('flipbook-compact-tight');
+        if (!this._compactActive) return;
+        const r = el.getBoundingClientRect();
+        const overflows = [this.menuBottom, this.menuTop].some((bar) => {
+            if (!bar) return false;
+            const items = bar.querySelectorAll('.flipbook-menu-btn, .flipbook-currentPageHolder, .flipbook-menu-grouped');
+            return Array.from(items).some((item) => {
+                if (item.closest('.flipbook-submenu') || !item.offsetWidth) return false;
+                const b = item.getBoundingClientRect();
+                const pad = item.classList.contains('flipbook-menu-grouped') ? parseFloat(item.style.marginLeft) || 0 : 0;
+                return b.left - pad < r.left - 0.5 || b.right + pad > r.right + 0.5;
+            });
+        });
+        el.classList.toggle('flipbook-compact-tight', overflows);
     }
 
     fitPageAudio() {
@@ -4324,7 +4490,11 @@ FLIPBOOK.Main = class {
             let width = this.elem.getBoundingClientRect().width;
             let ratio;
 
-            if (this.options.isMobile && width < this.options.responsiveViewTreshold) {
+            if (this.options.viewMode == 'calendar') {
+                ratio = pageRatio / (this.options.singlePageMode ? 1 : 2);
+            } else if (this.options.viewMode == 'stack') {
+                ratio = pageRatio / 1.15;
+            } else if (this.options.isMobile && width < this.options.responsiveViewTreshold) {
                 ratio = pageRatio;
             } else {
                 ratio = bookRatio;
@@ -4357,6 +4527,7 @@ FLIPBOOK.Main = class {
             this.scheduleRefit();
         };
         this.handleKeydown = (e) => {
+            if (e.key === 'Tab' && this.autoHideActive()) this.wakeMenu();
             if (e.target && e.target.closest && e.target.closest('input, textarea, select, [contenteditable="true"]')) {
                 return;
             }
@@ -4466,6 +4637,7 @@ FLIPBOOK.Main = class {
         this.updateCompactMode();
 
         this.resizeObserver2 = new ResizeObserver(() => {
+            self.updateCompactMode();
             self.resize();
         });
 
@@ -4501,11 +4673,7 @@ FLIPBOOK.Main = class {
                     if (!this.Book.enabled) return;
 
                     if (!this.options.lightBox && !this.fullscreenActive && !e.ctrlKey && !this.options.wheelZoomAlways) {
-                        if (
-                            this.options.wheelDisabledNotFullscreen ||
-                            this.bodyHasVerticalScrollbar() ||
-                            this.isIframe()
-                        ) {
+                        if (this.options.wheelDisabledNotFullscreen || this.pageCanScroll()) {
                             return;
                         }
                     }
@@ -4796,6 +4964,7 @@ FLIPBOOK.Main = class {
                 // pans in both axes — in those two cases every direction belongs to
                 // the book, so no lock.
                 const axisLockable = self.options.viewMode !== 'scroll' && !(self.zoom > 1);
+                const bookAxis = self.options.viewMode === 'calendar' ? 'y' : 'x';
                 if (axisLockable) {
                     if (dragAxis === null) {
                         const adx = Math.abs(distanceX);
@@ -4806,7 +4975,7 @@ FLIPBOOK.Main = class {
                     }
                     // Committed to scrolling: ignore the rest of this touch so
                     // touch-action: pan-y can do its job.
-                    if (dragAxis === 'y') return;
+                    if (dragAxis !== bookAxis) return;
                 }
 
                 callback(e, 'move', distanceX, distanceY, 0, 1);
@@ -4829,8 +4998,9 @@ FLIPBOOK.Main = class {
                 isSwiping = false;
                 // A touch that committed to scrolling reports no travel, so its
                 // release can't be read as a flip.
-                const endX = dragAxis === 'y' ? 0 : distanceX;
-                const endY = dragAxis === 'y' ? 0 : distanceY;
+                const scrolled = dragAxis !== null && dragAxis !== (self.options.viewMode === 'calendar' ? 'y' : 'x');
+                const endX = scrolled ? 0 : distanceX;
+                const endY = scrolled ? 0 : distanceY;
                 callback(e, 'end', endX, endY, duration, e.changedTouches ? e.changedTouches.length : 1);
             }
 
@@ -4842,6 +5012,7 @@ FLIPBOOK.Main = class {
         }
 
         function cancelHandler(e) {
+            if (e.type === 'mouseleave' && touchStarted) return;
             setTimeout(function () {
                 touchStarted = false;
             }, 300);
@@ -4888,10 +5059,16 @@ FLIPBOOK.Main = class {
         this.touchSwipe(this.book, function (e, phase, distanceX, distanceY, duration, fingerCount) {
             textSelect = self.tool == 'toolSelect' || self.options.pageDragDisabled;
 
+            if (phase == 'start' || phase == 'pinchstart') self._pressing = true;
+            if (phase == 'end' || phase == 'cancel' || phase == 'pinchend' || phase == 'pinchcancel') {
+                self._pressing = false;
+                if (self.autoHideActive() && !self._menuIdle) self.wakeMenu();
+            }
+
             if (phase == 'start') {
                 self.zoomStart = self.zoom;
                 try {
-                    self.currentPageInput.dispatchEvent(new Event('blur', { bubbles: true, cancelable: true }));
+                    self.currentPageInput.blur();
                 } catch (e) {}
                 const pageHtmlClicked = e.target.closest('.flipbook-page-html');
                 if (pageHtmlClicked) {
@@ -4916,7 +5093,9 @@ FLIPBOOK.Main = class {
                     scale = e.scale;
                 }
                 if (self.Book) self.Book._gestureZoom = true;
-                self.zoomTo(self.zoomStart * scale, 0, e);
+                let pinchZoom = self.zoomStart * scale;
+                if (self.options.viewMode == 'scroll') pinchZoom = Math.max(pinchZoom, Math.min(self.zoomStart, self.options.zoomMin));
+                self.zoomTo(pinchZoom, 0, e);
                 // Two-finger pan: midpoint travel pans the zoomed book. Only
                 // while actually zoomed in — at rest zoom it would drag the
                 // book off its centered fit.
@@ -4925,19 +5104,28 @@ FLIPBOOK.Main = class {
                     typeof distanceY.x === 'number' &&
                     self.Book &&
                     self.Book._panBy &&
-                    self.Book.isZoomed &&
-                    self.Book.isZoomed()
+                    (!self.Book.isZoomed || self.Book.isZoomed())
                 ) {
                     self.Book._panBy(distanceY.x, distanceY.y);
                 }
                 pinching = true;
             }
 
-            if (phase == 'end') {
+            if (phase == 'end' && !pinching) {
+                const tap =
+                    e.touches &&
+                    Math.abs(distanceX) < 10 &&
+                    Math.abs(distanceY) < 10 &&
+                    duration < 300 &&
+                    !e.target.closest(
+                    'a, button, input, select, textarea, .flipbook-hotspot, .flipbook-page-item, .flipbook-menuBottom, .flipbook-menuTop, .flipbook-nav'
+                );
+                if (self.options.doubleClickZoomDisabled && tap) self.onSingleTap();
                 if (!self.options.doubleClickZoomDisabled) {
                     if (!self.clickTimer && e.touches) {
                         self.clickTimer = setTimeout(function () {
                             delete self.clickTimer;
+                            if (tap) self.onSingleTap();
                         }, 300);
                     } else {
                         clearTimeout(self.clickTimer);
@@ -4973,7 +5161,8 @@ FLIPBOOK.Main = class {
                    business, not the book's. Unless the hover lift has a page
                    part open, in which case that click is the flip the
                    affordance offered, so let the book have it. */
-                if (Math.abs(distanceX) < 5 && duration < 200 && !(self.Book && self.Book._pressDir)) {
+                const travel = self.options.viewMode === 'calendar' ? distanceY : distanceX;
+                if (Math.abs(travel) < 5 && duration < 200 && !(self.Book && self.Book._pressDir)) {
                     zooming = true;
                 }
             }
@@ -5167,8 +5356,8 @@ FLIPBOOK.Main = class {
         });
 
         if (colorHover || bgColorHover) {
-            $btn.addEventListener('mouseenter', function () {
-                if (this.classList.contains('disabled')) return;
+            $btn.addEventListener('pointerenter', function (e) {
+                if (e.pointerType === 'touch' || this.classList.contains('disabled')) return;
                 var prop = $btn.$icon._isLucide ? 'stroke' : 'fill';
                 $btn.$icon.style[prop] = colorHover;
                 // Floating buttons: bg on wrapper (pill hover); otherwise on icon
@@ -5184,7 +5373,7 @@ FLIPBOOK.Main = class {
                 }
             });
 
-            $btn.addEventListener('mouseleave', function () {
+            $btn.addEventListener('pointerleave', function () {
                 var prop = $btn.$icon._isLucide ? 'stroke' : 'fill';
                 $btn.$icon.style[prop] = color;
                 if (floating) {
@@ -5250,8 +5439,8 @@ FLIPBOOK.Main = class {
         // tools-menu clone so they remain accessible when the toolbar is
         // hidden via `.flipbook-compact`. Styling mirrors a normal
         // tools-menu button (see addCSS branch where inToolsMenu is true).
-        var COMPACT_HIDE = ['btnSearch', 'btnBookmark', 'btnToc', 'btnThumbs', 'btnAutoplay', 'btnShare'];
-        if (!inToolsMenu && this.toolsMenu && COMPACT_HIDE.indexOf(btn.name) !== -1) {
+        if (!inToolsMenu && this.toolsMenu && FLIPBOOK.compactHide.indexOf(btn.name) !== -1) {
+            $btn.classList.add('flipbook-compact-hide');
             var toolsColor = btn.color;
             var toolsMargin = o.btnMargin;
             var toolsPadV = o.btnPaddingV + 4;
@@ -5295,8 +5484,8 @@ FLIPBOOK.Main = class {
                 $btn.click();
             });
             this.toolsMenu.appendChild($compact);
-            // Re-enable tools button if it was disabled due to ≤1 tool entries
-            if (o.btnTools && o.btnTools.enabled === false && !this._toolsCompactOnly) o.btnTools.enabled = true;
+            $btn.$compact = $compact;
+            if (o.btnTools && o.btnTools.enabled === false) this._toolsCompactOnly = true;
         }
 
         return $btn;
@@ -5381,19 +5570,13 @@ FLIPBOOK.Main = class {
         }
 
         if (o.arrowBackgroundHover) {
-            button.addEventListener('mouseenter', function () {
-                if (this.classList.contains('disabled')) return;
+            button.addEventListener('pointerenter', function (e) {
+                if (e.pointerType === 'touch' || this.classList.contains('disabled')) return;
                 button.style.background = o.arrowBackgroundHover;
             });
-            button.addEventListener('mouseleave', function () {
+            button.addEventListener('pointerleave', function () {
                 button.style.background = o.arrowBackground;
             });
-            // iOS sometimes skips mouseleave after a tap; the gray hover
-            // background persists. Force-reset on touchend so the post-tap
-            // state is always clean.
-            const resetBg = () => { button.style.background = o.arrowBackground; };
-            button.addEventListener('touchend', resetBg, { passive: true });
-            button.addEventListener('touchcancel', resetBg, { passive: true });
         }
 
         if (o.arrowColor) {
@@ -5422,6 +5605,7 @@ FLIPBOOK.Main = class {
         if (o.menuFloating && o.menuTransparent) this.menuBottom.classList.add('flipbook-menu-bare');
         if (!o.menuTransparent && o.skin !== 'gradient' && !(o.menuBackground && o.menuBackground.includes('gradient'))) this.menuBottom.classList.add('flipbook-border');
         if (!o.menuTransparent) this.menuBottom.classList.add('flipbook-menu-solid');
+        if (o.menuRail) this.menuBottom.classList.add('flipbook-menu-rail', 'flipbook-menu-rail-' + (o.menuRail === 'right' ? 'right' : 'left'));
         this.menuBottom.style.background = o.menuBackground;
         this.menuBottom.style.boxShadow = o.menuShadow;
         this.menuBottom.style.margin = o.menuMargin + 'px';
@@ -5477,7 +5661,7 @@ FLIPBOOK.Main = class {
 
         this._toolsCompactOnly =
             !o.btnTools.enabled &&
-            ['btnSearch', 'btnBookmark', 'btnToc', 'btnThumbs', 'btnAutoplay', 'btnShare'].some(function (name) {
+            FLIPBOOK.compactHide.some(function (name) {
                 return o[name] && o[name].enabled;
             });
 
@@ -5562,6 +5746,19 @@ FLIPBOOK.Main = class {
             }
         }
 
+        const prevAt = o.btnOrder.indexOf('btnPrev');
+        if (
+            !o.sideNavigationButtons &&
+            prevAt >= 0 &&
+            o.btnPrev.enabled &&
+            o.btnNext.enabled &&
+            o.currentPage.vAlign === (o.btnPrev.vAlign || 'bottom') &&
+            o.currentPage.hAlign === (o.btnPrev.hAlign || 'center')
+        ) {
+            o.btnOrder.splice(o.btnOrder.indexOf('currentPage'), 1);
+            o.btnOrder.splice(o.btnOrder.indexOf('btnPrev') + 1, 0, 'currentPage');
+        }
+
         if (o.pdfMode && !o.btnDownloadPdf.url) {
             o.btnDownloadPdf.url = o.pdfUrl;
         }
@@ -5594,6 +5791,13 @@ FLIPBOOK.Main = class {
                 'btnClose',
             ];
             
+
+        const zoomOutAt = o.btnOrder.indexOf('btnZoomOut');
+        const zoomInAt = o.btnOrder.indexOf('btnZoomIn');
+        if (o.menuRail && zoomOutAt >= 0 && zoomInAt > zoomOutAt) {
+            o.btnOrder[zoomOutAt] = 'btnZoomIn';
+            o.btnOrder[zoomInAt] = 'btnZoomOut';
+        }
 
         var tools = [];
         for (var i = 0; i < o.btnOrder.length; i++) {
@@ -5679,6 +5883,146 @@ FLIPBOOK.Main = class {
         }
 
         if (this.btnSingle) this.toggleIcon(this.btnSingle, this.options.singlePageMode);
+        this.updateMenuSeparators();
+        if (this._menuObserver) this._menuObserver.disconnect();
+        this._menuObserver = new ResizeObserver(() => this.fitCompactMenus());
+        [this.menuBL, this.menuBC, this.menuBR, this.menuTL, this.menuTC, this.menuTR].forEach((menu) =>
+            this._menuObserver.observe(menu)
+        );
+    }
+
+    updateMenuSeparators() {
+        const groups = FLIPBOOK.menuGroups;
+        const groupOf = (el) =>
+            el.classList.contains('flipbook-currentPageHolder') ? 0 : groups[el.dataset.name] ?? 2;
+        [this.menuBL, this.menuBC, this.menuBR, this.menuTL, this.menuTC, this.menuTR].forEach((menu) => {
+            if (!menu) return;
+            [menu, menu._floatingPill].forEach((box) => {
+                if (!box) return;
+                box.querySelectorAll(':scope > .flipbook-menu-sep').forEach((sep) => sep.remove());
+                let prev = null;
+                Array.from(box.children).forEach((el) => {
+                    if (!el.matches('.flipbook-menu-btn, .flipbook-currentPageHolder')) return;
+                    if (getComputedStyle(el).display === 'none') return;
+                    if (prev && groupOf(el) !== groupOf(prev)) {
+                        const sep = document.createElement('span');
+                        sep.className = 'flipbook-menu-sep';
+                        sep.setAttribute('aria-hidden', 'true');
+                        const icon = prev.querySelector('svg') || el.querySelector('svg');
+                        if (icon) sep.style.color = getComputedStyle(icon)[icon._isLucide ? 'stroke' : 'fill'];
+                        box.insertBefore(sep, el);
+                    }
+                    prev = el;
+                });
+            });
+        });
+    }
+
+    autoHideActive() {
+        return !!this.options.menuAutoHide && !this.options.menuRail && !!this._presets.isMobile;
+    }
+
+    syncMenuAutoHide() {
+        const on = this.autoHideActive();
+        this.wrapper.classList.toggle('flipbook-menu-autohide', on);
+        if (on && !this._menuWatch) {
+            this._menuWatch = true;
+            const w = this.wrapper;
+            w.addEventListener('focusin', () => this.wakeMenu());
+            w.addEventListener(
+                'pointermove',
+                (e) => {
+                    if (e.pointerType !== 'touch' && this._menuIdle && this.inMenuZone(e.clientX, e.clientY)) this.wakeMenu();
+                },
+                { passive: true }
+            );
+        }
+        this.wakeMenu();
+    }
+
+    scheduleTurnHint() {
+        if (!this.options.turnHint || !this.Book || !this.Book.turnHint || !window.IntersectionObserver) return;
+        try {
+            if (localStorage.getItem('r3d-turn-hint')) return;
+        } catch (e) {}
+        if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const w = this.wrapper;
+        const events = ['pointerdown', 'wheel', 'keydown'];
+        const stop = () => {
+            io.disconnect();
+            clearTimeout(timer);
+            events.forEach((t) => w.removeEventListener(t, stop, true));
+        };
+        let timer;
+        const io = new IntersectionObserver(
+            (entries) => {
+                if (!entries[0].isIntersecting) return;
+                io.disconnect();
+                timer = setTimeout(() => {
+                    stop();
+                    if (this.disposed || !this.Book || this.zoom > this.options.zoomMin + 0.01) return;
+                    try {
+                        localStorage.setItem('r3d-turn-hint', '1');
+                    } catch (e) {}
+                    this.Book.turnHint();
+                }, 1200);
+            },
+            { threshold: 0.5 }
+        );
+        events.forEach((t) => w.addEventListener(t, stop, true));
+        io.observe(w);
+    }
+
+    onSingleTap() {
+        if (!this.autoHideActive()) return;
+        if (this._menuIdle || !this._bookShown || this._menuBusy()) {
+            this.wakeMenu();
+            return;
+        }
+        clearTimeout(this._menuIdleTimer);
+        this.setMenuIdle(true);
+    }
+
+    inMenuZone(x, y) {
+        const pad = 40;
+        return [this.menuBottom, this.menuTop, ...this.wrapper.querySelectorAll('.flipbook-nav > *')].some((el) => {
+            if (!el || !el.offsetHeight) return false;
+            const r = el.getBoundingClientRect();
+            return x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad;
+        });
+    }
+
+    setMenuIdle(idle) {
+        if (!!this._menuIdle === idle) return;
+        this._menuIdle = idle;
+        this.wrapper.classList.toggle('flipbook-menu-idle', idle);
+    }
+
+    wakeMenu(delay) {
+        clearTimeout(this._menuIdleTimer);
+        this.setMenuIdle(false);
+        if (!this.autoHideActive() || !this._bookShown) return;
+        this._menuIdleTimer = setTimeout(() => {
+            if (this._menuBusy()) this.wakeMenu();
+            else this.setMenuIdle(true);
+        }, delay || this.options.menuAutoHideDelay);
+    }
+
+    _menuBusy() {
+        return (
+            this._pressing ||
+            this.thumbStripShowing ||
+            (this.Book && this.Book.isFlipping && this.Book.isFlipping()) ||
+            this.tocShowing ||
+            this.thumbsShowing ||
+            this.searchShowing ||
+            this.bookmarkShowing ||
+            this.toolsMenuShowing ||
+            this.shareMenuShowing ||
+            this.wrapper.querySelector(
+                '.flipbook-menuBottom:hover, .flipbook-menuTop:hover, .flipbook-nav :hover, .flipbook-menuBottom :focus-visible, .flipbook-menuTop :focus-visible'
+            )
+        );
     }
 
     applyTheme() {
@@ -5700,7 +6044,12 @@ FLIPBOOK.Main = class {
         const colors = {};
         if (o.skinColor) colors.color = o.skinColor;
         if (o.skinBackground) colors.bg = o.skinBackground;
-        if (o.skin) Object.assign(colors, themes[o.skin]);
+        const glass = !!o.glass && !!this._presets.skins.glass;
+        if (o.skin && !glass) Object.assign(colors, themes[o.skin]);
+
+        this.wrapper.classList.toggle('flipbook-glass', glass);
+        this.wrapper.classList.toggle('flipbook-glass-dark', glass && this._glassDark(o));
+        this.syncMenuAutoHide();
 
         const style = this.wrapper.style;
         style.setProperty('--flipbook-bg', colors.bg);
@@ -5713,17 +6062,24 @@ FLIPBOOK.Main = class {
         if (o.backgroundColor !== '') {
             style.background = o.backgroundColor;
         }
+        const dim = this.darkMode ? 'linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)), ' : '';
         if (o.backgroundPattern !== '') {
-            style.background = `url(${o.backgroundPattern}) repeat`;
+            style.background = `${dim}url(${o.backgroundPattern}) repeat`;
         }
         if (o.backgroundImage !== '') {
-            style.background = `url(${o.backgroundImage}) no-repeat`;
+            style.background = `${dim}url(${o.backgroundImage}) no-repeat`;
             style.backgroundSize = 'cover';
             style.backgroundPosition = 'center center';
         }
+        if (o.lightBox && !this.darkMode) style.background = 'none';
+        else if (o.lightBox && (o.lightboxBackgroundImage || o.lightboxBackgroundPattern)) style.background = 'rgba(0, 0, 0, 0.55)';
     }
 
     _deriveMenuOptions(o) {
+        if (this._presets.isMobile && o.currentPage.vAlign === 'top' && o.menu2Transparent && !o.menuTransparent) {
+            o.currentPage = { ...o.currentPage, vAlign: 'bottom', hAlign: o.sideNavigationButtons ? 'left' : o.btnPrev.hAlign || 'center' };
+        }
+
         if (o.menuFloating) {
             o.sideMenuOverMenu = true;
         }
@@ -5761,13 +6117,85 @@ FLIPBOOK.Main = class {
         if (o.hideMenu) {
             o.menuOverBook = true;
         }
+
+        
+        o.menuRail = false;
+            o.menuAutoHide = false;
+            
+
+        if (o.menuAutoHide && !o.menuRail && this._presets.isMobile) {
+            o.menuOverBook = true;
+            o.menu2OverBook = true;
+            o.sideMenuOverMenu = true;
+            o.sideMenuOverMenu2 = true;
+        }
+
+        o.sideMenuPosition = o.rightToLeft || o.menuRail === 'right' ? 'right' : 'left';
+    }
+
+    _layoutPreset(key) {
+        const { layouts, isMobile } = this._presets;
+        const preset = layouts[key];
+        return preset && preset.menuRail && (isMobile || this._railTooShort) ? layouts[8] : preset;
+    }
+
+    checkRailFit() {
+        const o = this.options;
+        const h = this.wrapper.clientHeight;
+        if (!h) return false;
+        if (this._railTooShort) {
+            if (h < this._railNeedH) return false;
+            return this.setRailFallback(false);
+        }
+        if (!o.menuRail || !this.menuBottom || !this.menuShowing || this.minimalViewActive) return false;
+        if (this._railCompact && h >= this._railFullH) this._railCompact = false;
+        this.updateCompactMode();
+        let need = this.railNeed();
+        if (need <= h) return false;
+        if (!this._railCompact) {
+            this._railFullH = need;
+            this._railCompact = true;
+            this.updateCompactMode();
+            need = this.railNeed();
+            if (need <= h) return false;
+        }
+        this._railNeedH = need;
+        return this.setRailFallback(true);
+    }
+
+    railNeed() {
+        let need = 0;
+        Array.from(this.menuBottom.children).forEach((slot) => {
+            const items = Array.from(slot.children).filter((el) => el.offsetHeight);
+            const cs = getComputedStyle(slot);
+            need += parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + 16;
+            items.forEach((el) => (need += el.offsetHeight + 2));
+        });
+        return need;
+    }
+
+    setRailFallback(on) {
+        this.setOptions({}, () => (this._railTooShort = on));
+        this.updateCompactMode();
+        return true;
+    }
+
+    _skinPreset(o) {
+        const { skins } = this._presets;
+        if (o.glass && skins.glass) return this._glassDark(o) ? skins.glassDark : skins.glass;
+        return skins[o.skin];
+    }
+
+    _glassDark(o) {
+        return o.skin === 'dark' || String(o.layout) === '7';
     }
 
     _mergeStyle(user) {
-        const { layouts, skins } = this._presets;
         let opts = user;
-        if (opts.skin && skins[opts.skin]) opts = FLIPBOOK.extend(true, {}, opts, skins[opts.skin]);
-        if (opts.layout && layouts[opts.layout]) opts = FLIPBOOK.extend(true, {}, opts, layouts[opts.layout]);
+        const skinPreset = this._skinPreset(opts);
+        if (skinPreset) opts = FLIPBOOK.extend(true, {}, opts, skinPreset);
+        const layout = this._layoutPreset(opts.layout);
+        if (layout) opts = FLIPBOOK.extend(true, {}, opts, layout);
         const merged = FLIPBOOK.extend(true, {}, FLIPBOOK.Main.defaultOptions, opts);
         if (opts.btnOrder) merged.btnOrder = opts.btnOrder.slice();
         if (this.options.isMobile) FLIPBOOK.extend(true, merged, merged.mobile);
@@ -5775,12 +6203,14 @@ FLIPBOOK.Main = class {
         return merged;
     }
 
-    setOptions(changes) {
+    setOptions(changes, beforeMerge) {
         if (!changes || typeof changes !== 'object' || !this.options || !this.wrapper) return this;
         const alias = this._presets.skinAliases[changes.skin];
         if (alias) changes = { ...changes, skin: alias };
+        if (changes.skin === 'glass') changes = { ...changes, skin: 'light', glass: true };
         const o = this.options;
         const prev = this._mergeStyle(this._userOptions);
+        if (beforeMerge) beforeMerge();
         FLIPBOOK.extend(true, this._userOptions, changes);
         if (changes.btnOrder) this._userOptions.btnOrder = changes.btnOrder.slice();
         const next = this._mergeStyle(this._userOptions);
@@ -5788,7 +6218,7 @@ FLIPBOOK.Main = class {
         const same = (a, b) => a === b || JSON.stringify(a) === JSON.stringify(b);
         const copy = (v) => (v && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v);
         const styleKey =
-            /^(layout|skin|accentColor|background(Color|Pattern|Image)$|icon|btn|menu|floatingBtn|arrow|sideMenuOverMenu|sideNavigationButtons|currentPage$|progressBar$)/;
+            /^(layout|skin|glass$|accentColor|background(Color|Pattern|Image)$|icon|btn|menu|floatingBtn|arrow|sideMenu(OverMenu|Position)|sideNavigationButtons|currentPage$|progressBar$)/;
         const keys = new Set(Object.keys(next).filter((key) => styleKey.test(key)));
         [this._presets.layouts, this._presets.skins].forEach((map) =>
             Object.values(map).forEach((preset) => Object.keys(preset).forEach((key) => keys.add(key)))
@@ -5832,6 +6262,17 @@ FLIPBOOK.Main = class {
         return this;
     }
 
+    placeSidePanels() {
+        const side = this.options.sideMenuPosition;
+        const other = side === 'right' ? 'left' : 'right';
+        this.wrapper.querySelectorAll('.flipbook-side-menu').forEach((el) => {
+            el.style[side] = '0';
+            el.style[other] = '';
+            el.classList.toggle('flipbook-side-menu-right', side === 'right');
+        });
+        if (this.bookLayer) this.bookLayer.style[other] = '0px';
+    }
+
     rebuildToolbar() {
         if (!this.menuBottom || !this.Book) return;
         const o = this.options;
@@ -5849,6 +6290,7 @@ FLIPBOOK.Main = class {
         this._progressBarPending = false;
 
         this.createMenu();
+        this.placeSidePanels();
 
         if (this.progressBar) {
             if (this._progressBarPending) {
@@ -5864,6 +6306,7 @@ FLIPBOOK.Main = class {
         if (this.btnExpand) this.toggleIcon(this.btnExpand, !this.fullscreenActive);
         if (this.btnAutoplay) this.toggleIcon(this.btnAutoplay, !this.autoplay);
         if (this.btnSound) this.toggleIcon(this.btnSound, !!o.sound);
+        if (this.btnDarkMode) this.toggleIcon(this.btnDarkMode, !this.darkMode);
         this.syncActiveButtons();
         if (this.minimalViewActive || this.menuShowing === false) this.hideMenu();
 
@@ -5883,6 +6326,7 @@ FLIPBOOK.Main = class {
     onButtonClick(btn, _) {
         var name = btn.dataset.name;
         var o = this.options;
+        if (this.autoHideActive()) this.wakeMenu();
 
         switch (name) {
             case 'btnFirst':
@@ -5955,6 +6399,7 @@ FLIPBOOK.Main = class {
                 if (o.printMenu) {
                     this.togglePrintMenu();
                 } else {
+                    this.sendPrintEvent('all');
                     this.togglePrintWindow();
                 }
 
@@ -5964,6 +6409,9 @@ FLIPBOOK.Main = class {
                 // The visitor's choice wins over a pending resume after page media.
                 this.soundPaused = false;
                 this.toggleSound();
+                break;
+            case 'btnDarkMode':
+                this.toggleDarkMode();
                 break;
             case 'btnExpand':
                 this.toggleExpand();
@@ -6455,8 +6903,9 @@ FLIPBOOK.Main = class {
             !this.minimalViewActive && this.menuShowing && !o.menu2OverBook && !(scrollMode && o.menu2Transparent) && this.menuTop
                 ? this.menuTop.offsetHeight
                 : 0;
+        const railW = this.railWidth();
         const bottomMenuH =
-            !this.minimalViewActive && this.menuShowing && !o.menuOverBook && !(scrollMode && o.menuTransparent) && this.menuBottom
+            !o.menuRail && !this.minimalViewActive && this.menuShowing && !o.menuOverBook && !(scrollMode && o.menuTransparent) && this.menuBottom
                 ? this.menuBottom.offsetHeight
                 : 0;
         const is3dBook = o.viewMode == '3d' || o.viewMode == '2d';
@@ -6465,20 +6914,23 @@ FLIPBOOK.Main = class {
         // const is3dBookZoomed = false;
         // const hasPadding = o.viewMode != 'swipe' && o.viewMode != 'scroll';
         const hasPadding = o.viewMode == 'webgl';
-        const overlay = this.overlayMenuReach(scrollMode);
+        const overlay = this.autoHideActive() ? { top: 0, bottom: 0 } : this.overlayMenuReach(scrollMode);
         // In lightbox/fullscreen the flip headroom comes from the menu heights, but
         // topMenuH/bottomMenuH are 0 for a menu that overlays the book — so a layout
         // where both overlay would leave no headroom at all and pages would clip
         // mid-flip. Count the overlaying menus' measured reach as well.
         const bookVerticalPadding = hasPadding
             ? this.options.lightBox || this.fullscreenActive
-                ? Math.max(topMenuH, bottomMenuH, overlay.top, overlay.bottom)
+                ? Math.max(topMenuH, bottomMenuH, overlay.top, overlay.bottom, railW || this.autoHideActive() ? 51 : 0)
                 : o.bookVerticalPadding
             : 0;
 
         this.bookVerticalPadding = bookVerticalPadding;
 
-        const stripH = this.thumbStripShowing && this.thumbStrip ? this.thumbStrip.el.offsetHeight : 0;
+        const stripH =
+            this.thumbStripShowing && this.thumbStrip
+                ? this.thumbStrip.el.offsetHeight + (this.autoHideActive() && this.menuBottom ? this.menuBottom.offsetHeight + 8 : 0)
+                : 0;
 
         // A menu that overlays the book doesn't shrink the layer, so the book stays
         // centered in the full height and the menu sits on top of its edge. Shift the
@@ -6494,7 +6946,7 @@ FLIPBOOK.Main = class {
         const overlayShift = scrollMode ? 0 : (overlay.bottom - overlay.top) / 2;
 
         const bookBottom =
-            (!o.menuOverBook && this.menuBottom ? -bookVerticalPadding + bottomMenuH + stripH : -bookVerticalPadding + stripH) +
+            (!o.menuOverBook && !o.menuRail && this.menuBottom ? -bookVerticalPadding + bottomMenuH + stripH : -bookVerticalPadding + stripH) +
             (scrollMode ? overlay.bottom : overlayShift);
         const bookTop =
             (!o.menu2OverBook && this.menuTop ? -bookVerticalPadding + topMenuH : -bookVerticalPadding) +
@@ -6513,11 +6965,21 @@ FLIPBOOK.Main = class {
             style.top = topValue;
         }
 
+        const marginLeft = o.menuRail === 'left' ? railW + 'px' : '';
+        const marginRight = o.menuRail === 'right' ? railW + 'px' : '';
+        if (style.marginLeft !== marginLeft) style.marginLeft = marginLeft;
+        if (style.marginRight !== marginRight) style.marginRight = marginRight;
+
         this.positionFirstPagePreloader();
 
         // if (is3dBook) {
         //     this.Book.onResize(true);
         // }
+    }
+
+    railWidth() {
+        const o = this.options;
+        return o.menuRail && this.menuBottom && this.menuShowing && !this.minimalViewActive ? this.menuBottom.offsetWidth : 0;
     }
 
     updateZoomButtons() {
@@ -6656,6 +7118,11 @@ FLIPBOOK.Main = class {
                 return false;
             }
 
+            if (String(value) === self.currentPageString) {
+                self.currentPageInput.blur();
+                return false;
+            }
+
             self.currentPageString = String(value);
             value += self.options.pageNumberOffset;
             self.goToPage(value);
@@ -6686,6 +7153,7 @@ FLIPBOOK.Main = class {
 
         this.currentPageInput.addEventListener('focus', function () {
             self.currentPageInput.select();
+            self.fitCompactMenus();
         });
 
         this.currentPageInput.addEventListener('input', function () {
@@ -6696,12 +7164,27 @@ FLIPBOOK.Main = class {
             self.currentPageInput.style.width = measureInputWidth(self.currentPageInput.value) + 'px';
         });
 
+        this.currentPageInput.addEventListener('change', function () {
+            form.dispatchEvent(new Event('submit', { cancelable: true }));
+        });
+
         this.currentPageInput.addEventListener('blur', function () {
             self.currentPageInput.value = self.currentPageString;
             self.currentPageInput.style.width = measureInputWidth(self.currentPageString) + 'px';
+            self.fitCompactMenus();
         });
 
         form.appendChild(this.currentPageInput);
+
+        var go = document.createElement('button');
+        go.type = 'submit';
+        go.className = 'flipbook-page-go';
+        go.setAttribute('aria-label', 'OK');
+        go.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+        });
+        go.appendChild(this.createSVGIcon('check'));
+        form.appendChild(go);
 
         var digits = String(o.numPages).length;
         this.currentPageInput.classList.add('digits-' + digits);
@@ -6791,8 +7274,59 @@ FLIPBOOK.Main = class {
         this.tocScroller.className = 'flipbook-toc-scroller';
         this.toc.appendChild(this.tocScroller);
 
+        this.tocHolder.addEventListener('click', (e) => {
+            if (e.target === this.tocHolder && this._compactActive) this.closeMenus();
+        });
+
+        this._tocFlat = [];
+        this.resolveTocPages(tocArray);
+        this.on('pagechange', () => this.updateTocActive());
+
         this.tocCreated = true;
         this.toggleToc();
+    }
+
+    resolveTocPages(items) {
+        const pdf = this.pdfService && this.pdfService.pdfDocument;
+        items.forEach((item) => {
+            this._tocFlat.push(item);
+            if (item.page) item._page = Number(item.page);
+            else if (item.dest && pdf) {
+                Promise.resolve(typeof item.dest === 'string' ? pdf.getDestination(item.dest) : item.dest)
+                    .then((dest) => pdf.getPageIndex(dest[0]))
+                    .then((index) => {
+                        item._page = this.options.doublePage ? 2 * index + 1 : index + 1;
+                        if (!item._pageEl.textContent) item._pageEl.textContent = item._page;
+                        this.updateTocActive();
+                    })
+                    .catch(() => {});
+            }
+            if (item.items) this.resolveTocPages(item.items);
+        });
+    }
+
+    updateTocActive(scroll) {
+        if (!this.tocShowing || !this._tocFlat || !this.cPage) return;
+        const current = Math.max.apply(null, this.cPage) + 1;
+        let best = null;
+        this._tocFlat.forEach((item) => {
+            if (item._page && item._page <= current && (!best || item._page >= best._page)) best = item;
+        });
+
+        let el = best && best._el;
+        while (el && !el.offsetParent) {
+            const parent = el.closest('ul').parentElement;
+            el = parent && parent.querySelector(':scope > .toc-item');
+        }
+
+        if (this._tocActiveEl && this._tocActiveEl !== el) this._tocActiveEl.classList.remove('is-active');
+        if (el) el.classList.add('is-active');
+        this._tocActiveEl = el;
+
+        if (scroll && el) {
+            const top = el.getBoundingClientRect().top - this.toc.getBoundingClientRect().top + this.toc.scrollTop;
+            this.toc.scrollTop = top - this.toc.clientHeight / 2;
+        }
     }
 
     buildTOC(items) {
@@ -6827,6 +7361,7 @@ FLIPBOOK.Main = class {
                         subUl.dataset.expanded = 'false';
                         expandIcon.classList.remove('expanded');
                     }
+                    self.updateTocActive();
                 });
 
                 titleContainer.appendChild(expandIcon);
@@ -6845,9 +7380,11 @@ FLIPBOOK.Main = class {
             itemDiv.appendChild(titleContainer);
 
             const pageSpan = document.createElement('span');
-            pageSpan.textContent = item.pageNumberDisplay || item.page;
+            pageSpan.textContent = item.pageNumberDisplay || item.page || '';
             pageSpan.classList.add('page-number');
             itemDiv.appendChild(pageSpan);
+            item._el = itemDiv;
+            item._pageEl = pageSpan;
 
             itemDiv.addEventListener('click', function (e) {
                 e.stopPropagation();
@@ -6912,11 +7449,8 @@ FLIPBOOK.Main = class {
             return;
         }
 
-        if (enabled) {
-            button.classList.remove('disabled');
-        } else {
-            button.classList.add('disabled');
-        }
+        button.classList.toggle('disabled', !enabled);
+        if (button.$compact) button.$compact.classList.toggle('disabled', !enabled);
 
         button.enabled = enabled;
     }
@@ -6929,6 +7463,7 @@ FLIPBOOK.Main = class {
 
         const sidebarVisible = this.tocShowing || this.thumbsShowing || this.searchShowing || this.bookmarkShowing;
         if (!sidebarVisible) this.bookLayer.style[this.options.sideMenuPosition] = '0px';
+        this.updateBookLayerSize();
         let rect = this.bookLayer.getBoundingClientRect();
         if (!rect.width || !rect.height) {
             return;
@@ -6941,7 +7476,7 @@ FLIPBOOK.Main = class {
         this.wrapperH = rect.height;
         this.sidebarVisible = sidebarVisible;
 
-        this.updateBookLayerSize();
+        if (this.checkRailFit()) return;
 
         if (sidebarVisible) {
             var sidebarWdith = this.tocShowing
@@ -6950,9 +7485,16 @@ FLIPBOOK.Main = class {
                   ? 0
                   : this.thumbs.thumbHolder.getBoundingClientRect().width;
 
+            if (this._compactActive) sidebarWdith = 0;
             this.bookLayer.style[this.options.sideMenuPosition] = `${sidebarWdith}px`;
-            let sideMenuCss = { bottom: '0px', top: '0px' };
-            if (!this.options.sideMenuOverMenu) {
+            const railW = this.railWidth();
+            let sideMenuCss = {
+                bottom: '0px',
+                top: '0px',
+                marginLeft: this.options.menuRail === 'left' ? railW + 'px' : '',
+                marginRight: this.options.menuRail === 'right' ? railW + 'px' : '',
+            };
+            if (!this.options.sideMenuOverMenu && !this.options.menuRail) {
                 sideMenuCss.bottom = this.menuBottom.offsetHeight + 'px';
             }
             if (!this.options.sideMenuOverMenu2) {
@@ -7022,7 +7564,7 @@ FLIPBOOK.Main = class {
             this._zoomMinOption = isFinite(configured) ? configured : 1;
         }
         const fill = Math.min(1, Math.max(0.95, isFinite(this._zoomMinOption) ? this._zoomMinOption : 1));
-        const overlay = this.overlayMenuReach();
+        const overlay = this.autoHideActive() ? { top: 0, bottom: 0 } : this.overlayMenuReach();
         // Measure against the visible container, not the padded layer. wrapperH
         // includes bookVerticalPadding on both sides, which is headroom for pages to
         // lift mid-flip — not space the book may fill. Using it as the base made the
@@ -7082,7 +7624,10 @@ FLIPBOOK.Main = class {
             zoomSize = Math.min(zoomSize, (o.maxTextureSize || 4096) / pageRatio);
         }
 
-        if (o.viewMode == 'scroll') {
+        if (FLIPBOOK.flatModes[o.viewMode]) {
+            const pageH = (this.Book && this.Book.fitPageH) || (o.viewMode == 'calendar' && !o.singlePageMode ? visualH / 2 : visualH);
+            o.zoomMax = zoomSize / pageH;
+        } else if (o.viewMode == 'scroll') {
             // Scroll is single-page: cap zoom so the visual page height in
             // CSS pixels stays close to the source texture size. Use
             // pageRatio (not bookRatio) since there's no spread.
@@ -7148,7 +7693,7 @@ FLIPBOOK.Main = class {
 
         // Opening: restore last active view, or use configured default
         this.closeMenus();
-        const view = this.lastThumbView || this.options.thumbsDefaultView;
+        const view = this._compactActive ? 'grid' : this.lastThumbView || this.options.thumbsDefaultView;
         if (view === 'strip') {
             this.showThumbStrip();
         } else {
@@ -7213,6 +7758,7 @@ FLIPBOOK.Main = class {
             setTimeout(() => {
                 this.tocHolder.classList.add('flipbook-side-menu-visible');
             }, 20);
+            this.updateTocActive(true);
         } else {
             this.tocHolder.classList.remove('flipbook-side-menu-visible');
             this.tocShowing = false;
@@ -7373,6 +7919,7 @@ FLIPBOOK.Main = class {
                 '<div class="c-p skin-color flipbook-btn">' + this.strings.printCurrentPage + '</div>';
             content.appendChild(currentPageButton);
             currentPageButton.addEventListener('click', function () {
+                self.sendPrintEvent('current', self.cPage[0]);
                 self.printPage(self.cPage[0], this);
             });
 
@@ -7381,6 +7928,7 @@ FLIPBOOK.Main = class {
                 '<div class="c-l-p skin-color flipbook-btn">' + this.strings.printLeftPage + '</div>';
             content.appendChild(leftPageButton);
             leftPageButton.addEventListener('click', function () {
+                self.sendPrintEvent('left', self.cPage[0]);
                 self.printPage(self.cPage[0], this);
             });
 
@@ -7389,6 +7937,7 @@ FLIPBOOK.Main = class {
                 '<div class="c-r-p skin-color flipbook-btn">' + this.strings.printRightPage + '</div>';
             content.appendChild(rightPageButton);
             rightPageButton.addEventListener('click', function () {
+                self.sendPrintEvent('right', self.cPage[1]);
                 self.printPage(self.cPage[1], this);
             });
 
@@ -7396,6 +7945,7 @@ FLIPBOOK.Main = class {
             allPagesButton.innerHTML = '<div class="skin-color flipbook-btn">' + this.strings.printAllPages + '</div>';
             content.appendChild(allPagesButton);
             allPagesButton.addEventListener('click', function () {
+                self.sendPrintEvent('all');
                 self.togglePrintWindow();
             });
 
@@ -7713,6 +8263,17 @@ FLIPBOOK.Main = class {
         const res = await fetch(u, { mode: 'cors' });
         const blob = await res.blob();
         return URL.createObjectURL(blob);
+    }
+
+    sendPrintEvent(pages, index) {
+        this.sendGAEvent({
+            event: 'flipbook_print',
+            book_name: this.options.name,
+            page_number: this.currentPageValue,
+            pages: pages,
+            print_page: typeof index === 'number' ? index + 1 : undefined,
+            nonInteraction: true,
+        });
     }
 
     async printPage(index, _, retried) {
@@ -9333,7 +9894,7 @@ FLIPBOOK.ThumbUtils = {
     // Parse current page value into a Set of page numbers
     parseCurrentPages(main) {
         const raw = (main?.currentPageValue ?? '').toString().trim();
-        if (!raw) return null;
+        if (!raw) return main?.cPage ? new Set(main.cPage.map((i) => i + 1)) : null;
         return new Set(raw.split('-').map(Number).filter(Number.isFinite));
     },
 
@@ -9525,8 +10086,12 @@ FLIPBOOK.Thumbnails = class {
 
         main.createMenuHeader(this.thumbHolder, main.strings.thumbnails, main.toggleThumbs);
 
+        this.thumbHolder.addEventListener('click', (e) => {
+            if (e.target === this.thumbHolder && main._compactActive) main.closeMenus();
+        });
+
         this.bookmark = document.createElement('div');
-        this.bookmark.className = 'flipbook-font';
+        this.bookmark.className = 'flipbook-font flipbook-bookmark-actions';
         this.thumbHolder.appendChild(this.bookmark);
         this.bookmark.classList.add('flipbook-hidden');
 
@@ -9560,6 +10125,12 @@ FLIPBOOK.Thumbnails = class {
             e.stopPropagation();
         });
 
+        this.bookmark.querySelectorAll('.flipbook-btn').forEach((btn) => {
+            btn.prepend(main.createSVGIcon('bookmark'));
+        });
+
+        this.bookmarkEmpty = this.createEmptyState('bookmark', options.strings.noBookmarks, options.strings.noBookmarksHint);
+
         this.search = document.createElement('div');
         this.search.className = 'flipbook-search';
         this.thumbHolder.appendChild(this.search);
@@ -9579,6 +10150,9 @@ FLIPBOOK.Thumbnails = class {
         this.findInput.autocapitalize = 'none';
         this.findInput.placeholder = `${options.strings.findInDocument}...`;
         this.findInputCotainer.appendChild(this.findInput);
+        const findIcon = main.createSVGIcon('search');
+        findIcon.classList.add('flipbook-search-icon');
+        this.findInputCotainer.appendChild(findIcon);
 
         this.clearInput = document.createElement('span');
         this.clearInput.className = 'flipbook-search-clear flipbook-hidden skin-color skin-color-bg';
@@ -9595,6 +10169,12 @@ FLIPBOOK.Thumbnails = class {
             this.findInput.focus({ preventScroll: true });
         });
         this.findInputCotainer.appendChild(this.clearInput);
+
+        this.searchCount = document.createElement('div');
+        this.searchCount.className = 'flipbook-search-count';
+        this.search.appendChild(this.searchCount);
+
+        this.searchStatus = this.createEmptyState('search', options.strings.noMatches, options.strings.noMatchesHint);
 
         this.thumbsWrapper = document.createElement('div');
         this.thumbsWrapper.className = 'flipbook-thumbsWrapper';
@@ -9637,11 +10217,24 @@ FLIPBOOK.Thumbnails = class {
             this.searchString(str);
         });
 
+        this.findInput.enterKeyHint = 'search';
+        this.findInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.findInput.blur();
+        });
+        this.thumbHolder.addEventListener(
+            'touchmove',
+            () => {
+                if (document.activeElement === this.findInput) this.findInput.blur();
+            },
+            { passive: true }
+        );
+
         this.thumbs = [];
         this.isOverlayMode = options.thumbsStyle === 'overlay';
 
         const height = options.thumbSize;
         const width = (height * options.pageWidth) / options.pageHeight;
+        this.thumbWidth = width;
 
         this.main.wrapper.style.setProperty('--flipbook-thumbs-spread-width', 2 * width + 'px');
 
@@ -9690,6 +10283,21 @@ FLIPBOOK.Thumbnails = class {
         this.main.on('pagechange', () => {
             this.updateCurrentPages();
         });
+    }
+
+    createEmptyState(icon, title, hint) {
+        const el = document.createElement('div');
+        el.className = 'flipbook-panel-empty flipbook-font skin-color flipbook-hidden';
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'flipbook-panel-empty-icon';
+        iconWrap.appendChild(this.main.createSVGIcon(icon));
+        const strong = document.createElement('strong');
+        strong.textContent = title;
+        const span = document.createElement('span');
+        span.textContent = hint;
+        el.append(iconWrap, strong, span);
+        this.thumbHolder.appendChild(el);
+        return el;
     }
 
     createSpreads() {
@@ -9780,9 +10388,11 @@ FLIPBOOK.Thumbnails = class {
                 this.hideAllThumbs();
                 this.clearSearchResults();
                 this.pagesFound = 0;
+                this.matchesTotal = 0;
 
                 main.unmark();
                 main.searchingString = str;
+                this.search.classList.add('flipbook-searching');
 
                 if (pdfService) {
                     let matchesFound = 0;
@@ -9805,7 +10415,9 @@ FLIPBOOK.Thumbnails = class {
                             else this.showSearchResults(matches.length, index, pageText, firstResult);
                         }
                     }
+                    this.searchDone(str);
                 } else {
+                    let pending = 1;
                     options.pagesOriginal.forEach((_, index) => {
                         const originalIndex = index;
 
@@ -9817,6 +10429,7 @@ FLIPBOOK.Thumbnails = class {
 
                         if (options.pages[pi] && options.pages[pi].locked) return;
 
+                        pending++;
                         main.loadPageHTML(pi, (htmlContent) => {
                             const re = new RegExp(
                                 main.searchingString.toUpperCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
@@ -9837,8 +10450,10 @@ FLIPBOOK.Thumbnails = class {
                                 this.pagesFound++;
                                 main.mark(str);
                             }
+                            if (--pending === 0) this.searchDone(str);
                         });
                     });
+                    if (--pending === 0) this.searchDone(str);
                 }
             } else {
                 this.hideAllThumbs();
@@ -9873,10 +10488,19 @@ FLIPBOOK.Thumbnails = class {
     clearSearchResults() {
         const matches = this.thumbsScroller.querySelectorAll('.flipbook-search-match');
         for (let i = 0; i < matches.length; i++) matches[i].remove();
+        this.search.classList.remove('flipbook-searching');
+        this.searchStatus.classList.add('flipbook-hidden');
+        this.searchCount.textContent = '';
+    }
+
+    searchDone(str) {
+        if (str !== this.main.searchingString) return;
+        this.search.classList.remove('flipbook-searching');
+        if (!this.pagesFound) this.searchStatus.classList.remove('flipbook-hidden');
     }
 
     showSearchResults(matches, pageIndex, str, firstResult) {
-        const { main, options, findInput } = this;
+        const { main, options } = this;
         const { doublePage, strings } = main.options;
 
         let displayPageTitle;
@@ -9901,15 +10525,29 @@ FLIPBOOK.Thumbnails = class {
         searchMatch.dataset.page = adjustedPageIndex + 1;
         searchMatch.style.order = adjustedPageIndex;
 
-        const matchString = matches === 1 ? strings.match : strings.matches;
+        const title = document.createElement('div');
+        title.className = 'flipbook-search-match-title';
+        const titleText = document.createElement('strong');
+        titleText.textContent = `${strings.page} ${displayPageTitle}`;
+        const count = document.createElement('span');
+        count.textContent = `${matches} ${matches === 1 ? strings.match : strings.matches}`;
+        title.append(titleText, count);
 
-        searchMatch.innerHTML = `
-        <div class="flipbook-search-match-title">
-            <span style="float:left"><strong>${strings.page} ${displayPageTitle}</strong></span>
-            <span style="float:right">${matches} ${matchString}</span>
-        </div>
-        <div class="flipbook-search-match-text">${str}</div>
-    `;
+        const text = document.createElement('div');
+        text.className = 'flipbook-search-match-text';
+        const re = new RegExp('(' + main.searchingString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig');
+        String(str).split(re).forEach((part, i) => {
+            if (i % 2) {
+                const mark = document.createElement('mark');
+                mark.textContent = part;
+                text.appendChild(mark);
+            } else if (part) text.appendChild(document.createTextNode(part));
+        });
+
+        searchMatch.append(title, text);
+
+        this.matchesTotal += matches;
+        this.searchCount.textContent = `${this.matchesTotal} ${strings.matchesFound}`;
 
         searchMatch.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -9959,8 +10597,12 @@ FLIPBOOK.Thumbnails = class {
         this.showeCloseButtons(true);
         this.showBookmarkedThumbs();
         this.clearSearchResults();
+        this.thumbHolder.classList.add('flipbook-side-menu-list', 'flipbook-bookmarks-list');
         this.bookmark.classList.remove('flipbook-hidden');
         this.setTitle(this.options.strings.bookmarks);
+        const zoom = (this.thumbHolder.getBoundingClientRect().width - 56) / (3 * this.thumbWidth + 24);
+        this.thumbsScroller.style.zoom = zoom;
+        this.thumbsScroller.style.setProperty('--flipbook-thumb-zoom', zoom);
         this.main.updateCurrentPage();
         this.active = 'bookmarks';
     }
@@ -9974,6 +10616,7 @@ FLIPBOOK.Thumbnails = class {
         this.main.unmark();
         this.clearSearchResults();
         this.hideAllThumbs();
+        this.thumbHolder.classList.add('flipbook-side-menu-list');
         this.search.classList.remove('flipbook-hidden');
         this.showeCloseButtons(false);
         this.setTitle(this.options.strings.search);
@@ -9996,6 +10639,7 @@ FLIPBOOK.Thumbnails = class {
                 this.showThumb(thumbIndex);
             }
         }
+        this.bookmarkEmpty.classList.toggle('flipbook-hidden', arr.some(Boolean));
     }
 
     /* Drop a pending hide-completion (listener + fallback timer). */
@@ -10016,6 +10660,8 @@ FLIPBOOK.Thumbnails = class {
         this.bookmark.classList.add('flipbook-hidden');
         this.search.classList.add('flipbook-hidden');
         this.thumbHolder.classList.remove('flipbook-hidden');
+        this.thumbHolder.classList.remove('flipbook-side-menu-list', 'flipbook-bookmarks-list');
+        this.bookmarkEmpty.classList.add('flipbook-hidden');
         this.thumbHolder.classList.remove('flipbook-side-menu-visible');
         this.thumbHolder.classList.remove('flipbook-thumbs-grid');
 
@@ -10026,18 +10672,36 @@ FLIPBOOK.Thumbnails = class {
         this.main.resize();
         this.active = 'thumbs';
 
-        if (isGrid && this.main.options.thumbsStyle === 'overlay') {
+        const grid = isGrid && this.main.options.thumbsStyle === 'overlay';
+        const sheet = grid && this.main._compactActive;
+        if (grid) {
             this.thumbHolder.classList.add('flipbook-thumbs-grid');
             if (this.options.rightToLeft) {
                 this.thumbsScroller.style.direction = 'rtl';
             }
         }
 
+        if (sheet) {
+            const o = this.main.options;
+            const wide = o.pageWidth > o.pageHeight;
+            const width = this.main.wrapper.clientWidth;
+            const flat = this.main._isSingleView();
+            const cols = flat
+                ? Math.max(wide ? 2 : 3, Math.floor(width / (wide ? 190 : 125)))
+                : 2 * Math.max(1, Math.floor(width / (wide ? 300 : 200)));
+
+            this.setTitle(o.btnThumbs.title || o.strings.thumbnails);
+            this.thumbsScroller.style.setProperty('--flipbook-sheet-cols', cols);
+            this.thumbHolder.classList.toggle('flipbook-thumbs-flat', flat);
+            this.thumbsScroller.style.zoom = (width - 24) / (cols * this.thumbWidth + (cols - 1) * 12);
+        } else {
+            this.thumbsScroller.style.zoom = '';
+        }
+
         this.thumbsScroller.scrollTop = 0;
 
-        setTimeout(() => {
-            this.thumbHolder.classList.add('flipbook-side-menu-visible');
-        }, 20);
+        this.thumbHolder.offsetHeight;
+        this.thumbHolder.classList.add('flipbook-side-menu-visible');
 
         this.updateCurrentPages();
     }
@@ -10107,7 +10771,7 @@ FLIPBOOK.Thumbnails = class {
             el.classList.toggle('flipbook-thumb-active', isActive);
 
             // Also highlight sibling thumb in the same spread
-            if (isActive) {
+            if (isActive && !(this.main._compactActive && next.size === 1)) {
                 const spread = el.closest('.flipbook-thumb-spread');
                 if (spread) {
                     const siblings = spread.querySelectorAll('.flipbook-thumb');
@@ -10116,8 +10780,18 @@ FLIPBOOK.Thumbnails = class {
             }
         }
 
+        this.thumbsScroller.querySelectorAll('.flipbook-search-match').forEach((row) => {
+            row.classList.toggle('is-active', next.has(Number(row.dataset.page)));
+        });
+
         const activeEl = this.thumbsScroller.querySelector('.flipbook-thumb-active');
-        if (activeEl) {
+        if (activeEl && this.thumbsScroller.style.zoom) {
+            const container = this.thumbsWrapper;
+            const sRect = this.thumbsScroller.getBoundingClientRect();
+            const aRect = activeEl.getBoundingClientRect();
+            const ratio = (aRect.top + aRect.height / 2 - sRect.top) / sRect.height;
+            container.scrollTop = ratio * container.scrollHeight - container.clientHeight / 2;
+        } else if (activeEl) {
             const container = this.thumbsWrapper;
             const cRect = container.getBoundingClientRect();
             const aRect = activeEl.getBoundingClientRect();
@@ -10254,7 +10928,6 @@ FLIPBOOK.ThumbStrip = class {
         this.scroller.className = 'flipbook-thumb-strip-scroller';
         this.el.appendChild(this.scroller);
 
-        // Buttons container (top-right)
         const btns = document.createElement('div');
         btns.className = 'flipbook-thumb-strip-buttons';
         this.el.appendChild(btns);
@@ -10368,12 +11041,18 @@ FLIPBOOK.ThumbStrip = class {
     }
 
     show() {
-        const menuH = this.main.menuBottom ? this.main.menuBottom.offsetHeight : 0;
+        const menuH = this.main.menuBottom && !this.options.menuRail ? this.main.menuBottom.offsetHeight : 0;
+        const railW = this.main.railWidth();
         this.el.style.bottom = menuH + 8 + 'px';
+        this.el.style.marginLeft = railW ? (this.options.menuRail === 'right' ? -railW : railW) / 2 + 'px' : '';
+        this.el.style.maxWidth = railW ? `calc(100% - ${railW + 16}px)` : '';
         this.el.offsetHeight;
         this.el.classList.add('flipbook-thumb-strip-visible');
         this.updateActive();
         this.scrollToActive();
+        this.el.style.background = this.options.floatingBtnBackground;
+        this.el.style.color = this.options.floatingBtnColor;
+        this.el.style.boxShadow = this.options.floatingBtnShadow;
     }
 
     hide() {
@@ -10956,6 +11635,7 @@ FLIPBOOK.Tooltip2 = class {
     }
 
     handleMouseOver(e) {
+        if (Date.now() - (this._touchAt || 0) < 1000) return;
         const target = e.target.closest('.flipbook-has-tooltip');
         if (target && !target.classList.contains('disabled')) {
             this.showTooltip(target);
@@ -10971,6 +11651,7 @@ FLIPBOOK.Tooltip2 = class {
     }
 
     handleTouchStart(e) {
+        this._touchAt = Date.now();
         const target = e.target.closest('.flipbook-has-tooltip');
         if (target && !target.classList.contains('disabled')) {
             this.showTooltip(target);
@@ -11001,6 +11682,14 @@ FLIPBOOK.Tooltip2 = class {
         let top = targetRect.top - wrapperRect.top - tooltipRect.height - 10;
         let left = targetRect.left - wrapperRect.left + (targetRect.width - tooltipRect.width) / 2;
         let isBelow = false;
+
+        const rail = target.closest('.flipbook-menu-rail');
+        if (rail) {
+            top = targetRect.top - wrapperRect.top + (targetRect.height - tooltipRect.height) / 2;
+            left = rail.classList.contains('flipbook-menu-rail-right')
+                ? targetRect.left - wrapperRect.left - tooltipRect.width - 10
+                : targetRect.right - wrapperRect.left + 10;
+        }
 
         let arrowLeft = targetRect.left - wrapperRect.left + targetRect.width / 2 - left;
         arrowLeft = Math.max(6, Math.min(tooltipRect.width - 6, arrowLeft));
